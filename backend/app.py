@@ -631,6 +631,17 @@ def rules(rule_id=None):
     return jsonify({'message': 'deleted'})
 
 
+@app.route('/reset', methods=['POST'])
+@login_required
+def reset():
+    """Delete all transactions from the database."""
+    session = SessionLocal()
+    session.query(Transaction).delete()
+    session.commit()
+    session.close()
+    return jsonify({'message': 'reset'})
+
+
 def open_browser():
     webbrowser.open_new('http://localhost:5000')
 
