@@ -22,6 +22,19 @@ python run.py
 
 Par défaut, l'application s'ouvre dans votre navigateur à l'adresse http://localhost:5000.
 
+## Packaging macOS
+
+Pour créer un exécutable autonome pour macOS, PyInstaller est utilisé. Un
+`Makefile` fournit la cible suivante :
+
+```bash
+make package
+```
+
+Cette commande lance `pyinstaller --onefile run.py` et génère le binaire dans
+`dist/run`. La construction doit être effectuée sur macOS afin d'obtenir un
+exécutable natif.
+
 ## Licence
 
 Ce projet est distribué sous licence MIT. Voir le fichier [LICENSE](LICENSE).
