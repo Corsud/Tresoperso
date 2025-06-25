@@ -35,6 +35,38 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
 #transactions-table td:nth-child(9) {
     min-width: 90px;
 }
+#transactions-table th:nth-child(1),
+#transactions-table td:nth-child(1) {
+    text-align: right;
+}
+#transactions-table th:nth-child(5),
+#transactions-table td:nth-child(5) {
+    text-align: right;
+}
+#transactions-table th:nth-child(8),
+#transactions-table td:nth-child(8),
+#transactions-table th:nth-child(9),
+#transactions-table td:nth-child(9) {
+    text-align: center;
+}
+
+#catsubs-container {
+    display: flex;
+    gap: 20px;
+}
+.settings-col { flex: 1; }
+
+#categories-list li,
+#subcategories-list li,
+#rules-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+#categories-list li button,
+#subcategories-list li button,
+#rules-list li button { margin-left: 4px; }
 .overlay {
     position: fixed;
     top: 0;
