@@ -267,6 +267,51 @@ def list_transactions():
         results.append({
             'id': t.id,
             'date': t.date.isoformat(),
+            'category_id': t.category_id,
+            'subcategory_id': t.subcategory_id,
+@app.route('/transactions/<int:tx_id>', methods=['PUT', 'GET'])
+@login_required
+def update_transaction(tx_id):
+    """Retrieve or update a single transaction."""
+    session = SessionLocal()
+    tx = session.query(Transaction).get(tx_id)
+    if not tx:
+        session.close()
+        return jsonify({'error': 'Not found'}), 404
+
+    if request.method == 'GET':
+        result = {
+            'id': tx.id,
+            'date': tx.date.isoformat(),
+            'tx_type': tx.tx_type,
+            'payment_method': tx.payment_method,
+            'label': tx.label,
+            'amount': tx.amount,
+            'category_id': tx.category_id,
+            'subcategory_id': tx.subcategory_id,
+        }
+        session.close()
+        return jsonify(result)
+
+    data = request.get_json() or {}
+    if 'category_id' in data:
+        tx.category_id = data['category_id'] or None
+    if 'subcategory_id' in data:
+        tx.subcategory_id = data['subcategory_id'] or None
+    session.commit()
+    result = {
+        'id': tx.id,
+        'category_id': tx.category_id,
+        'subcategory_id': tx.subcategory_id,
+        'category': tx.category.name if tx.category else None,
+        'category_color': tx.category.color if tx.category else None,
+        'subcategory': tx.subcategory.name if tx.subcategory else None,
+        'subcategory_color': tx.subcategory.color if tx.subcategory else None,
+    }
+    session.close()
+    return jsonify(result)
+
+
             'type': t.tx_type,
             'payment_method': t.payment_method,
             'label': t.label,
