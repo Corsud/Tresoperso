@@ -61,6 +61,8 @@ function TransactionTable() {
             <th>Libellé</th>
             <th>Montant</th>
             <th>Catégorie</th>
+            <th>Pointée</th>
+            <th>A analyser</th>
           </tr>
         </thead>
         <tbody>
@@ -72,6 +74,14 @@ function TransactionTable() {
               <td>{t.label}</td>
               <td>{t.amount}</td>
               <td>{t.category || ''}</td>
+              <td><input type="checkbox" checked={t.reconciled} onChange={e => {
+                fetch('/transactions/' + t.id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({reconciled: e.target.checked})})
+                  .then(fetchData);
+              }} /></td>
+              <td><input type="checkbox" checked={t.to_analyze} onChange={e => {
+                fetch('/transactions/' + t.id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({to_analyze: e.target.checked})})
+                  .then(fetchData);
+              }} /></td>
             </tr>
           ))}
         </tbody>

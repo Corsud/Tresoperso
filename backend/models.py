@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, Date, ForeignKey, text
+from sqlalchemy import create_engine, Column, Integer, String, Float, Date, Boolean, ForeignKey, text
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash
@@ -49,6 +49,8 @@ class Transaction(Base):
     payment_method = Column(String)
     category_id = Column(Integer, ForeignKey('categories.id'))
     subcategory_id = Column(Integer, ForeignKey('subcategories.id'))
+    reconciled = Column(Boolean, default=False)
+    to_analyze = Column(Boolean, default=True)
 
     category = relationship('Category', back_populates='transactions')
     subcategory = relationship('Subcategory', back_populates='transactions')
@@ -80,6 +82,10 @@ def init_db():
             conn.execute(text('ALTER TABLE transactions ADD COLUMN payment_method TEXT'))
         if 'subcategory_id' not in cols:
             conn.execute(text('ALTER TABLE transactions ADD COLUMN subcategory_id INTEGER'))
+        if 'reconciled' not in cols:
+            conn.execute(text('ALTER TABLE transactions ADD COLUMN reconciled INTEGER DEFAULT 0'))
+        if 'to_analyze' not in cols:
+            conn.execute(text('ALTER TABLE transactions ADD COLUMN to_analyze INTEGER DEFAULT 1'))
 
         info = conn.execute(text('PRAGMA table_info(categories)')).fetchall()
         cols = {row[1] for row in info}

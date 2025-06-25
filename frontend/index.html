@@ -81,6 +81,8 @@
                     <th>Montant</th>
                     <th>Catégorie</th>
                     <th>Sous-catégorie</th>
+                    <th>Pointée</th>
+                    <th>A analyser</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -140,6 +142,28 @@
                 subBtn.innerHTML = t.subcategory ? `<span style="color:${t.subcategory_color}">${t.subcategory}</span>` : '(Aucune)';
                 subCell.appendChild(subBtn);
                 tr.appendChild(subCell);
+
+                const recCell = document.createElement('td');
+                const recBox = document.createElement('input');
+                recBox.type = 'checkbox';
+                recBox.checked = t.reconciled;
+                recBox.addEventListener('change', async () => {
+                    await fetch('/transactions/' + t.id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({reconciled: recBox.checked})});
+                    fetchTransactions();
+                });
+                recCell.appendChild(recBox);
+                tr.appendChild(recCell);
+
+                const analyzeCell = document.createElement('td');
+                const analyzeBox = document.createElement('input');
+                analyzeBox.type = 'checkbox';
+                analyzeBox.checked = t.to_analyze;
+                analyzeBox.addEventListener('change', async () => {
+                    await fetch('/transactions/' + t.id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({to_analyze: analyzeBox.checked})});
+                    fetchTransactions();
+                });
+                analyzeCell.appendChild(analyzeBox);
+                tr.appendChild(analyzeCell);
 
                 tbody.appendChild(tr);
             });
