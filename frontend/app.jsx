@@ -56,6 +56,8 @@ function TransactionTable() {
         <thead>
           <tr>
             <th>Date</th>
+            <th>Type</th>
+            <th>Moyen de paiement</th>
             <th>Libellé</th>
             <th>Montant</th>
             <th>Catégorie</th>
@@ -65,6 +67,8 @@ function TransactionTable() {
           {transactions.map(t => (
             <tr key={t.id}>
               <td>{t.date}</td>
+              <td>{t.tx_type}</td>
+              <td>{t.payment_method}</td>
               <td>{t.label}</td>
               <td>{t.amount}</td>
               <td>{t.category || ''}</td>
