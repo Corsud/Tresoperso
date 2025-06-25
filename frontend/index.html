@@ -9,14 +9,13 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <h1>Tresoperso</h1>
     <form id="login-form">
         <input type="text" id="username" placeholder="Utilisateur" required />
         <input type="password" id="password" placeholder="Mot de passe" required />
         <button type="submit">Connexion</button>
     </form>
     <div id="app" style="display:none;">
-        <div id="sidebar">
+        <nav id="navbar">
             <ul class="menu">
                 <li class="open">
                     <div class="menu-header">Transactions</div>
@@ -25,10 +24,10 @@
                     </ul>
                 </li>
                 <li>
-                    <div class="menu-header">Statistiques</div>
+                    <div class="menu-header">Analyses</div>
                     <ul class="submenu">
                         <li><button data-target="stats-section">Statistiques</button></li>
-                        <li><button data-target="projection-section">Projection</button></li>
+                        <li><button data-target="projection-section">Projections</button></li>
                     </ul>
                 </li>
                 <li>
@@ -38,8 +37,9 @@
                     </ul>
                 </li>
             </ul>
-        </div>
+        </nav>
         <div id="content">
+            <h1>Tresoperso</h1>
             <section id="transactions-section">
                 <form id="upload-form">
                     <input type="file" id="csv-file" name="file" accept=".csv" required />
@@ -530,7 +530,7 @@
         });
 
         const sectionIds = ['transactions-section', 'stats-section', 'projection-section', 'settings-section'];
-        const sidebarButtons = document.querySelectorAll('#sidebar .submenu button');
+        const sidebarButtons = document.querySelectorAll('#navbar .submenu button');
         sidebarButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 const target = btn.dataset.target;
@@ -545,7 +545,7 @@
             sidebarButtons[0].classList.add('selected');
         }
 
-        document.querySelectorAll('#sidebar .menu-header').forEach(header => {
+        document.querySelectorAll('#navbar .menu-header').forEach(header => {
             header.addEventListener('click', () => {
                 header.parentElement.classList.toggle('open');
             });
