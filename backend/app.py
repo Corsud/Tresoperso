@@ -5,7 +5,7 @@ import os
 import csv
 from datetime import datetime
 
-from .models import init_db, SessionLocal, Transaction
+from .models import init_db, SessionLocal, Transaction, Category
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
 
@@ -71,6 +71,65 @@ def import_csv():
     if errors:
         return jsonify({'imported': imported, 'errors': errors}), 400
     return jsonify({'message': f'{imported} transactions importées'})
+
+
+@app.route('/transactions')
+def list_transactions():
+    """Return transactions with optional filtering and sorting."""
+    session = SessionLocal()
+    query = session.query(Transaction)
+
+    category = request.args.get('category')
+    if category:
+        query = query.join(Category).filter(Category.name == category)
+
+    start_date = request.args.get('start_date')
+    if start_date:
+        try:
+            date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            query = query.filter(Transaction.date >= date)
+        except ValueError:
+            pass
+
+    end_date = request.args.get('end_date')
+    if end_date:
+        try:
+            date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            query = query.filter(Transaction.date <= date)
+        except ValueError:
+            pass
+
+    min_amount = request.args.get('min_amount')
+    if min_amount:
+        try:
+            query = query.filter(Transaction.amount >= float(min_amount))
+        except ValueError:
+            pass
+
+    max_amount = request.args.get('max_amount')
+    if max_amount:
+        try:
+            query = query.filter(Transaction.amount <= float(max_amount))
+        except ValueError:
+            pass
+
+    sort_by = request.args.get('sort_by', 'date')
+    sort_column = getattr(Transaction, sort_by, Transaction.date)
+    order = request.args.get('order', 'desc')
+    sort_column = sort_column.desc() if order == 'desc' else sort_column.asc()
+    query = query.order_by(sort_column)
+
+    results = []
+    for t in query.all():
+        results.append({
+            'id': t.id,
+            'date': t.date.isoformat(),
+            'label': t.label,
+            'amount': t.amount,
+            'category': t.category.name if t.category else None
+        })
+    session.close()
+    return jsonify(results)
 
 
 def open_browser():
