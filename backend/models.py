@@ -38,6 +38,16 @@ class Subcategory(Base):
     category = relationship('Category', back_populates='subcategories')
     transactions = relationship('Transaction', back_populates='subcategory')
 
+class BankAccount(Base):
+    __tablename__ = 'bank_accounts'
+
+    id = Column(Integer, primary_key=True)
+    account_type = Column(String)
+    number = Column(String)
+    export_date = Column(Date)
+
+    transactions = relationship('Transaction', back_populates='account')
+
 class Transaction(Base):
     __tablename__ = 'transactions'
 
@@ -47,6 +57,7 @@ class Transaction(Base):
     amount = Column(Float, nullable=False)
     tx_type = Column(String)
     payment_method = Column(String)
+    bank_account_id = Column(Integer, ForeignKey('bank_accounts.id'))
     category_id = Column(Integer, ForeignKey('categories.id'))
     subcategory_id = Column(Integer, ForeignKey('subcategories.id'))
     reconciled = Column(Boolean, default=False)
@@ -54,6 +65,7 @@ class Transaction(Base):
 
     category = relationship('Category', back_populates='transactions')
     subcategory = relationship('Subcategory', back_populates='transactions')
+    account = relationship('BankAccount', back_populates='transactions')
 
 
 class Rule(Base):
@@ -86,6 +98,8 @@ def init_db():
             conn.execute(text('ALTER TABLE transactions ADD COLUMN reconciled INTEGER DEFAULT 0'))
         if 'to_analyze' not in cols:
             conn.execute(text('ALTER TABLE transactions ADD COLUMN to_analyze INTEGER DEFAULT 1'))
+        if 'bank_account_id' not in cols:
+            conn.execute(text('ALTER TABLE transactions ADD COLUMN bank_account_id INTEGER'))
 
         info = conn.execute(text('PRAGMA table_info(categories)')).fetchall()
         cols = {row[1] for row in info}
