@@ -4,58 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tresoperso</title>
-    <style>
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ccc; padding: 4px; }
-        #transactions-table { width: 90%; }
-        #transactions-table td:nth-child(4) {
-            white-space: normal;
-            word-break: break-word;
-        }
-        #transactions-table th:nth-child(1),
-        #transactions-table td:nth-child(1),
-        #transactions-table th:nth-child(5),
-        #transactions-table td:nth-child(5),
-        #transactions-table th:nth-child(8),
-        #transactions-table td:nth-child(8),
-        #transactions-table th:nth-child(9),
-        #transactions-table td:nth-child(9) {
-            min-width: 90px;
-        }
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.4);
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-        .popup {
-            background: #fff;
-            padding: 10px;
-            border: 1px solid #ccc;
-        }
-        #app {
-            display: flex;
-        }
-        #sidebar {
-            width: 200px;
-            border-right: 1px solid #ccc;
-            padding-right: 10px;
-        }
-        #sidebar button {
-            display: block;
-            width: 100%;
-            margin: 4px 0;
-        }
-        #content {
-            flex-grow: 1;
-            padding-left: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="base.css">
+    <link rel="stylesheet" id="theme-link" href="light.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -143,6 +93,18 @@
                     <button type="submit">Enregistrer</button>
                 </form>
                 <ul id="rules-list"></ul>
+                <h2>Préférences d'affichage</h2>
+                <label for="theme-select">Thème :</label>
+                <select id="theme-select">
+                    <option value="light">Clair</option>
+                    <option value="dark">Sombre</option>
+                </select>
+                <label for="font-select">Police :</label>
+                <select id="font-select">
+                    <option value="roboto">Roboto</option>
+                    <option value="arial">Arial</option>
+                    <option value="geneva">Geneva</option>
+                </select>
             </section>
         </div>
 
@@ -559,6 +521,31 @@
                 });
             });
         });
+
+        const themeSelect = document.getElementById('theme-select');
+        const fontSelect = document.getElementById('font-select');
+        const themeLink = document.getElementById('theme-link');
+
+        function applyPreferences() {
+            const theme = localStorage.getItem('theme') || 'light';
+            const font = localStorage.getItem('font') || 'roboto';
+            themeLink.href = theme + '.css';
+            document.body.classList.remove('font-roboto', 'font-arial', 'font-geneva');
+            document.body.classList.add('font-' + font);
+            themeSelect.value = theme;
+            fontSelect.value = font;
+        }
+
+        themeSelect.addEventListener('change', () => {
+            localStorage.setItem('theme', themeSelect.value);
+            applyPreferences();
+        });
+        fontSelect.addEventListener('change', () => {
+            localStorage.setItem('font', fontSelect.value);
+            applyPreferences();
+        });
+
+        applyPreferences();
     </script>
 </body>
 </html>
