@@ -23,6 +23,7 @@ class Category(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True, nullable=False)
     transactions = relationship('Transaction', back_populates='category')
+    rules = relationship('Rule', back_populates='category')
 
 class Transaction(Base):
     __tablename__ = 'transactions'
@@ -34,6 +35,16 @@ class Transaction(Base):
     category_id = Column(Integer, ForeignKey('categories.id'))
 
     category = relationship('Category', back_populates='transactions')
+
+
+class Rule(Base):
+    __tablename__ = 'rules'
+
+    id = Column(Integer, primary_key=True)
+    pattern = Column(String, nullable=False)
+    category_id = Column(Integer, ForeignKey('categories.id'), nullable=False)
+
+    category = relationship('Category', back_populates='rules')
 
 
 def init_db():

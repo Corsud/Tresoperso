@@ -21,6 +21,25 @@
             <input type="file" id="csv-file" name="file" accept=".csv" required />
             <button type="submit">Importer CSV</button>
         </form>
+
+        <h2>Catégories</h2>
+        <form id="category-form">
+            <input type="hidden" id="category-id" />
+            <input type="text" id="category-name" placeholder="Nom" required />
+            <button type="submit">Enregistrer</button>
+        </form>
+        <ul id="categories-list"></ul>
+
+        <h2>Règles</h2>
+        <form id="rule-form">
+            <input type="hidden" id="rule-id" />
+            <input type="text" id="rule-pattern" placeholder="Mot-clé" required />
+            <select id="rule-category"></select>
+            <button type="submit">Enregistrer</button>
+        </form>
+        <ul id="rules-list"></ul>
+
+        <h2>Transactions</h2>
         <table id="transactions-table">
             <thead>
                 <tr>
@@ -60,6 +79,8 @@
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
                 fetchTransactions();
+                fetchCategories();
+                fetchRules();
             } else {
                 alert('Connexion échouée');
             }
@@ -79,6 +100,98 @@
                 const data = await resp.json().catch(() => ({}));
                 alert(data.error || 'Erreur import');
             }
+        });
+
+        async function fetchCategories() {
+            const resp = await fetch('/categories');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const list = document.getElementById('categories-list');
+            list.innerHTML = '';
+            const select = document.getElementById('rule-category');
+            select.innerHTML = '';
+            data.forEach(c => {
+                const li = document.createElement('li');
+                li.textContent = c.name;
+                const edit = document.createElement('button');
+                edit.textContent = 'Éditer';
+                edit.onclick = () => {
+                    document.getElementById('category-id').value = c.id;
+                    document.getElementById('category-name').value = c.name;
+                };
+                const del = document.createElement('button');
+                del.textContent = 'Supprimer';
+                del.onclick = async () => {
+                    await fetch('/categories/' + c.id, { method: 'DELETE' });
+                    fetchCategories();
+                    fetchRules();
+                };
+                li.append(' ', edit, ' ', del);
+                list.appendChild(li);
+
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                select.appendChild(opt);
+            });
+        }
+
+        async function fetchRules() {
+            const resp = await fetch('/rules');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const list = document.getElementById('rules-list');
+            list.innerHTML = '';
+            data.forEach(r => {
+                const li = document.createElement('li');
+                li.textContent = `${r.pattern} → ${r.category || ''}`;
+                const edit = document.createElement('button');
+                edit.textContent = 'Éditer';
+                edit.onclick = () => {
+                    document.getElementById('rule-id').value = r.id;
+                    document.getElementById('rule-pattern').value = r.pattern;
+                    document.getElementById('rule-category').value = r.category_id;
+                };
+                const del = document.createElement('button');
+                del.textContent = 'Supprimer';
+                del.onclick = async () => {
+                    await fetch('/rules/' + r.id, { method: 'DELETE' });
+                    fetchRules();
+                };
+                li.append(' ', edit, ' ', del);
+                list.appendChild(li);
+            });
+        }
+
+        document.getElementById('category-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = document.getElementById('category-id').value;
+            const name = document.getElementById('category-name').value;
+            if (id) {
+                await fetch('/categories/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name }) });
+            } else {
+                await fetch('/categories', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name }) });
+            }
+            document.getElementById('category-id').value = '';
+            document.getElementById('category-name').value = '';
+            fetchCategories();
+            fetchRules();
+        });
+
+        document.getElementById('rule-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = document.getElementById('rule-id').value;
+            const pattern = document.getElementById('rule-pattern').value;
+            const category_id = document.getElementById('rule-category').value;
+            const payload = { pattern, category_id };
+            if (id) {
+                await fetch('/rules/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            } else {
+                await fetch('/rules', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            }
+            document.getElementById('rule-id').value = '';
+            document.getElementById('rule-pattern').value = '';
+            fetchRules();
         });
     </script>
 </body>
