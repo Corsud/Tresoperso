@@ -8,6 +8,7 @@
         table { border-collapse: collapse; width: 100%; }
         th, td { border: 1px solid #ccc; padding: 4px; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <h1>Tresoperso</h1>
@@ -51,6 +52,16 @@
             </thead>
             <tbody></tbody>
         </table>
+
+        <h2>Statistiques mensuelles</h2>
+        <canvas id="statsChart" width="400" height="200"></canvas>
+
+        <h2>Projection</h2>
+        <table id="projection-table">
+            <thead><tr><th>Mois</th><th>Montant</th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <canvas id="projectionChart" width="400" height="200"></canvas>
     </div>
     <script>
         async function fetchTransactions() {
@@ -81,6 +92,8 @@
                 fetchTransactions();
                 fetchCategories();
                 fetchRules();
+                fetchStats();
+                fetchProjection();
             } else {
                 alert('Connexion échouée');
             }
@@ -96,6 +109,8 @@
             if (resp.ok) {
                 fileInput.value = '';
                 fetchTransactions();
+                fetchStats();
+                fetchProjection();
             } else {
                 const data = await resp.json().catch(() => ({}));
                 alert(data.error || 'Erreur import');
@@ -193,6 +208,68 @@
             document.getElementById('rule-pattern').value = '';
             fetchRules();
         });
+
+        let statsChart;
+        let projChart;
+
+        async function fetchStats() {
+            const resp = await fetch('/stats');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            if (statsChart) statsChart.destroy();
+            statsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.month),
+                    datasets: [{
+                        label: 'Total mensuel',
+                        data: data.map(d => d.total),
+                        backgroundColor: 'rgba(75, 192, 192, 0.5)'
+                    }]
+                }
+            });
+        }
+
+        function drawProjectionChart() {
+            const rows = document.querySelectorAll('#projection-table tbody tr');
+            const labels = [];
+            const values = [];
+            rows.forEach(r => {
+                labels.push(r.children[0].textContent);
+                values.push(parseFloat(r.querySelector('input').value) || 0);
+            });
+            const ctx = document.getElementById('projectionChart').getContext('2d');
+            if (projChart) projChart.destroy();
+            projChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Projection',
+                        data: values,
+                        fill: false,
+                        borderColor: 'rgba(153, 102, 255, 1)'
+                    }]
+                }
+            });
+        }
+
+        async function fetchProjection() {
+            const resp = await fetch('/projection');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const tbody = document.querySelector('#projection-table tbody');
+            tbody.innerHTML = '';
+            data.forEach(d => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${d.month}</td><td><input type="number" step="0.01" value="${d.amount}"></td>`;
+                tbody.appendChild(tr);
+            });
+            drawProjectionChart();
+        }
+
+        document.getElementById('projection-table').addEventListener('input', drawProjectionChart);
     </script>
 </body>
 </html>
