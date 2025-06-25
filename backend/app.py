@@ -6,6 +6,7 @@ import threading
 import os
 import csv
 from datetime import datetime
+from sqlalchemy import func
 
 from .models import init_db, SessionLocal, Transaction, Category, Rule, User
 
@@ -226,6 +227,43 @@ def list_transactions():
         })
     session.close()
     return jsonify(results)
+
+
+@app.route('/stats')
+@login_required
+def stats():
+    session = SessionLocal()
+    data = session.query(
+        func.strftime('%Y-%m', Transaction.date).label('month'),
+        func.sum(Transaction.amount).label('total')
+    ).group_by('month').order_by('month').all()
+    session.close()
+    return jsonify([{ 'month': m, 'total': t } for m, t in data])
+
+
+@app.route('/projection')
+@login_required
+def projection():
+    months = int(request.args.get('months', 6))
+    session = SessionLocal()
+    data = session.query(
+        func.strftime('%Y-%m', Transaction.date).label('month'),
+        func.sum(Transaction.amount).label('total')
+    ).group_by('month').order_by('month').all()
+    session.close()
+    if not data:
+        return jsonify([])
+
+    avg = sum(d[1] for d in data) / len(data)
+    last_month = data[-1][0]
+    year, month = map(int, last_month.split('-'))
+    result = []
+    for i in range(1, months + 1):
+        m = month + i
+        y = year + (m - 1) // 12
+        m = (m - 1) % 12 + 1
+        result.append({'month': f'{y:04d}-{m:02d}', 'amount': avg})
+    return jsonify(result)
 
 
 @app.route('/categories', methods=['GET', 'POST'])
