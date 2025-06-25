@@ -15,12 +15,15 @@ Tresoperso est une application de gestion de trésorerie personnelle. Elle perme
 
 Un serveur Flask minimal est fourni pour servir l'application Web locale. Assurez-vous d'avoir **Python&nbsp;3** installé.
 
+Avant le premier démarrage, installez les dépendances du projet&nbsp;:
+
 ```bash
 pip install -r requirements.txt
 python run.py
 ```
 
 Par défaut, l'application s'ouvrira automatiquement dans votre navigateur à l'adresse http://localhost:5000/.
+Si ce n'est pas le cas, ouvrez manuellement cette URL.
 Le serveur Flask écoute sur l'adresse `0.0.0.0`, ce qui permet d'exposer
 l'application sur le réseau local.
 
