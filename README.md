@@ -45,8 +45,9 @@ supprimé en cas de réinitialisation souhaitée.
 
 Pour la BNP : Les champs du CSV doivent être séparés par des point-virgules (`;`). 
 Les fichiers de la bnp ne comportent pas d'entete de colonnes. la premiere ligne decrit le compte bancaire. A partir de la deuxieme ligne se trouvent les transactions.
-Elles sont au format :`date`, `type de transaction`,`moyen de paiement`,`libellé` et
-`montant`.
+Elles sont au format :`date`, `type de transaction`, `moyen de paiement`, `libellé` et
+`montant`. Les colonnes `type de transaction` et `moyen de paiement` sont
+désormais enregistrées dans la base pour chaque opération.
 
 Les montants peuvent contenir un espace comme séparateur de milliers et
 utiliser soit la virgule soit le point pour indiquer les décimales.

@@ -74,8 +74,8 @@ def parse_csv(content):
     use a semicolon (``;``) as delimiter. The first line contains account
     information and must be ignored. Each transaction line is expected to
     contain the fields ``date`` , ``type`` , ``moyen de paiement`` , ``libellé``
-    and ``montant`` in that order. Only the ``date``, ``libellé`` and
-    ``montant`` columns are used.
+    and ``montant`` in that order. The ``type`` and ``moyen de paiement``
+    columns are now stored alongside ``date``, ``libellé`` and ``montant``.
 
     Duplicate rows based on (date, label, amount) are ignored and reported as
     errors.
@@ -97,6 +97,8 @@ def parse_csv(content):
             continue
 
         date_str = row[0]
+        tx_type = row[1]
+        payment_method = row[2]
         label = row[3]
         amount_str = row[4]
 
@@ -127,7 +129,13 @@ def parse_csv(content):
             continue
         seen.add(key)
 
-        transactions.append({'date': date, 'label': label.strip(), 'amount': amount})
+        transactions.append({
+            'date': date,
+            'tx_type': tx_type.strip(),
+            'payment_method': payment_method.strip(),
+            'label': label.strip(),
+            'amount': amount
+        })
 
     return transactions, errors
 
@@ -174,7 +182,11 @@ def import_csv():
                     break
 
             session.add(Transaction(
-                date=t['date'], label=t['label'], amount=t['amount'],
+                date=t['date'],
+                tx_type=t['tx_type'],
+                payment_method=t['payment_method'],
+                label=t['label'],
+                amount=t['amount'],
                 category_id=category_id
             ))
             imported += 1
@@ -244,6 +256,8 @@ def list_transactions():
         results.append({
             'id': t.id,
             'date': t.date.isoformat(),
+            'tx_type': t.tx_type,
+            'payment_method': t.payment_method,
             'label': t.label,
             'amount': t.amount,
             'category': t.category.name if t.category else None
