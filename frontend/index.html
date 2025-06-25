@@ -145,6 +145,15 @@
                 <button id="popup-subcategory-save">OK</button>
             </div>
         </div>
+        <div id="duplicate-overlay" class="overlay">
+            <div class="popup">
+                <form id="duplicate-form">
+                    <h3>Doublons détectés</h3>
+                    <ul id="duplicate-list"></ul>
+                    <button type="submit">Insérer la sélection</button>
+                </form>
+            </div>
+        </div>
     </div>
     <script>
         let categoriesData = [];
@@ -279,13 +288,17 @@
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
             const resp = await fetch('/import', { method: 'POST', body: formData });
+            const data = await resp.json().catch(() => ({}));
             if (resp.ok) {
                 fileInput.value = '';
-                fetchTransactions();
-                fetchStats();
-                fetchProjection();
+                if (data.duplicates && data.duplicates.length) {
+                    showDuplicates(data.duplicates);
+                } else {
+                    fetchTransactions();
+                    fetchStats();
+                    fetchProjection();
+                }
             } else {
-                const data = await resp.json().catch(() => ({}));
                 if (data.errors) {
                     alert(data.errors.join('\n'));
                 } else {
@@ -566,6 +579,7 @@
         let currentSubBtn = null;
         const catOverlay = document.getElementById('category-overlay');
         const subOverlay = document.getElementById('subcategory-overlay');
+        const dupOverlay = document.getElementById('duplicate-overlay');
 
         document.getElementById('transactions-table').addEventListener('click', e => {
             if (e.target.classList.contains('tx-cat-btn')) {
@@ -581,6 +595,53 @@
 
         catOverlay.addEventListener('click', e => { if (e.target === catOverlay) catOverlay.style.display = 'none'; });
         subOverlay.addEventListener('click', e => { if (e.target === subOverlay) subOverlay.style.display = 'none'; });
+
+        function showDuplicates(dups) {
+            const list = document.getElementById('duplicate-list');
+            list.innerHTML = '';
+            dupOverlay.dataset.rows = JSON.stringify(dups);
+            dups.forEach((d, idx) => {
+                const li = document.createElement('li');
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.checked = true;
+                cb.dataset.index = idx;
+                li.appendChild(cb);
+                li.appendChild(document.createTextNode(`${d.date} - ${d.label} - ${formatAmount(d.amount)}`));
+                list.appendChild(li);
+            });
+            dupOverlay.style.display = 'flex';
+        }
+
+        dupOverlay.addEventListener('click', e => { if (e.target === dupOverlay) dupOverlay.style.display = 'none'; });
+        document.getElementById('duplicate-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const rows = JSON.parse(dupOverlay.dataset.rows || '[]');
+            const selected = [];
+            document.querySelectorAll('#duplicate-list input[type="checkbox"]').forEach(cb => {
+                if (cb.checked) selected.push(rows[cb.dataset.index]);
+            });
+            dupOverlay.style.display = 'none';
+            if (!selected.length) {
+                fetchTransactions();
+                fetchStats();
+                fetchProjection();
+                return;
+            }
+            const resp = await fetch('/import/confirm', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ transactions: selected })
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (resp.ok) {
+                fetchTransactions();
+                fetchStats();
+                fetchProjection();
+            } else {
+                if (data.errors) alert(data.errors.join('\n')); else alert(data.error || 'Erreur import');
+            }
+        });
 
         document.getElementById('popup-category-save').addEventListener('click', async () => {
             if (!currentCatBtn) return;
