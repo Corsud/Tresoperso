@@ -10,7 +10,13 @@ from sqlalchemy import func
 
 from .models import init_db, SessionLocal, Transaction, Category, Rule, User
 
-app = Flask(__name__, static_folder='../frontend', static_url_path='')
+# Compute the absolute path to the frontend directory so Flask can
+# reliably serve the static files no matter where the application is
+# started from.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_DIR = os.path.join(BASE_DIR, '..', 'frontend')
+
+app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path='')
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret')
 
 login_manager = LoginManager(app)
