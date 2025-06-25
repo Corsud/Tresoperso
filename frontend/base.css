@@ -68,9 +68,9 @@ a {
 button,
 input[type="submit"],
 input[type="button"] {
-    background-color: var(--interactive-color);
-    color: #fff;
-    border: none;
+    color: var(--interactive-color);
+    background-color: transparent;
+    border: 1px solid var(--interactive-color);
     padding: 4px 8px;
 }
 
