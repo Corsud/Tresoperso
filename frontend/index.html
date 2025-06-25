@@ -530,14 +530,20 @@
         });
 
         const sectionIds = ['transactions-section', 'stats-section', 'projection-section', 'settings-section'];
-        document.querySelectorAll('#sidebar .submenu button').forEach(btn => {
+        const sidebarButtons = document.querySelectorAll('#sidebar .submenu button');
+        sidebarButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 const target = btn.dataset.target;
                 sectionIds.forEach(id => {
                     document.getElementById(id).style.display = id === target ? 'block' : 'none';
                 });
+                sidebarButtons.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
             });
         });
+        if (sidebarButtons.length) {
+            sidebarButtons[0].classList.add('selected');
+        }
 
         document.querySelectorAll('#sidebar .menu-header').forEach(header => {
             header.addEventListener('click', () => {

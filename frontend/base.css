@@ -8,6 +8,8 @@
     --text-color: #000000;
     --border-color: #ccc;
     --popup-bg: #fff;
+    --interactive-color: #0066cc;
+    --selected-color: #cce5ff;
 }
 
 body {
@@ -58,6 +60,32 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
 #sidebar li.open > .submenu { max-height: 1000px; }
 #sidebar .submenu button { display: block; width: 100%; margin: 4px 0; }
 #content { flex-grow: 1; padding-left: 10px; }
+
+a {
+    color: var(--interactive-color);
+    cursor: pointer;
+}
+
+button,
+input[type="submit"],
+input[type="button"] {
+    color: var(--interactive-color);
+    background-color: transparent;
+    border: 1px solid var(--bg-color);
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    accent-color: var(--interactive-color);
+    cursor: pointer;
+}
+
+#sidebar .submenu button.selected,
+tr.selected {
+    background-color: var(--selected-color);
+}
 
 .font-roboto { --font-family: 'Roboto', Arial, Geneva, sans-serif; }
 .font-arial { --font-family: 'Arial', sans-serif; }
