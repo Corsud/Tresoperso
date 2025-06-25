@@ -38,6 +38,23 @@
             padding: 10px;
             border: 1px solid #ccc;
         }
+        #app {
+            display: flex;
+        }
+        #sidebar {
+            width: 200px;
+            border-right: 1px solid #ccc;
+            padding-right: 10px;
+        }
+        #sidebar button {
+            display: block;
+            width: 100%;
+            margin: 4px 0;
+        }
+        #content {
+            flex-grow: 1;
+            padding-left: 10px;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -49,69 +66,85 @@
         <button type="submit">Connexion</button>
     </form>
     <div id="app" style="display:none;">
-        <form id="upload-form">
-            <input type="file" id="csv-file" name="file" accept=".csv" required />
-            <button type="submit">Importer CSV</button>
-        </form>
+        <div id="sidebar">
+            <button data-target="transactions-section">Transactions</button>
+            <button data-target="stats-section">Statistiques</button>
+            <button data-target="projection-section">Projection</button>
+            <button data-target="settings-section">Paramètres</button>
+        </div>
+        <div id="content">
+            <section id="transactions-section">
+                <form id="upload-form">
+                    <input type="file" id="csv-file" name="file" accept=".csv" required />
+                    <button type="submit">Importer CSV</button>
+                </form>
 
-        <h2>Catégories</h2>
-        <form id="category-form">
-            <input type="hidden" id="category-id" />
-            <input type="text" id="category-name" placeholder="Nom" required />
-            <input type="color" id="category-color" value="#000000" />
-            <button type="submit">Enregistrer</button>
-        </form>
-        <ul id="categories-list"></ul>
+                <h2>Transactions</h2>
+                <table id="transactions-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Moyen de paiement</th>
+                            <th>Libellé</th>
+                            <th>Montant</th>
+                            <th>Catégorie</th>
+                            <th>Sous-catégorie</th>
+                            <th>Pointée</th>
+                            <th>A analyser</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </section>
 
-        <h3>Sous-catégories</h3>
-        <form id="subcategory-form">
-            <input type="hidden" id="subcategory-id" />
-            <input type="text" id="subcategory-name" placeholder="Nom" required />
-            <select id="subcategory-category"></select>
-            <input type="color" id="subcategory-color" value="#000000" />
-            <button type="submit">Enregistrer</button>
-        </form>
-        <ul id="subcategories-list"></ul>
+            <section id="stats-section" style="display:none;">
+                <h2>Statistiques mensuelles</h2>
+                <canvas id="statsChart" width="400" height="200"></canvas>
+            </section>
 
-        <h2>Règles</h2>
-        <form id="rule-form">
-            <input type="hidden" id="rule-id" />
-            <input type="text" id="rule-pattern" placeholder="Mot-clé" required />
-            <select id="rule-category"></select>
-            <select id="rule-subcategory">
-                <option value="">(Aucune)</option>
-            </select>
-            <button type="submit">Enregistrer</button>
-        </form>
-        <ul id="rules-list"></ul>
+            <section id="projection-section" style="display:none;">
+                <h2>Projection</h2>
+                <table id="projection-table">
+                    <thead><tr><th>Mois</th><th>Montant</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <canvas id="projectionChart" width="400" height="200"></canvas>
+            </section>
 
-        <h2>Transactions</h2>
-        <table id="transactions-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Type</th>
-                    <th>Moyen de paiement</th>
-                    <th>Libellé</th>
-                    <th>Montant</th>
-                    <th>Catégorie</th>
-                    <th>Sous-catégorie</th>
-                    <th>Pointée</th>
-                    <th>A analyser</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+            <section id="settings-section" style="display:none;">
+                <h2>Catégories</h2>
+                <form id="category-form">
+                    <input type="hidden" id="category-id" />
+                    <input type="text" id="category-name" placeholder="Nom" required />
+                    <input type="color" id="category-color" value="#000000" />
+                    <button type="submit">Enregistrer</button>
+                </form>
+                <ul id="categories-list"></ul>
 
-        <h2>Statistiques mensuelles</h2>
-        <canvas id="statsChart" width="400" height="200"></canvas>
+                <h3>Sous-catégories</h3>
+                <form id="subcategory-form">
+                    <input type="hidden" id="subcategory-id" />
+                    <input type="text" id="subcategory-name" placeholder="Nom" required />
+                    <select id="subcategory-category"></select>
+                    <input type="color" id="subcategory-color" value="#000000" />
+                    <button type="submit">Enregistrer</button>
+                </form>
+                <ul id="subcategories-list"></ul>
 
-        <h2>Projection</h2>
-        <table id="projection-table">
-            <thead><tr><th>Mois</th><th>Montant</th></tr></thead>
-            <tbody></tbody>
-        </table>
-        <canvas id="projectionChart" width="400" height="200"></canvas>
+                <h2>Règles</h2>
+                <form id="rule-form">
+                    <input type="hidden" id="rule-id" />
+                    <input type="text" id="rule-pattern" placeholder="Mot-clé" required />
+                    <select id="rule-category"></select>
+                    <select id="rule-subcategory">
+                        <option value="">(Aucune)</option>
+                    </select>
+                    <button type="submit">Enregistrer</button>
+                </form>
+                <ul id="rules-list"></ul>
+            </section>
+        </div>
 
         <div id="category-overlay" class="overlay">
             <div class="popup">
@@ -515,6 +548,16 @@
             }
             subOverlay.style.display = 'none';
             currentSubBtn = null;
+        });
+
+        const sectionIds = ['transactions-section', 'stats-section', 'projection-section', 'settings-section'];
+        document.querySelectorAll('#sidebar button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.target;
+                sectionIds.forEach(id => {
+                    document.getElementById(id).style.display = id === target ? 'block' : 'none';
+                });
+            });
         });
     </script>
 </body>
