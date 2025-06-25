@@ -142,7 +142,9 @@ def parse_csv(content):
             'type': tx_type.strip(),
             'payment_method': payment_method.strip(),
             'label': label.strip(),
-            'amount': amount
+            'amount': amount,
+            'reconciled': False,
+            'to_analyze': True
         })
 
     return transactions, errors
@@ -198,7 +200,9 @@ def import_csv():
                 label=t['label'],
                 amount=t['amount'],
                 category_id=category_id,
-                subcategory_id=subcategory_id
+                subcategory_id=subcategory_id,
+                reconciled=t['reconciled'],
+                to_analyze=t['to_analyze']
             ))
             imported += 1
         session.commit()
@@ -267,8 +271,22 @@ def list_transactions():
         results.append({
             'id': t.id,
             'date': t.date.isoformat(),
+            'type': t.tx_type,
+            'payment_method': t.payment_method,
+            'label': t.label,
+            'amount': t.amount,
             'category_id': t.category_id,
+            'category': t.category.name if t.category else None,
+            'category_color': t.category.color if t.category else None,
             'subcategory_id': t.subcategory_id,
+            'subcategory': t.subcategory.name if t.subcategory else None,
+            'subcategory_color': t.subcategory.color if t.subcategory else None,
+            'reconciled': t.reconciled,
+            'to_analyze': t.to_analyze,
+        })
+    session.close()
+    return jsonify(results)
+
 @app.route('/transactions/<int:tx_id>', methods=['PUT', 'GET'])
 @login_required
 def update_transaction(tx_id):
@@ -289,6 +307,8 @@ def update_transaction(tx_id):
             'amount': tx.amount,
             'category_id': tx.category_id,
             'subcategory_id': tx.subcategory_id,
+            'reconciled': tx.reconciled,
+            'to_analyze': tx.to_analyze,
         }
         session.close()
         return jsonify(result)
@@ -298,11 +318,17 @@ def update_transaction(tx_id):
         tx.category_id = data['category_id'] or None
     if 'subcategory_id' in data:
         tx.subcategory_id = data['subcategory_id'] or None
+    if 'reconciled' in data:
+        tx.reconciled = bool(data['reconciled'])
+    if 'to_analyze' in data:
+        tx.to_analyze = bool(data['to_analyze'])
     session.commit()
     result = {
         'id': tx.id,
         'category_id': tx.category_id,
         'subcategory_id': tx.subcategory_id,
+        'reconciled': tx.reconciled,
+        'to_analyze': tx.to_analyze,
         'category': tx.category.name if tx.category else None,
         'category_color': tx.category.color if tx.category else None,
         'subcategory': tx.subcategory.name if tx.subcategory else None,
@@ -312,20 +338,7 @@ def update_transaction(tx_id):
     return jsonify(result)
 
 
-            'type': t.tx_type,
-            'payment_method': t.payment_method,
-            'label': t.label,
-            'amount': t.amount,
-            'category_id': t.category_id,
-            'category': t.category.name if t.category else None,
-            'category_color': t.category.color if t.category else None,
-            'subcategory_id': t.subcategory_id,
 
-            'subcategory': t.subcategory.name if t.subcategory else None,
-            'subcategory_color': t.subcategory.color if t.subcategory else None,
-        })
-    session.close()
-    return jsonify(results)
 
 
 @app.route('/transactions/<int:tx_id>', methods=['PUT', 'GET'])
@@ -348,6 +361,8 @@ def update_transaction(tx_id):
             'amount': tx.amount,
             'category_id': tx.category_id,
             'subcategory_id': tx.subcategory_id,
+            'reconciled': tx.reconciled,
+            'to_analyze': tx.to_analyze,
         }
         session.close()
         return jsonify(result)
@@ -359,11 +374,17 @@ def update_transaction(tx_id):
     if 'subcategory_id' in data:
         sid = data['subcategory_id']
         tx.subcategory_id = int(sid) if sid else None
+    if 'reconciled' in data:
+        tx.reconciled = bool(data['reconciled'])
+    if 'to_analyze' in data:
+        tx.to_analyze = bool(data['to_analyze'])
     session.commit()
     result = {
         'id': tx.id,
         'category_id': tx.category_id,
         'subcategory_id': tx.subcategory_id,
+        'reconciled': tx.reconciled,
+        'to_analyze': tx.to_analyze,
         'category': tx.category.name if tx.category else None,
         'category_color': tx.category.color if tx.category else None,
         'subcategory': tx.subcategory.name if tx.subcategory else None,
