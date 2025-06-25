@@ -17,18 +17,10 @@ Un serveur Flask minimal est fourni pour servir l'application Web locale. Assure
 
 ```bash
 pip install -r requirements.txt
-python3 run.py
-```
-
-Par défaut, l'application s'ouvre automatiquement dans votre navigateur à l'adresse http://localhost:5000/.
-Un serveur Flask minimal est fourni pour servir l'application Web locale. Assurez-vous d'avoir Python 3 installé.
-
-```bash
-pip install -r requirements.txt
 python run.py
 ```
 
-Par défaut, l'application s'ouvre dans votre navigateur à l'adresse http://localhost:5000.
+Par défaut, l'application s'ouvrira automatiquement dans votre navigateur à l'adresse http://localhost:5000/.
 
 ## Base de données
 
