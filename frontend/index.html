@@ -172,14 +172,39 @@
                 const tr = document.createElement('tr');
                 const type = t.type || '';
                 const pay = t.payment_method || '';
-                tr.innerHTML = `<td>${t.date}</td><td>${type}</td><td>${pay}</td><td>${t.label}</td><td>${formatAmount(t.amount)}</td>`;
+
+                const dateCell = document.createElement('td');
+                dateCell.textContent = t.date;
+                tr.appendChild(dateCell);
+
+                const typeCell = document.createElement('td');
+                typeCell.textContent = type;
+                tr.appendChild(typeCell);
+
+                const payCell = document.createElement('td');
+                payCell.textContent = pay;
+                tr.appendChild(payCell);
+
+                const labelCell = document.createElement('td');
+                labelCell.textContent = t.label;
+                tr.appendChild(labelCell);
+
+                const amountCell = document.createElement('td');
+                amountCell.textContent = formatAmount(t.amount);
+                tr.appendChild(amountCell);
 
                 const catCell = document.createElement('td');
                 const catBtn = document.createElement('button');
                 catBtn.className = 'tx-cat-btn';
                 catBtn.dataset.id = t.id;
                 catBtn.dataset.current = t.category_id || '';
-                catBtn.innerHTML = t.category ? `<span style="color:${t.category_color}">${t.category}</span>` : '(Aucune)';
+                if (t.category) {
+                    catBtn.textContent = t.category;
+                    catBtn.style.color = t.category_color || '';
+                } else {
+                    catBtn.textContent = '(Aucune)';
+                    catBtn.style.color = '';
+                }
                 catCell.appendChild(catBtn);
                 tr.appendChild(catCell);
 
@@ -188,7 +213,13 @@
                 subBtn.className = 'tx-sub-btn';
                 subBtn.dataset.id = t.id;
                 subBtn.dataset.current = t.subcategory_id || '';
-                subBtn.innerHTML = t.subcategory ? `<span style="color:${t.subcategory_color}">${t.subcategory}</span>` : '(Aucune)';
+                if (t.subcategory) {
+                    subBtn.textContent = t.subcategory;
+                    subBtn.style.color = t.subcategory_color || '';
+                } else {
+                    subBtn.textContent = '(Aucune)';
+                    subBtn.style.color = '';
+                }
                 subCell.appendChild(subBtn);
                 tr.appendChild(subCell);
 
@@ -278,7 +309,14 @@
             subSelectCat.innerHTML = '';
             data.forEach(c => {
                 const li = document.createElement('li');
-                li.innerHTML = `<span style="display:inline-block;width:12px;height:12px;background:${c.color};margin-right:4px;"></span>${c.name}`;
+                const colorSpan = document.createElement('span');
+                colorSpan.style.display = 'inline-block';
+                colorSpan.style.width = '12px';
+                colorSpan.style.height = '12px';
+                colorSpan.style.background = c.color;
+                colorSpan.style.marginRight = '4px';
+                li.appendChild(colorSpan);
+                li.appendChild(document.createTextNode(c.name));
 
                 const edit = document.createElement('button');
                 edit.textContent = 'Éditer';
@@ -328,7 +366,15 @@
             popupSelect.innerHTML = '<option value="">(Aucune)</option>';
             data.forEach(s => {
                 const li = document.createElement('li');
-                li.innerHTML = `${s.category} → <span style="display:inline-block;width:12px;height:12px;background:${s.color};margin-right:4px;"></span>${s.name}`;
+                li.appendChild(document.createTextNode(`${s.category} → `));
+                const colorSpan = document.createElement('span');
+                colorSpan.style.display = 'inline-block';
+                colorSpan.style.width = '12px';
+                colorSpan.style.height = '12px';
+                colorSpan.style.background = s.color;
+                colorSpan.style.marginRight = '4px';
+                li.appendChild(colorSpan);
+                li.appendChild(document.createTextNode(s.name));
 
                 const edit = document.createElement('button');
                 edit.textContent = 'Éditer';
@@ -497,7 +543,18 @@
             tbody.innerHTML = '';
             data.forEach(d => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${d.month}</td><td><input type="number" step="0.01" value="${d.amount}"></td>`;
+                const monthCell = document.createElement('td');
+                monthCell.textContent = d.month;
+                tr.appendChild(monthCell);
+
+                const amountCell = document.createElement('td');
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.step = '0.01';
+                input.value = d.amount;
+                amountCell.appendChild(input);
+                tr.appendChild(amountCell);
+
                 tbody.appendChild(tr);
             });
             drawProjectionChart();
@@ -533,7 +590,13 @@
             if (resp.ok) {
                 const cat = findCategory(val);
                 currentCatBtn.dataset.current = val;
-                currentCatBtn.innerHTML = cat ? `<span style="color:${cat.color}">${cat.name}</span>` : '(Aucune)';
+                if (cat) {
+                    currentCatBtn.textContent = cat.name;
+                    currentCatBtn.style.color = cat.color || '';
+                } else {
+                    currentCatBtn.textContent = '(Aucune)';
+                    currentCatBtn.style.color = '';
+                }
                 fetchTransactions();
             }
             catOverlay.style.display = 'none';
@@ -548,7 +611,13 @@
             if (resp.ok) {
                 const sub = findSubcategory(val);
                 currentSubBtn.dataset.current = val;
-                currentSubBtn.innerHTML = sub ? `<span style="color:${sub.color}">${sub.category} - ${sub.name}</span>` : '(Aucune)';
+                if (sub) {
+                    currentSubBtn.textContent = `${sub.category} - ${sub.name}`;
+                    currentSubBtn.style.color = sub.color || '';
+                } else {
+                    currentSubBtn.textContent = '(Aucune)';
+                    currentSubBtn.style.color = '';
+                }
                 fetchTransactions();
             }
             subOverlay.style.display = 'none';
