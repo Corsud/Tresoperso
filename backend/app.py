@@ -7,7 +7,7 @@ import os
 import csv
 from datetime import datetime
 
-from .models import init_db, SessionLocal, Transaction, Category, User
+from .models import init_db, SessionLocal, Transaction, Category, Rule, User
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret')
@@ -131,6 +131,9 @@ def import_csv():
     imported = 0
     skipped = 0
 
+    # Load rules once for auto-categorisation
+    rules = session.query(Rule).all()
+
     try:
         for t in transactions:
             exists = session.query(Transaction).filter_by(
@@ -139,7 +142,17 @@ def import_csv():
             if exists:
                 skipped += 1
                 continue
-            session.add(Transaction(**t))
+
+            category_id = None
+            for r in rules:
+                if r.pattern.lower() in t['label'].lower():
+                    category_id = r.category_id
+                    break
+
+            session.add(Transaction(
+                date=t['date'], label=t['label'], amount=t['amount'],
+                category_id=category_id
+            ))
             imported += 1
         session.commit()
     except Exception as e:
@@ -213,6 +226,135 @@ def list_transactions():
         })
     session.close()
     return jsonify(results)
+
+
+@app.route('/categories', methods=['GET', 'POST'])
+@app.route('/categories/<int:category_id>', methods=['GET', 'PUT', 'DELETE'])
+@login_required
+def categories(category_id=None):
+    session = SessionLocal()
+    if request.method == 'GET':
+        if category_id is None:
+            data = [{'id': c.id, 'name': c.name} for c in session.query(Category).all()]
+            session.close()
+            return jsonify(data)
+        category = session.query(Category).get(category_id)
+        if not category:
+            session.close()
+            return jsonify({'error': 'Not found'}), 404
+        result = {'id': category.id, 'name': category.name}
+        session.close()
+        return jsonify(result)
+
+    if request.method == 'POST':
+        data = request.get_json() or {}
+        name = data.get('name')
+        if not name:
+            session.close()
+            return jsonify({'error': 'Missing name'}), 400
+        category = Category(name=name)
+        session.add(category)
+        session.commit()
+        result = {'id': category.id, 'name': category.name}
+        session.close()
+        return jsonify(result), 201
+
+    # PUT or DELETE
+    category = session.query(Category).get(category_id)
+    if not category:
+        session.close()
+        return jsonify({'error': 'Not found'}), 404
+
+    if request.method == 'PUT':
+        data = request.get_json() or {}
+        name = data.get('name')
+        if name:
+            category.name = name
+            session.commit()
+        result = {'id': category.id, 'name': category.name}
+        session.close()
+        return jsonify(result)
+
+    session.delete(category)
+    session.commit()
+    session.close()
+    return jsonify({'message': 'deleted'})
+
+
+@app.route('/rules', methods=['GET', 'POST'])
+@app.route('/rules/<int:rule_id>', methods=['GET', 'PUT', 'DELETE'])
+@login_required
+def rules(rule_id=None):
+    session = SessionLocal()
+    if request.method == 'GET':
+        if rule_id is None:
+            data = [
+                {
+                    'id': r.id,
+                    'pattern': r.pattern,
+                    'category_id': r.category_id,
+                    'category': r.category.name if r.category else None,
+                } for r in session.query(Rule).all()
+            ]
+            session.close()
+            return jsonify(data)
+        rule = session.query(Rule).get(rule_id)
+        if not rule:
+            session.close()
+            return jsonify({'error': 'Not found'}), 404
+        result = {
+            'id': rule.id,
+            'pattern': rule.pattern,
+            'category_id': rule.category_id,
+            'category': rule.category.name if rule.category else None,
+        }
+        session.close()
+        return jsonify(result)
+
+    if request.method == 'POST':
+        data = request.get_json() or {}
+        pattern = data.get('pattern')
+        category_id = data.get('category_id')
+        if not pattern or not category_id:
+            session.close()
+            return jsonify({'error': 'Missing fields'}), 400
+        rule = Rule(pattern=pattern, category_id=category_id)
+        session.add(rule)
+        session.commit()
+        result = {
+            'id': rule.id,
+            'pattern': rule.pattern,
+            'category_id': rule.category_id,
+            'category': rule.category.name if rule.category else None,
+        }
+        session.close()
+        return jsonify(result), 201
+
+    rule = session.query(Rule).get(rule_id)
+    if not rule:
+        session.close()
+        return jsonify({'error': 'Not found'}), 404
+
+    if request.method == 'PUT':
+        data = request.get_json() or {}
+        if 'pattern' in data:
+            rule.pattern = data['pattern']
+        if 'category_id' in data:
+            rule.category_id = data['category_id']
+        session.commit()
+        result = {
+            'id': rule.id,
+            'pattern': rule.pattern,
+            'category_id': rule.category_id,
+            'category': rule.category.name if rule.category else None,
+        }
+        session.close()
+        return jsonify(result)
+
+    session.delete(rule)
+    session.commit()
+    session.close()
+    return jsonify({'message': 'deleted'})
 
 
 def open_browser():
