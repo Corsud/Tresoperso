@@ -41,6 +41,25 @@ python run.py
 Le fichier `tresoperso.db` est placé dans le répertoire courant et peut être
 supprimé en cas de réinitialisation souhaitée.
 
+## Format des fichiers CSV
+
+Les fichiers importés doivent être séparés par des virgules (`,`). Ils doivent
+au minimum comporter les en-têtes :`date`, `libellé`/`label` et
+`montant`/`amount`.
+
+Exemple minimal :
+
+```csv
+date,libellé,montant
+2023-01-15,Café,-3.50
+2023-01-20,Salaire,2500.00
+```
+
+Problèmes courants :
+
+- Fichiers délimités par des points-virgules `;`
+- Colonnes séparées `debit`/`credit` au lieu d'une seule colonne `montant`
+
 ## Packaging macOS
 
 Pour créer un exécutable autonome pour macOS, PyInstaller est utilisé. Un
