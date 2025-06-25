@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, Date, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Float, Date, ForeignKey, text
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash
@@ -32,6 +32,8 @@ class Transaction(Base):
     date = Column(Date, nullable=False)
     label = Column(String, nullable=False)
     amount = Column(Float, nullable=False)
+    tx_type = Column(String)
+    payment_method = Column(String)
     category_id = Column(Integer, ForeignKey('categories.id'))
 
     category = relationship('Category', back_populates='transactions')
@@ -50,6 +52,15 @@ class Rule(Base):
 def init_db():
     """Create database tables if they do not exist."""
     Base.metadata.create_all(engine)
+
+    # Ensure new columns exist when upgrading from older versions
+    with engine.connect() as conn:
+        info = conn.execute(text('PRAGMA table_info(transactions)')).fetchall()
+        cols = {row[1] for row in info}
+        if 'tx_type' not in cols:
+            conn.execute(text('ALTER TABLE transactions ADD COLUMN tx_type TEXT'))
+        if 'payment_method' not in cols:
+            conn.execute(text('ALTER TABLE transactions ADD COLUMN payment_method TEXT'))
 
     # Create a default user if none exists
     session = SessionLocal()
