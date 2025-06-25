@@ -76,4 +76,52 @@ function TransactionTable() {
   );
 }
 
-ReactDOM.render(<TransactionTable />, document.getElementById('root'));
+function LoginForm({ onLogin }) {
+  const [username, setUsername] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [error, setError] = React.useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(() => onLogin())
+      .catch(() => setError('Identifiants invalides'));
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div>
+        <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Utilisateur" />
+      </div>
+      <div>
+        <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Mot de passe" />
+      </div>
+      {error && <div style={{color: 'red'}}>{error}</div>}
+      <button type="submit">Connexion</button>
+    </form>
+  );
+}
+
+function App() {
+  const [loggedIn, setLoggedIn] = React.useState(false);
+
+  React.useEffect(() => {
+    fetch('/me')
+      .then(r => r.ok && r.json())
+      .then(data => {
+        if (data && data.username) setLoggedIn(true);
+      });
+  }, []);
+
+  if (!loggedIn) {
+    return <LoginForm onLogin={() => setLoggedIn(true)} />;
+  }
+  return <TransactionTable />;
+}
+
+ReactDOM.render(<App />, document.getElementById('root'));

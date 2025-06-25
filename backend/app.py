@@ -1,20 +1,67 @@
 from flask import Flask, send_from_directory, request, jsonify
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from werkzeug.security import check_password_hash
 import webbrowser
 import threading
 import os
 import csv
 from datetime import datetime
 
-from .models import init_db, SessionLocal, Transaction, Category
+from .models import init_db, SessionLocal, Transaction, Category, User
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret')
+
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    session = SessionLocal()
+    user = session.query(User).get(int(user_id))
+    session.close()
+    return user
 
 @app.route('/')
 def index():
     return send_from_directory(app.static_folder, 'index.html')
 
 
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Invalid payload'}), 400
+
+    username = data.get('username', '')
+    password = data.get('password', '')
+
+    session = SessionLocal()
+    user = session.query(User).filter_by(username=username).first()
+    session.close()
+
+    if user and check_password_hash(user.password, password):
+        login_user(user)
+        return jsonify({'message': 'Logged in'})
+    return jsonify({'error': 'Invalid credentials'}), 401
+
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return jsonify({'message': 'Logged out'})
+
+
+@app.route('/me')
+def me():
+    if current_user.is_authenticated:
+        return jsonify({'username': current_user.username})
+    return jsonify({'error': 'Unauthorized'}), 401
+
+
 @app.route('/import', methods=['POST'])
+@login_required
 def import_csv():
     """Import transactions from a CSV file."""
     if 'file' not in request.files:
@@ -74,6 +121,7 @@ def import_csv():
 
 
 @app.route('/transactions')
+@login_required
 def list_transactions():
     """Return transactions with optional filtering and sorting."""
     session = SessionLocal()
