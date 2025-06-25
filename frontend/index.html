@@ -113,7 +113,11 @@
                 fetchProjection();
             } else {
                 const data = await resp.json().catch(() => ({}));
-                alert(data.error || 'Erreur import');
+                if (data.errors) {
+                    alert(data.errors.join('\n'));
+                } else {
+                    alert(data.error || 'Erreur import');
+                }
             }
         });
 
