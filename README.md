@@ -22,6 +22,20 @@ python run.py
 
 Par défaut, l'application s'ouvre dans votre navigateur à l'adresse http://localhost:5000.
 
+## Base de données
+
+Le backend repose sur **SQLAlchemy** avec une base SQLite créée dans le
+fichier `tresoperso.db`. Lors du premier démarrage, les tables ainsi qu'un
+compte administrateur `admin` (mot de passe `admin`) sont générés
+automatiquement.
+
+```bash
+python run.py
+```
+
+Le fichier `tresoperso.db` est placé dans le répertoire courant et peut être
+supprimé en cas de réinitialisation souhaitée.
+
 ## Packaging macOS
 
 Pour créer un exécutable autonome pour macOS, PyInstaller est utilisé. Un
