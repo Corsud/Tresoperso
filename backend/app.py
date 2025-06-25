@@ -301,7 +301,7 @@ def update_transaction(tx_id):
         result = {
             'id': tx.id,
             'date': tx.date.isoformat(),
-            'tx_type': tx.tx_type,
+            'type': tx.tx_type,
             'payment_method': tx.payment_method,
             'label': tx.label,
             'amount': tx.amount,
@@ -336,63 +336,6 @@ def update_transaction(tx_id):
     }
     session.close()
     return jsonify(result)
-
-
-
-
-
-@app.route('/transactions/<int:tx_id>', methods=['PUT', 'GET'])
-@login_required
-def update_transaction(tx_id):
-    """Retrieve or update a single transaction."""
-    session = SessionLocal()
-    tx = session.query(Transaction).get(tx_id)
-    if not tx:
-        session.close()
-        return jsonify({'error': 'Not found'}), 404
-
-    if request.method == 'GET':
-        result = {
-            'id': tx.id,
-            'date': tx.date.isoformat(),
-            'tx_type': tx.tx_type,
-            'payment_method': tx.payment_method,
-            'label': tx.label,
-            'amount': tx.amount,
-            'category_id': tx.category_id,
-            'subcategory_id': tx.subcategory_id,
-            'reconciled': tx.reconciled,
-            'to_analyze': tx.to_analyze,
-        }
-        session.close()
-        return jsonify(result)
-
-    data = request.get_json() or {}
-    if 'category_id' in data:
-        cid = data['category_id']
-        tx.category_id = int(cid) if cid else None
-    if 'subcategory_id' in data:
-        sid = data['subcategory_id']
-        tx.subcategory_id = int(sid) if sid else None
-    if 'reconciled' in data:
-        tx.reconciled = bool(data['reconciled'])
-    if 'to_analyze' in data:
-        tx.to_analyze = bool(data['to_analyze'])
-    session.commit()
-    result = {
-        'id': tx.id,
-        'category_id': tx.category_id,
-        'subcategory_id': tx.subcategory_id,
-        'reconciled': tx.reconciled,
-        'to_analyze': tx.to_analyze,
-        'category': tx.category.name if tx.category else None,
-        'category_color': tx.category.color if tx.category else None,
-        'subcategory': tx.subcategory.name if tx.subcategory else None,
-        'subcategory_color': tx.subcategory.color if tx.subcategory else None,
-    }
-    session.close()
-    return jsonify(result)
-
 
 @app.route('/stats')
 @login_required
