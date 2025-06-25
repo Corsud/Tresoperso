@@ -114,7 +114,9 @@ def parse_csv(content):
             continue
 
         try:
-            amount = float(amount_str.replace(',', '.'))
+            cleaned = amount_str.replace('\xa0', '').replace(' ', '')
+            cleaned = cleaned.replace(',', '.')
+            amount = float(cleaned)
         except ValueError:
             errors.append(f'Ligne {line_no}: montant invalide')
             continue

@@ -48,6 +48,9 @@ Les fichiers de la bnp ne comportent pas d'entete de colonnes. la premiere ligne
 Elles sont au format :`date`, `type de transaction`,`moyen de paiement`,`libellé` et
 `montant`.
 
+Les montants peuvent contenir un espace comme séparateur de milliers et
+utiliser soit la virgule soit le point pour indiquer les décimales.
+
 
 Problèmes courants :
 
