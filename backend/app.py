@@ -316,13 +316,61 @@ def update_transaction(tx_id):
             'payment_method': t.payment_method,
             'label': t.label,
             'amount': t.amount,
+            'category_id': t.category_id,
             'category': t.category.name if t.category else None,
             'category_color': t.category.color if t.category else None,
+            'subcategory_id': t.subcategory_id,
+
             'subcategory': t.subcategory.name if t.subcategory else None,
             'subcategory_color': t.subcategory.color if t.subcategory else None,
         })
     session.close()
     return jsonify(results)
+
+
+@app.route('/transactions/<int:tx_id>', methods=['PUT', 'GET'])
+@login_required
+def update_transaction(tx_id):
+    """Retrieve or update a single transaction."""
+    session = SessionLocal()
+    tx = session.query(Transaction).get(tx_id)
+    if not tx:
+        session.close()
+        return jsonify({'error': 'Not found'}), 404
+
+    if request.method == 'GET':
+        result = {
+            'id': tx.id,
+            'date': tx.date.isoformat(),
+            'tx_type': tx.tx_type,
+            'payment_method': tx.payment_method,
+            'label': tx.label,
+            'amount': tx.amount,
+            'category_id': tx.category_id,
+            'subcategory_id': tx.subcategory_id,
+        }
+        session.close()
+        return jsonify(result)
+
+    data = request.get_json() or {}
+    if 'category_id' in data:
+        cid = data['category_id']
+        tx.category_id = int(cid) if cid else None
+    if 'subcategory_id' in data:
+        sid = data['subcategory_id']
+        tx.subcategory_id = int(sid) if sid else None
+    session.commit()
+    result = {
+        'id': tx.id,
+        'category_id': tx.category_id,
+        'subcategory_id': tx.subcategory_id,
+        'category': tx.category.name if tx.category else None,
+        'category_color': tx.category.color if tx.category else None,
+        'subcategory': tx.subcategory.name if tx.subcategory else None,
+        'subcategory_color': tx.subcategory.color if tx.subcategory else None,
+    }
+    session.close()
+    return jsonify(result)
 
 
 @app.route('/stats')
@@ -479,7 +527,8 @@ def subcategories(sub_id=None):
         if not name or not category_id:
             session.close()
             return jsonify({'error': 'Missing fields'}), 400
-        sub = Subcategory(name=name, category_id=category_id, color=color)
+        sub = Subcategory(name=name, category_id=int(category_id), color=color)
+
         session.add(sub)
         session.commit()
         result = {
@@ -501,7 +550,9 @@ def subcategories(sub_id=None):
         if 'name' in data:
             sub.name = data['name']
         if 'category_id' in data:
-            sub.category_id = data['category_id']
+            cid = data['category_id']
+            sub.category_id = int(cid) if cid else None
+
         if 'color' in data:
             sub.color = data['color']
         session.commit()
@@ -563,7 +614,12 @@ def rules(rule_id=None):
         if not pattern or not category_id:
             session.close()
             return jsonify({'error': 'Missing fields'}), 400
-        rule = Rule(pattern=pattern, category_id=category_id, subcategory_id=subcategory_id)
+        rule = Rule(
+            pattern=pattern,
+            category_id=int(category_id),
+            subcategory_id=int(subcategory_id) if subcategory_id else None,
+        )
+
         session.add(rule)
         session.commit()
         result = {
@@ -587,9 +643,12 @@ def rules(rule_id=None):
         if 'pattern' in data:
             rule.pattern = data['pattern']
         if 'category_id' in data:
-            rule.category_id = data['category_id']
+            cid = data['category_id']
+            rule.category_id = int(cid) if cid else None
         if 'subcategory_id' in data:
-            rule.subcategory_id = data['subcategory_id']
+            sid = data['subcategory_id']
+            rule.subcategory_id = int(sid) if sid else None
+
         session.commit()
         result = {
             'id': rule.id,
