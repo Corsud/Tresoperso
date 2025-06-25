@@ -7,6 +7,22 @@
     <style>
         table { border-collapse: collapse; width: 100%; }
         th, td { border: 1px solid #ccc; padding: 4px; }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .popup {
+            background: #fff;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -27,15 +43,29 @@
         <form id="category-form">
             <input type="hidden" id="category-id" />
             <input type="text" id="category-name" placeholder="Nom" required />
+            <input type="color" id="category-color" value="#000000" />
             <button type="submit">Enregistrer</button>
         </form>
         <ul id="categories-list"></ul>
+
+        <h3>Sous-catégories</h3>
+        <form id="subcategory-form">
+            <input type="hidden" id="subcategory-id" />
+            <input type="text" id="subcategory-name" placeholder="Nom" required />
+            <select id="subcategory-category"></select>
+            <input type="color" id="subcategory-color" value="#000000" />
+            <button type="submit">Enregistrer</button>
+        </form>
+        <ul id="subcategories-list"></ul>
 
         <h2>Règles</h2>
         <form id="rule-form">
             <input type="hidden" id="rule-id" />
             <input type="text" id="rule-pattern" placeholder="Mot-clé" required />
             <select id="rule-category"></select>
+            <select id="rule-subcategory">
+                <option value="">(Aucune)</option>
+            </select>
             <button type="submit">Enregistrer</button>
         </form>
         <ul id="rules-list"></ul>
@@ -50,6 +80,7 @@
                     <th>Libellé</th>
                     <th>Montant</th>
                     <th>Catégorie</th>
+                    <th>Sous-catégorie</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -64,8 +95,24 @@
             <tbody></tbody>
         </table>
         <canvas id="projectionChart" width="400" height="200"></canvas>
+
+        <div id="category-overlay" class="overlay">
+            <div class="popup">
+                <select id="popup-category-select"></select>
+                <button id="popup-category-save">OK</button>
+            </div>
+        </div>
+        <div id="subcategory-overlay" class="overlay">
+            <div class="popup">
+                <select id="popup-subcategory-select"></select>
+                <button id="popup-subcategory-save">OK</button>
+            </div>
+        </div>
     </div>
     <script>
+        let categoriesData = [];
+        let subcategoriesData = [];
+
         async function fetchTransactions() {
             const resp = await fetch('/transactions');
             if (!resp.ok) return;
@@ -74,7 +121,26 @@
             tbody.innerHTML = '';
             data.forEach(t => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${t.date}</td><td>${t.tx_type}</td><td>${t.payment_method}</td><td>${t.label}</td><td>${t.amount}</td><td>${t.category || ''}</td>`;
+                tr.innerHTML = `<td>${t.date}</td><td>${t.tx_type}</td><td>${t.payment_method}</td><td>${t.label}</td><td>${t.amount}</td>`;
+
+                const catCell = document.createElement('td');
+                const catBtn = document.createElement('button');
+                catBtn.className = 'tx-cat-btn';
+                catBtn.dataset.id = t.id;
+                catBtn.dataset.current = t.category_id || '';
+                catBtn.innerHTML = t.category ? `<span style="color:${t.category_color}">${t.category}</span>` : '(Aucune)';
+                catCell.appendChild(catBtn);
+                tr.appendChild(catCell);
+
+                const subCell = document.createElement('td');
+                const subBtn = document.createElement('button');
+                subBtn.className = 'tx-sub-btn';
+                subBtn.dataset.id = t.id;
+                subBtn.dataset.current = t.subcategory_id || '';
+                subBtn.innerHTML = t.subcategory ? `<span style="color:${t.subcategory_color}">${t.subcategory}</span>` : '(Aucune)';
+                subCell.appendChild(subBtn);
+                tr.appendChild(subCell);
+
                 tbody.appendChild(tr);
             });
         }
@@ -93,6 +159,7 @@
                 document.getElementById('app').style.display = 'block';
                 fetchTransactions();
                 fetchCategories();
+                fetchSubcategories();
                 fetchRules();
                 fetchStats();
                 fetchProjection();
@@ -127,18 +194,24 @@
             const resp = await fetch('/categories');
             if (!resp.ok) return;
             const data = await resp.json();
+            categoriesData = data;
             const list = document.getElementById('categories-list');
             list.innerHTML = '';
             const select = document.getElementById('rule-category');
             select.innerHTML = '';
+            const popupSelect = document.getElementById('popup-category-select');
+            popupSelect.innerHTML = '<option value="">(Aucune)</option>';
+            const subSelectCat = document.getElementById('subcategory-category');
+            subSelectCat.innerHTML = '';
             data.forEach(c => {
                 const li = document.createElement('li');
-                li.textContent = c.name;
+                li.innerHTML = `<span style="display:inline-block;width:12px;height:12px;background:${c.color};margin-right:4px;"></span>${c.name}`;
                 const edit = document.createElement('button');
                 edit.textContent = 'Éditer';
                 edit.onclick = () => {
                     document.getElementById('category-id').value = c.id;
                     document.getElementById('category-name').value = c.name;
+                    document.getElementById('category-color').value = c.color || '#000000';
                 };
                 const del = document.createElement('button');
                 del.textContent = 'Supprimer';
@@ -146,6 +219,7 @@
                     await fetch('/categories/' + c.id, { method: 'DELETE' });
                     fetchCategories();
                     fetchRules();
+                    fetchSubcategories();
                 };
                 li.append(' ', edit, ' ', del);
                 list.appendChild(li);
@@ -154,6 +228,59 @@
                 opt.value = c.id;
                 opt.textContent = c.name;
                 select.appendChild(opt);
+
+                const catOpt = document.createElement('option');
+                catOpt.value = c.id;
+                catOpt.textContent = c.name;
+                subSelectCat.appendChild(catOpt);
+
+                const popOpt = document.createElement('option');
+                popOpt.value = c.id;
+                popOpt.textContent = c.name;
+                popupSelect.appendChild(popOpt);
+            });
+        }
+
+        async function fetchSubcategories() {
+            const resp = await fetch('/subcategories');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            subcategoriesData = data;
+            const list = document.getElementById('subcategories-list');
+            list.innerHTML = '';
+            const select = document.getElementById('rule-subcategory');
+            select.innerHTML = '<option value="">(Aucune)</option>';
+            const popupSelect = document.getElementById('popup-subcategory-select');
+            popupSelect.innerHTML = '<option value="">(Aucune)</option>';
+            data.forEach(s => {
+                const li = document.createElement('li');
+                li.innerHTML = `${s.category} → <span style="display:inline-block;width:12px;height:12px;background:${s.color};margin-right:4px;"></span>${s.name}`;
+                const edit = document.createElement('button');
+                edit.textContent = 'Éditer';
+                edit.onclick = () => {
+                    document.getElementById('subcategory-id').value = s.id;
+                    document.getElementById('subcategory-name').value = s.name;
+                    document.getElementById('subcategory-category').value = s.category_id;
+                    document.getElementById('subcategory-color').value = s.color || '#000000';
+                };
+                const del = document.createElement('button');
+                del.textContent = 'Supprimer';
+                del.onclick = async () => {
+                    await fetch('/subcategories/' + s.id, { method: 'DELETE' });
+                    fetchSubcategories();
+                };
+                li.append(' ', edit, ' ', del);
+                list.appendChild(li);
+
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = `${s.category} - ${s.name}`;
+                select.appendChild(opt);
+
+                const popOpt = document.createElement('option');
+                popOpt.value = s.id;
+                popOpt.textContent = `${s.category} - ${s.name}`;
+                popupSelect.appendChild(popOpt);
             });
         }
 
@@ -165,13 +292,16 @@
             list.innerHTML = '';
             data.forEach(r => {
                 const li = document.createElement('li');
-                li.textContent = `${r.pattern} → ${r.category || ''}`;
+                const cat = r.category || '';
+                const sub = r.subcategory ? ' / ' + r.subcategory : '';
+                li.textContent = `${r.pattern} → ${cat}${sub}`;
                 const edit = document.createElement('button');
                 edit.textContent = 'Éditer';
                 edit.onclick = () => {
                     document.getElementById('rule-id').value = r.id;
                     document.getElementById('rule-pattern').value = r.pattern;
                     document.getElementById('rule-category').value = r.category_id;
+                    document.getElementById('rule-subcategory').value = r.subcategory_id || '';
                 };
                 const del = document.createElement('button');
                 del.textContent = 'Supprimer';
@@ -184,19 +314,40 @@
             });
         }
 
-        document.getElementById('category-form').addEventListener('submit', async e => {
+       document.getElementById('category-form').addEventListener('submit', async e => {
             e.preventDefault();
             const id = document.getElementById('category-id').value;
             const name = document.getElementById('category-name').value;
+            const color = document.getElementById('category-color').value;
             if (id) {
-                await fetch('/categories/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name }) });
+                await fetch('/categories/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name, color }) });
             } else {
-                await fetch('/categories', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name }) });
+                await fetch('/categories', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name, color }) });
             }
             document.getElementById('category-id').value = '';
             document.getElementById('category-name').value = '';
+            document.getElementById('category-color').value = '#000000';
             fetchCategories();
             fetchRules();
+            fetchSubcategories();
+        });
+
+        document.getElementById('subcategory-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = document.getElementById('subcategory-id').value;
+            const name = document.getElementById('subcategory-name').value;
+            const category_id = document.getElementById('subcategory-category').value;
+            const color = document.getElementById('subcategory-color').value;
+            const payload = { name, category_id, color };
+            if (id) {
+                await fetch('/subcategories/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            } else {
+                await fetch('/subcategories', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            }
+            document.getElementById('subcategory-id').value = '';
+            document.getElementById('subcategory-name').value = '';
+            document.getElementById('subcategory-color').value = '#000000';
+            fetchSubcategories();
         });
 
         document.getElementById('rule-form').addEventListener('submit', async e => {
@@ -204,7 +355,8 @@
             const id = document.getElementById('rule-id').value;
             const pattern = document.getElementById('rule-pattern').value;
             const category_id = document.getElementById('rule-category').value;
-            const payload = { pattern, category_id };
+            const subcategory_id = document.getElementById('rule-subcategory').value;
+            const payload = { pattern, category_id, subcategory_id };
             if (id) {
                 await fetch('/rules/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
             } else {
@@ -212,6 +364,7 @@
             }
             document.getElementById('rule-id').value = '';
             document.getElementById('rule-pattern').value = '';
+            document.getElementById('rule-subcategory').value = '';
             fetchRules();
         });
 
@@ -276,6 +429,50 @@
         }
 
         document.getElementById('projection-table').addEventListener('input', drawProjectionChart);
+
+        let currentCatBtn = null;
+        let currentSubBtn = null;
+        const catOverlay = document.getElementById('category-overlay');
+        const subOverlay = document.getElementById('subcategory-overlay');
+
+        document.getElementById('transactions-table').addEventListener('click', e => {
+            if (e.target.classList.contains('tx-cat-btn')) {
+                currentCatBtn = e.target;
+                document.getElementById('popup-category-select').value = currentCatBtn.dataset.current || '';
+                catOverlay.style.display = 'flex';
+            } else if (e.target.classList.contains('tx-sub-btn')) {
+                currentSubBtn = e.target;
+                document.getElementById('popup-subcategory-select').value = currentSubBtn.dataset.current || '';
+                subOverlay.style.display = 'flex';
+            }
+        });
+
+        catOverlay.addEventListener('click', e => { if (e.target === catOverlay) catOverlay.style.display = 'none'; });
+        subOverlay.addEventListener('click', e => { if (e.target === subOverlay) subOverlay.style.display = 'none'; });
+
+        document.getElementById('popup-category-save').addEventListener('click', async () => {
+            if (!currentCatBtn) return;
+            const id = currentCatBtn.dataset.id;
+            const val = document.getElementById('popup-category-select').value;
+            const resp = await fetch('/transactions/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ category_id: val }) });
+            if (resp.ok) {
+                fetchTransactions();
+            }
+            catOverlay.style.display = 'none';
+            currentCatBtn = null;
+        });
+
+        document.getElementById('popup-subcategory-save').addEventListener('click', async () => {
+            if (!currentSubBtn) return;
+            const id = currentSubBtn.dataset.id;
+            const val = document.getElementById('popup-subcategory-select').value;
+            const resp = await fetch('/transactions/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ subcategory_id: val }) });
+            if (resp.ok) {
+                fetchTransactions();
+            }
+            subOverlay.style.display = 'none';
+            currentSubBtn = null;
+        });
     </script>
 </body>
 </html>
