@@ -21,6 +21,41 @@ python3 run.py
 ```
 
 Par défaut, l'application s'ouvre automatiquement dans votre navigateur à l'adresse http://localhost:5000/.
+Un serveur Flask minimal est fourni pour servir l'application Web locale. Assurez-vous d'avoir Python 3 installé.
+
+```bash
+pip install -r requirements.txt
+python run.py
+```
+
+Par défaut, l'application s'ouvre dans votre navigateur à l'adresse http://localhost:5000.
+
+## Base de données
+
+Le backend repose sur **SQLAlchemy** avec une base SQLite créée dans le
+fichier `tresoperso.db`. Lors du premier démarrage, les tables ainsi qu'un
+compte administrateur `admin` (mot de passe `admin`) sont générés
+automatiquement.
+
+```bash
+python run.py
+```
+
+Le fichier `tresoperso.db` est placé dans le répertoire courant et peut être
+supprimé en cas de réinitialisation souhaitée.
+
+## Packaging macOS
+
+Pour créer un exécutable autonome pour macOS, PyInstaller est utilisé. Un
+`Makefile` fournit la cible suivante :
+
+```bash
+make package
+```
+
+Cette commande lance `pyinstaller --onefile run.py` et génère le binaire dans
+`dist/run`. La construction doit être effectuée sur macOS afin d'obtenir un
+exécutable natif.
 
 ## Licence
 
