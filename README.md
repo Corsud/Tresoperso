@@ -43,21 +43,15 @@ supprimé en cas de réinitialisation souhaitée.
 
 ## Format des fichiers CSV
 
-Les fichiers importés doivent être séparés par des virgules (`,`). Ils doivent
-au minimum comporter les en-têtes :`date`, `libellé`/`label` et
-`montant`/`amount`.
+Les fichiers importés doivent être séparés par des point-virgules (`;`). 
+Les fichiers de la bnp ne comportent pas d'entete de colonnes. la première ligne décrit le compte bancaire. Apartir de la deuxieme ligne se trouvent les transactions.
+Elles sont au format :`date`, `type de transaction`,`moyen de paiement`,`libellé` et
+`montant`.
 
-Exemple minimal :
-
-```csv
-date,libellé,montant
-2023-01-15,Café,-3.50
-2023-01-20,Salaire,2500.00
-```
 
 Problèmes courants :
 
-- Fichiers délimités par des points-virgules `;`
+- Fichiers délimités par des virgules `;`
 - Colonnes séparées `debit`/`credit` au lieu d'une seule colonne `montant`
 
 ## Packaging macOS
