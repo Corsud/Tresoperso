@@ -408,7 +408,7 @@ def open_browser():
 def run():
     init_db()
     threading.Timer(1, open_browser).start()
-    app.run()
+    app.run(host='0.0.0.0')
 
 
 if __name__ == '__main__':
