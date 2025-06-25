@@ -74,7 +74,7 @@
             tbody.innerHTML = '';
             data.forEach(t => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${t.date}</td><td>${t.tx_type}</td><td>${t.payment_method}</td><td>${t.label}</td><td>${t.amount}</td><td>${t.category || ''}</td>`;
+                tr.innerHTML = `<td>${t.date}</td><td>${t.type}</td><td>${t.payment_method}</td><td>${t.label}</td><td>${t.amount}</td><td>${t.category || ''}</td>`;
                 tbody.appendChild(tr);
             });
         }
