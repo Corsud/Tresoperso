@@ -21,6 +21,8 @@ python run.py
 ```
 
 Par défaut, l'application s'ouvrira automatiquement dans votre navigateur à l'adresse http://localhost:5000/.
+Le serveur Flask écoute sur l'adresse `0.0.0.0`, ce qui permet d'exposer
+l'application sur le réseau local.
 
 ## Base de données
 
