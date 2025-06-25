@@ -206,6 +206,7 @@
             data.forEach(c => {
                 const li = document.createElement('li');
                 li.innerHTML = `<span style="display:inline-block;width:12px;height:12px;background:${c.color};margin-right:4px;"></span>${c.name}`;
+
                 const edit = document.createElement('button');
                 edit.textContent = 'Éditer';
                 edit.onclick = () => {
@@ -255,6 +256,7 @@
             data.forEach(s => {
                 const li = document.createElement('li');
                 li.innerHTML = `${s.category} → <span style="display:inline-block;width:12px;height:12px;background:${s.color};margin-right:4px;"></span>${s.name}`;
+
                 const edit = document.createElement('button');
                 edit.textContent = 'Éditer';
                 edit.onclick = () => {
@@ -457,6 +459,7 @@
             const resp = await fetch('/transactions/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ category_id: val }) });
             if (resp.ok) {
                 fetchTransactions();
+
             }
             catOverlay.style.display = 'none';
             currentCatBtn = null;
@@ -469,6 +472,7 @@
             const resp = await fetch('/transactions/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ subcategory_id: val }) });
             if (resp.ok) {
                 fetchTransactions();
+
             }
             subOverlay.style.display = 'none';
             currentSubBtn = null;

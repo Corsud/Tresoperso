@@ -139,7 +139,7 @@ def parse_csv(content):
 
         transactions.append({
             'date': date,
-            'tx_type': tx_type.strip(),
+            'type': tx_type.strip(),
             'payment_method': payment_method.strip(),
             'label': label.strip(),
             'amount': amount
@@ -193,7 +193,7 @@ def import_csv():
 
             session.add(Transaction(
                 date=t['date'],
-                tx_type=t['tx_type'],
+                tx_type=t['type'],
                 payment_method=t['payment_method'],
                 label=t['label'],
                 amount=t['amount'],
@@ -267,7 +267,52 @@ def list_transactions():
         results.append({
             'id': t.id,
             'date': t.date.isoformat(),
-            'tx_type': t.tx_type,
+            'category_id': t.category_id,
+            'subcategory_id': t.subcategory_id,
+@app.route('/transactions/<int:tx_id>', methods=['PUT', 'GET'])
+@login_required
+def update_transaction(tx_id):
+    """Retrieve or update a single transaction."""
+    session = SessionLocal()
+    tx = session.query(Transaction).get(tx_id)
+    if not tx:
+        session.close()
+        return jsonify({'error': 'Not found'}), 404
+
+    if request.method == 'GET':
+        result = {
+            'id': tx.id,
+            'date': tx.date.isoformat(),
+            'tx_type': tx.tx_type,
+            'payment_method': tx.payment_method,
+            'label': tx.label,
+            'amount': tx.amount,
+            'category_id': tx.category_id,
+            'subcategory_id': tx.subcategory_id,
+        }
+        session.close()
+        return jsonify(result)
+
+    data = request.get_json() or {}
+    if 'category_id' in data:
+        tx.category_id = data['category_id'] or None
+    if 'subcategory_id' in data:
+        tx.subcategory_id = data['subcategory_id'] or None
+    session.commit()
+    result = {
+        'id': tx.id,
+        'category_id': tx.category_id,
+        'subcategory_id': tx.subcategory_id,
+        'category': tx.category.name if tx.category else None,
+        'category_color': tx.category.color if tx.category else None,
+        'subcategory': tx.subcategory.name if tx.subcategory else None,
+        'subcategory_color': tx.subcategory.color if tx.subcategory else None,
+    }
+    session.close()
+    return jsonify(result)
+
+
+            'type': t.tx_type,
             'payment_method': t.payment_method,
             'label': t.label,
             'amount': t.amount,
@@ -275,6 +320,7 @@ def list_transactions():
             'category': t.category.name if t.category else None,
             'category_color': t.category.color if t.category else None,
             'subcategory_id': t.subcategory_id,
+
             'subcategory': t.subcategory.name if t.subcategory else None,
             'subcategory_color': t.subcategory.color if t.subcategory else None,
         })
@@ -482,6 +528,7 @@ def subcategories(sub_id=None):
             session.close()
             return jsonify({'error': 'Missing fields'}), 400
         sub = Subcategory(name=name, category_id=int(category_id), color=color)
+
         session.add(sub)
         session.commit()
         result = {
@@ -505,6 +552,7 @@ def subcategories(sub_id=None):
         if 'category_id' in data:
             cid = data['category_id']
             sub.category_id = int(cid) if cid else None
+
         if 'color' in data:
             sub.color = data['color']
         session.commit()
@@ -571,6 +619,7 @@ def rules(rule_id=None):
             category_id=int(category_id),
             subcategory_id=int(subcategory_id) if subcategory_id else None,
         )
+
         session.add(rule)
         session.commit()
         result = {
@@ -599,6 +648,7 @@ def rules(rule_id=None):
         if 'subcategory_id' in data:
             sid = data['subcategory_id']
             rule.subcategory_id = int(sid) if sid else None
+
         session.commit()
         result = {
             'id': rule.id,
