@@ -51,7 +51,12 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
 }
 #app { display: flex; }
 #sidebar { width: 200px; border-right: 1px solid var(--border-color); padding-right: 10px; }
-#sidebar button { display: block; width: 100%; margin: 4px 0; }
+#sidebar ul { list-style: none; padding-left: 0; }
+#sidebar li { margin-bottom: 4px; }
+#sidebar .menu-header { cursor: pointer; font-weight: bold; padding: 4px 0; }
+#sidebar .submenu { list-style: none; padding-left: 15px; max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+#sidebar li.open > .submenu { max-height: 1000px; }
+#sidebar .submenu button { display: block; width: 100%; margin: 4px 0; }
 #content { flex-grow: 1; padding-left: 10px; }
 
 .font-roboto { --font-family: 'Roboto', Arial, Geneva, sans-serif; }

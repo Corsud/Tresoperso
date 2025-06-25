@@ -17,10 +17,27 @@
     </form>
     <div id="app" style="display:none;">
         <div id="sidebar">
-            <button data-target="transactions-section">Transactions</button>
-            <button data-target="stats-section">Statistiques</button>
-            <button data-target="projection-section">Projection</button>
-            <button data-target="settings-section">Paramètres</button>
+            <ul class="menu">
+                <li class="open">
+                    <div class="menu-header">Transactions</div>
+                    <ul class="submenu">
+                        <li><button data-target="transactions-section">Transactions</button></li>
+                    </ul>
+                </li>
+                <li>
+                    <div class="menu-header">Statistiques</div>
+                    <ul class="submenu">
+                        <li><button data-target="stats-section">Statistiques</button></li>
+                        <li><button data-target="projection-section">Projection</button></li>
+                    </ul>
+                </li>
+                <li>
+                    <div class="menu-header">Paramètres</div>
+                    <ul class="submenu">
+                        <li><button data-target="settings-section">Paramètres</button></li>
+                    </ul>
+                </li>
+            </ul>
         </div>
         <div id="content">
             <section id="transactions-section">
@@ -513,12 +530,18 @@
         });
 
         const sectionIds = ['transactions-section', 'stats-section', 'projection-section', 'settings-section'];
-        document.querySelectorAll('#sidebar button').forEach(btn => {
+        document.querySelectorAll('#sidebar .submenu button').forEach(btn => {
             btn.addEventListener('click', () => {
                 const target = btn.dataset.target;
                 sectionIds.forEach(id => {
                     document.getElementById(id).style.display = id === target ? 'block' : 'none';
                 });
+            });
+        });
+
+        document.querySelectorAll('#sidebar .menu-header').forEach(header => {
+            header.addEventListener('click', () => {
+                header.parentElement.classList.toggle('open');
             });
         });
 
