@@ -75,12 +75,22 @@ function TransactionTable() {
               <td>{t.amount}</td>
               <td>{t.category || ''}</td>
               <td><input type="checkbox" checked={t.reconciled} onChange={e => {
-                fetch('/transactions/' + t.id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({reconciled: e.target.checked})})
-                  .then(fetchData);
+                const value = e.target.checked;
+                setTransactions(prev => prev.map(tx => tx.id === t.id ? { ...tx, reconciled: value } : tx));
+                fetch('/transactions/' + t.id, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ reconciled: value })
+                }).then(fetchData);
               }} /></td>
               <td><input type="checkbox" checked={t.to_analyze} onChange={e => {
-                fetch('/transactions/' + t.id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({to_analyze: e.target.checked})})
-                  .then(fetchData);
+                const value = e.target.checked;
+                setTransactions(prev => prev.map(tx => tx.id === t.id ? { ...tx, to_analyze: value } : tx));
+                fetch('/transactions/' + t.id, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ to_analyze: value })
+                }).then(fetchData);
               }} /></td>
             </tr>
           ))}
