@@ -4,13 +4,82 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tresoperso</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 4px; }
+    </style>
 </head>
 <body>
-    <div id="root"></div>
+    <h1>Tresoperso</h1>
+    <form id="login-form">
+        <input type="text" id="username" placeholder="Utilisateur" required />
+        <input type="password" id="password" placeholder="Mot de passe" required />
+        <button type="submit">Connexion</button>
+    </form>
+    <div id="app" style="display:none;">
+        <form id="upload-form">
+            <input type="file" id="csv-file" name="file" accept=".csv" required />
+            <button type="submit">Importer CSV</button>
+        </form>
+        <table id="transactions-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Libellé</th>
+                    <th>Montant</th>
+                    <th>Catégorie</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <script>
+        async function fetchTransactions() {
+            const resp = await fetch('/transactions');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const tbody = document.querySelector('#transactions-table tbody');
+            tbody.innerHTML = '';
+            data.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${t.date}</td><td>${t.label}</td><td>${t.amount}</td><td>${t.category || ''}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
 
-    <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
-    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
-    <script type="text/babel" src="app.jsx"></script>
+        document.getElementById('login-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resp = await fetch('/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username, password })
+            });
+            if (resp.ok) {
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                fetchTransactions();
+            } else {
+                alert('Connexion échouée');
+            }
+        });
+
+        document.getElementById('upload-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const fileInput = document.getElementById('csv-file');
+            if (!fileInput.files.length) return;
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            const resp = await fetch('/import', { method: 'POST', body: formData });
+            if (resp.ok) {
+                fileInput.value = '';
+                fetchTransactions();
+            } else {
+                const data = await resp.json().catch(() => ({}));
+                alert(data.error || 'Erreur import');
+            }
+        });
+    </script>
 </body>
 </html>
