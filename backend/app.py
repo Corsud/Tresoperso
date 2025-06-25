@@ -1,3 +1,9 @@
+from flask import Flask, send_from_directory
+import webbrowser
+import threading
+import os
+
+app = Flask(__name__, static_folder='../frontend', static_url_path='')
 from flask import Flask, send_from_directory, request, jsonify
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash
@@ -28,6 +34,13 @@ def load_user(user_id):
 def index():
     return send_from_directory(app.static_folder, 'index.html')
 
+
+def open_browser():
+    """Open the application homepage in the default web browser."""
+    webbrowser.open_new('http://localhost:5000/')
+
+
+def run():
 
 @app.route('/login', methods=['POST'])
 def login():
