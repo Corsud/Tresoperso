@@ -139,7 +139,7 @@ def parse_csv(content):
 
         transactions.append({
             'date': date,
-            'tx_type': tx_type.strip(),
+            'type': tx_type.strip(),
             'payment_method': payment_method.strip(),
             'label': label.strip(),
             'amount': amount
@@ -193,7 +193,7 @@ def import_csv():
 
             session.add(Transaction(
                 date=t['date'],
-                tx_type=t['tx_type'],
+                tx_type=t['type'],
                 payment_method=t['payment_method'],
                 label=t['label'],
                 amount=t['amount'],
@@ -267,7 +267,7 @@ def list_transactions():
         results.append({
             'id': t.id,
             'date': t.date.isoformat(),
-            'tx_type': t.tx_type,
+            'type': t.tx_type,
             'payment_method': t.payment_method,
             'label': t.label,
             'amount': t.amount,
