@@ -8,7 +8,15 @@ import csv
 from datetime import datetime
 from sqlalchemy import func
 
-from .models import init_db, SessionLocal, Transaction, Category, Rule, User
+from .models import (
+    init_db,
+    SessionLocal,
+    Transaction,
+    Category,
+    Subcategory,
+    Rule,
+    User,
+)
 
 # Compute the absolute path to the frontend directory so Flask can
 # reliably serve the static files no matter where the application is
@@ -176,9 +184,11 @@ def import_csv():
                 continue
 
             category_id = None
+            subcategory_id = None
             for r in rules:
                 if r.pattern.lower() in t['label'].lower():
                     category_id = r.category_id
+                    subcategory_id = r.subcategory_id
                     break
 
             session.add(Transaction(
@@ -187,7 +197,8 @@ def import_csv():
                 payment_method=t['payment_method'],
                 label=t['label'],
                 amount=t['amount'],
-                category_id=category_id
+                category_id=category_id,
+                subcategory_id=subcategory_id
             ))
             imported += 1
         session.commit()
@@ -260,7 +271,10 @@ def list_transactions():
             'payment_method': t.payment_method,
             'label': t.label,
             'amount': t.amount,
-            'category': t.category.name if t.category else None
+            'category': t.category.name if t.category else None,
+            'category_color': t.category.color if t.category else None,
+            'subcategory': t.subcategory.name if t.subcategory else None,
+            'subcategory_color': t.subcategory.color if t.subcategory else None,
         })
     session.close()
     return jsonify(results)
@@ -310,27 +324,47 @@ def categories(category_id=None):
     session = SessionLocal()
     if request.method == 'GET':
         if category_id is None:
-            data = [{'id': c.id, 'name': c.name} for c in session.query(Category).all()]
+            data = [
+                {
+                    'id': c.id,
+                    'name': c.name,
+                    'color': c.color,
+                    'subcategories': [
+                        {'id': s.id, 'name': s.name, 'color': s.color}
+                        for s in c.subcategories
+                    ],
+                }
+                for c in session.query(Category).all()
+            ]
             session.close()
             return jsonify(data)
         category = session.query(Category).get(category_id)
         if not category:
             session.close()
             return jsonify({'error': 'Not found'}), 404
-        result = {'id': category.id, 'name': category.name}
+        result = {
+            'id': category.id,
+            'name': category.name,
+            'color': category.color,
+            'subcategories': [
+                {'id': s.id, 'name': s.name, 'color': s.color}
+                for s in category.subcategories
+            ],
+        }
         session.close()
         return jsonify(result)
 
     if request.method == 'POST':
         data = request.get_json() or {}
         name = data.get('name')
+        color = data.get('color', '')
         if not name:
             session.close()
             return jsonify({'error': 'Missing name'}), 400
-        category = Category(name=name)
+        category = Category(name=name, color=color)
         session.add(category)
         session.commit()
-        result = {'id': category.id, 'name': category.name}
+        result = {'id': category.id, 'name': category.name, 'color': category.color}
         session.close()
         return jsonify(result), 201
 
@@ -343,14 +377,99 @@ def categories(category_id=None):
     if request.method == 'PUT':
         data = request.get_json() or {}
         name = data.get('name')
-        if name:
+        color = data.get('color')
+        if name is not None:
             category.name = name
-            session.commit()
-        result = {'id': category.id, 'name': category.name}
+        if color is not None:
+            category.color = color
+        session.commit()
+        result = {'id': category.id, 'name': category.name, 'color': category.color}
         session.close()
         return jsonify(result)
 
     session.delete(category)
+    session.commit()
+    session.close()
+    return jsonify({'message': 'deleted'})
+
+
+@app.route('/subcategories', methods=['GET', 'POST'])
+@app.route('/subcategories/<int:sub_id>', methods=['GET', 'PUT', 'DELETE'])
+@login_required
+def subcategories(sub_id=None):
+    session = SessionLocal()
+    if request.method == 'GET':
+        if sub_id is None:
+            data = [
+                {
+                    'id': s.id,
+                    'name': s.name,
+                    'color': s.color,
+                    'category_id': s.category_id,
+                    'category': s.category.name if s.category else None,
+                }
+                for s in session.query(Subcategory).all()
+            ]
+            session.close()
+            return jsonify(data)
+        sub = session.query(Subcategory).get(sub_id)
+        if not sub:
+            session.close()
+            return jsonify({'error': 'Not found'}), 404
+        result = {
+            'id': sub.id,
+            'name': sub.name,
+            'color': sub.color,
+            'category_id': sub.category_id,
+            'category': sub.category.name if sub.category else None,
+        }
+        session.close()
+        return jsonify(result)
+
+    if request.method == 'POST':
+        data = request.get_json() or {}
+        name = data.get('name')
+        category_id = data.get('category_id')
+        color = data.get('color', '')
+        if not name or not category_id:
+            session.close()
+            return jsonify({'error': 'Missing fields'}), 400
+        sub = Subcategory(name=name, category_id=category_id, color=color)
+        session.add(sub)
+        session.commit()
+        result = {
+            'id': sub.id,
+            'name': sub.name,
+            'color': sub.color,
+            'category_id': sub.category_id,
+        }
+        session.close()
+        return jsonify(result), 201
+
+    sub = session.query(Subcategory).get(sub_id)
+    if not sub:
+        session.close()
+        return jsonify({'error': 'Not found'}), 404
+
+    if request.method == 'PUT':
+        data = request.get_json() or {}
+        if 'name' in data:
+            sub.name = data['name']
+        if 'category_id' in data:
+            sub.category_id = data['category_id']
+        if 'color' in data:
+            sub.color = data['color']
+        session.commit()
+        result = {
+            'id': sub.id,
+            'name': sub.name,
+            'color': sub.color,
+            'category_id': sub.category_id,
+        }
+        session.close()
+        return jsonify(result)
+
+    session.delete(sub)
     session.commit()
     session.close()
     return jsonify({'message': 'deleted'})
@@ -368,8 +487,11 @@ def rules(rule_id=None):
                     'id': r.id,
                     'pattern': r.pattern,
                     'category_id': r.category_id,
+                    'subcategory_id': r.subcategory_id,
                     'category': r.category.name if r.category else None,
-                } for r in session.query(Rule).all()
+                    'subcategory': r.subcategory.name if r.subcategory else None,
+                }
+                for r in session.query(Rule).all()
             ]
             session.close()
             return jsonify(data)
@@ -381,7 +503,9 @@ def rules(rule_id=None):
             'id': rule.id,
             'pattern': rule.pattern,
             'category_id': rule.category_id,
+            'subcategory_id': rule.subcategory_id,
             'category': rule.category.name if rule.category else None,
+            'subcategory': rule.subcategory.name if rule.subcategory else None,
         }
         session.close()
         return jsonify(result)
@@ -390,17 +514,20 @@ def rules(rule_id=None):
         data = request.get_json() or {}
         pattern = data.get('pattern')
         category_id = data.get('category_id')
+        subcategory_id = data.get('subcategory_id')
         if not pattern or not category_id:
             session.close()
             return jsonify({'error': 'Missing fields'}), 400
-        rule = Rule(pattern=pattern, category_id=category_id)
+        rule = Rule(pattern=pattern, category_id=category_id, subcategory_id=subcategory_id)
         session.add(rule)
         session.commit()
         result = {
             'id': rule.id,
             'pattern': rule.pattern,
             'category_id': rule.category_id,
+            'subcategory_id': rule.subcategory_id,
             'category': rule.category.name if rule.category else None,
+            'subcategory': rule.subcategory.name if rule.subcategory else None,
         }
         session.close()
         return jsonify(result), 201
@@ -416,12 +543,16 @@ def rules(rule_id=None):
             rule.pattern = data['pattern']
         if 'category_id' in data:
             rule.category_id = data['category_id']
+        if 'subcategory_id' in data:
+            rule.subcategory_id = data['subcategory_id']
         session.commit()
         result = {
             'id': rule.id,
             'pattern': rule.pattern,
             'category_id': rule.category_id,
+            'subcategory_id': rule.subcategory_id,
             'category': rule.category.name if rule.category else None,
+            'subcategory': rule.subcategory.name if rule.subcategory else None,
         }
         session.close()
         return jsonify(result)
