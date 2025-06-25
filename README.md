@@ -43,8 +43,8 @@ supprimé en cas de réinitialisation souhaitée.
 
 ## Format des fichiers CSV
 
-Les fichiers importés doivent être séparés par des point-virgules (`;`). 
-Les fichiers de la bnp ne comportent pas d'entete de colonnes. la première ligne décrit le compte bancaire. Apartir de la deuxieme ligne se trouvent les transactions.
+Pour la BNP : Les champs du CSV doivent être séparés par des point-virgules (`;`). 
+Les fichiers de la bnp ne comportent pas d'entete de colonnes. la premiere ligne decrit le compte bancaire. A partir de la deuxieme ligne se trouvent les transactions.
 Elles sont au format :`date`, `type de transaction`,`moyen de paiement`,`libellé` et
 `montant`.
 
