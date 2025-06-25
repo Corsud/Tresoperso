@@ -70,23 +70,38 @@ def me():
 def parse_csv(content):
     """Parse CSV content and return valid transactions and errors.
 
-    The CSV must contain at least the columns date, libellé/label and montant.
+    The BNP CSV files described in the README do not have a header line and
+    use a semicolon (``;``) as delimiter. The first line contains account
+    information and must be ignored. Each transaction line is expected to
+    contain the fields ``date`` , ``type`` , ``moyen de paiement`` , ``libellé``
+    and ``montant`` in that order. Only the ``date``, ``libellé`` and
+    ``montant`` columns are used.
+
     Duplicate rows based on (date, label, amount) are ignored and reported as
     errors.
     """
 
-    reader = csv.DictReader(content.splitlines())
+    reader = csv.reader(content.splitlines(), delimiter=';')
+    rows = list(reader)
+    if not rows:
+        return [], ['Fichier vide']
+
     transactions = []
     errors = []
     seen = set()
 
-    for i, row in enumerate(reader, start=1):
-        date_str = row.get('date') or row.get('Date')
-        label = row.get('libellé') or row.get('libelle') or row.get('label') or row.get('Libellé')
-        amount_str = row.get('montant') or row.get('amount') or row.get('Montant')
+    # Skip the first line which contains account information
+    for line_no, row in enumerate(rows[1:], start=2):
+        if len(row) < 5:
+            errors.append(f'Ligne {line_no}: colonnes manquantes')
+            continue
+
+        date_str = row[0]
+        label = row[3]
+        amount_str = row[4]
 
         if not (date_str and label and amount_str):
-            errors.append(f'Ligne {i}: colonnes manquantes')
+            errors.append(f'Ligne {line_no}: colonnes manquantes')
             continue
 
         try:
@@ -95,18 +110,18 @@ def parse_csv(content):
             except ValueError:
                 date = datetime.strptime(date_str.strip(), '%d/%m/%Y').date()
         except ValueError:
-            errors.append(f'Ligne {i}: date invalide')
+            errors.append(f'Ligne {line_no}: date invalide')
             continue
 
         try:
             amount = float(amount_str.replace(',', '.'))
         except ValueError:
-            errors.append(f'Ligne {i}: montant invalide')
+            errors.append(f'Ligne {line_no}: montant invalide')
             continue
 
         key = (date, label.strip(), amount)
         if key in seen:
-            errors.append(f'Ligne {i}: doublon d\'entrée')
+            errors.append(f'Ligne {line_no}: doublon d\'entrée')
             continue
         seen.add(key)
 
