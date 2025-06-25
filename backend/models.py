@@ -22,8 +22,21 @@ class Category(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True, nullable=False)
+    color = Column(String, default='')
     transactions = relationship('Transaction', back_populates='category')
     rules = relationship('Rule', back_populates='category')
+    subcategories = relationship('Subcategory', back_populates='category')
+
+class Subcategory(Base):
+    __tablename__ = 'subcategories'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    color = Column(String, default='')
+    category_id = Column(Integer, ForeignKey('categories.id'), nullable=False)
+
+    category = relationship('Category', back_populates='subcategories')
+    transactions = relationship('Transaction', back_populates='subcategory')
 
 class Transaction(Base):
     __tablename__ = 'transactions'
@@ -35,8 +48,10 @@ class Transaction(Base):
     tx_type = Column(String)
     payment_method = Column(String)
     category_id = Column(Integer, ForeignKey('categories.id'))
+    subcategory_id = Column(Integer, ForeignKey('subcategories.id'))
 
     category = relationship('Category', back_populates='transactions')
+    subcategory = relationship('Subcategory', back_populates='transactions')
 
 
 class Rule(Base):
@@ -45,8 +60,10 @@ class Rule(Base):
     id = Column(Integer, primary_key=True)
     pattern = Column(String, nullable=False)
     category_id = Column(Integer, ForeignKey('categories.id'), nullable=False)
+    subcategory_id = Column(Integer, ForeignKey('subcategories.id'))
 
     category = relationship('Category', back_populates='rules')
+    subcategory = relationship('Subcategory')
 
 
 def init_db():
@@ -61,6 +78,18 @@ def init_db():
             conn.execute(text('ALTER TABLE transactions ADD COLUMN tx_type TEXT'))
         if 'payment_method' not in cols:
             conn.execute(text('ALTER TABLE transactions ADD COLUMN payment_method TEXT'))
+        if 'subcategory_id' not in cols:
+            conn.execute(text('ALTER TABLE transactions ADD COLUMN subcategory_id INTEGER'))
+
+        info = conn.execute(text('PRAGMA table_info(categories)')).fetchall()
+        cols = {row[1] for row in info}
+        if 'color' not in cols:
+            conn.execute(text('ALTER TABLE categories ADD COLUMN color TEXT'))
+
+        info = conn.execute(text('PRAGMA table_info(rules)')).fetchall()
+        cols = {row[1] for row in info}
+        if 'subcategory_id' not in cols:
+            conn.execute(text('ALTER TABLE rules ADD COLUMN subcategory_id INTEGER'))
 
     # Create a default user if none exists
     session = SessionLocal()
