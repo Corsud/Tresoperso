@@ -85,16 +85,18 @@ def parse_csv(content):
     and ``montant`` in that order. The ``type`` and ``moyen de paiement``
     columns are now stored alongside ``date``, ``libellé`` and ``montant``.
 
-    Duplicate rows based on (date, label, amount) are ignored and reported as
-    errors.
+    Duplicate rows based on (date, label, amount) are returned separately
+    instead of being treated as errors. They can then be reviewed by the user
+    before insertion.
     """
 
     reader = csv.reader(content.splitlines(), delimiter=';')
     rows = list(reader)
     if not rows:
-        return [], ['Fichier vide']
+        return [], [], ['Fichier vide']
 
     transactions = []
+    duplicates = []
     errors = []
     seen = set()
 
@@ -133,7 +135,14 @@ def parse_csv(content):
 
         key = (date, label.strip(), amount)
         if key in seen:
-            errors.append(f'Ligne {line_no}: doublon d\'entrée')
+            duplicates.append({
+                'line_no': line_no,
+                'date': date,
+                'type': tx_type.strip(),
+                'payment_method': payment_method.strip(),
+                'label': label.strip(),
+                'amount': amount,
+            })
             continue
         seen.add(key)
 
@@ -147,7 +156,7 @@ def parse_csv(content):
             'to_analyze': True
         })
 
-    return transactions, errors
+    return transactions, duplicates, errors
 
 
 @app.route('/import', methods=['POST'])
@@ -167,11 +176,11 @@ def import_csv():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
-    transactions, errors = parse_csv(content)
+    transactions, csv_duplicates, errors = parse_csv(content)
 
     session = SessionLocal()
     imported = 0
-    skipped = 0
+    duplicates = list(csv_duplicates)
 
     # Load rules once for auto-categorisation
     rules = session.query(Rule).all()
@@ -182,7 +191,13 @@ def import_csv():
                 date=t['date'], label=t['label'], amount=t['amount']
             ).first()
             if exists:
-                skipped += 1
+                duplicates.append({
+                    'date': t['date'].isoformat(),
+                    'type': t['type'],
+                    'payment_method': t['payment_method'],
+                    'label': t['label'],
+                    'amount': t['amount'],
+                })
                 continue
 
             category_id = None
@@ -212,7 +227,77 @@ def import_csv():
     finally:
         session.close()
 
-    response = {'imported': imported, 'skipped': skipped}
+    response = {'imported': imported}
+    if duplicates:
+        response['duplicates'] = [
+            {
+                **d,
+                'date': d['date'].isoformat() if hasattr(d['date'], 'isoformat') else d['date'],
+            }
+            for d in duplicates
+        ]
+    if errors:
+        response['errors'] = errors
+        return jsonify(response), 400
+    return jsonify(response)
+
+
+@app.route('/import/confirm', methods=['POST'])
+@login_required
+def confirm_import():
+    """Insert transactions that were previously flagged as duplicates."""
+    data = request.get_json() or {}
+    rows = data.get('transactions', [])
+
+    session = SessionLocal()
+    imported = 0
+    errors = []
+
+    rules = session.query(Rule).all()
+
+    try:
+        for t in rows:
+            try:
+                date = datetime.strptime(t['date'], '%Y-%m-%d').date()
+            except (KeyError, ValueError):
+                errors.append('Date invalide')
+                continue
+
+            exists = session.query(Transaction).filter_by(
+                date=date, label=t.get('label'), amount=t.get('amount')
+            ).first()
+            if exists:
+                continue
+
+            category_id = None
+            subcategory_id = None
+            for r in rules:
+                if r.pattern.lower() in t.get('label', '').lower():
+                    category_id = r.category_id
+                    subcategory_id = r.subcategory_id
+                    break
+
+            session.add(Transaction(
+                date=date,
+                tx_type=t.get('type', ''),
+                payment_method=t.get('payment_method', ''),
+                label=t.get('label', ''),
+                amount=t.get('amount'),
+                category_id=category_id,
+                subcategory_id=subcategory_id,
+                reconciled=False,
+                to_analyze=True,
+            ))
+            imported += 1
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        session.close()
+        return jsonify({'error': str(e)}), 400
+    finally:
+        session.close()
+
+    response = {'imported': imported}
     if errors:
         response['errors'] = errors
         return jsonify(response), 400
