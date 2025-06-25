@@ -46,6 +46,14 @@
                     <button type="submit">Importer CSV</button>
                 </form>
 
+                <div id="account-controls">
+                    <label for="account-select">Compte :</label>
+                    <select id="account-select">
+                        <option value="">(Tous)</option>
+                    </select>
+                    <span id="account-info"></span>
+                </div>
+
                 <h2>Transactions</h2>
                 <table id="transactions-table">
                     <thead>
@@ -158,6 +166,8 @@
     <script>
         let categoriesData = [];
         let subcategoriesData = [];
+        let accountsData = [];
+        let selectedAccountId = '';
 
         function findCategory(id) {
             return categoriesData.find(c => String(c.id) === String(id));
@@ -171,10 +181,35 @@
             return (v || 0).toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         }
 
+        function updateAccountDropdown() {
+            const select = document.getElementById('account-select');
+            select.innerHTML = '<option value="">(Tous)</option>';
+            accountsData.forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a.id;
+                opt.textContent = `${a.account_type} ${a.number}`.trim();
+                select.appendChild(opt);
+            });
+            select.value = selectedAccountId;
+        }
+
+        function displayAccountInfo() {
+            const info = document.getElementById('account-info');
+            const acc = accountsData.find(a => String(a.id) === String(selectedAccountId));
+            if (acc) {
+                const date = acc.export_date ? ` - export ${acc.export_date}` : '';
+                info.textContent = `${acc.account_type} ${acc.number}${date}`.trim();
+            } else {
+                info.textContent = '';
+            }
+        }
+
         async function fetchTransactions() {
-            const resp = await fetch('/transactions');
+            const url = selectedAccountId ? `/transactions?account_id=${selectedAccountId}` : '/transactions';
+            const resp = await fetch(url);
             if (!resp.ok) return;
             const data = await resp.json();
+            displayAccountInfo();
             const tbody = document.querySelector('#transactions-table tbody');
             tbody.innerHTML = '';
             data.forEach(t => {
@@ -270,6 +305,8 @@
             if (resp.ok) {
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
+                updateAccountDropdown();
+                displayAccountInfo();
                 fetchTransactions();
                 fetchCategories();
                 fetchSubcategories();
@@ -291,8 +328,15 @@
             const data = await resp.json().catch(() => ({}));
             if (resp.ok) {
                 fileInput.value = '';
+                if (data.account) {
+                    const exists = accountsData.some(a => String(a.id) === String(data.account.id));
+                    if (!exists) accountsData.push(data.account);
+                    selectedAccountId = data.account.id;
+                    updateAccountDropdown();
+                    displayAccountInfo();
+                }
                 if (data.duplicates && data.duplicates.length) {
-                    showDuplicates(data.duplicates);
+                    showDuplicates(data.duplicates, data.account ? data.account.id : '');
                 } else {
                     fetchTransactions();
                     fetchStats();
@@ -596,10 +640,11 @@
         catOverlay.addEventListener('click', e => { if (e.target === catOverlay) catOverlay.style.display = 'none'; });
         subOverlay.addEventListener('click', e => { if (e.target === subOverlay) subOverlay.style.display = 'none'; });
 
-        function showDuplicates(dups) {
+        function showDuplicates(dups, accountId) {
             const list = document.getElementById('duplicate-list');
             list.innerHTML = '';
             dupOverlay.dataset.rows = JSON.stringify(dups);
+            dupOverlay.dataset.accountId = accountId || '';
             dups.forEach((d, idx) => {
                 const li = document.createElement('li');
                 const cb = document.createElement('input');
@@ -631,7 +676,7 @@
             const resp = await fetch('/import/confirm', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ transactions: selected })
+                body: JSON.stringify({ transactions: selected, account_id: dupOverlay.dataset.accountId })
             });
             const data = await resp.json().catch(() => ({}));
             if (resp.ok) {
@@ -710,6 +755,7 @@
         const themeSelect = document.getElementById('theme-select');
         const fontSelect = document.getElementById('font-select');
         const themeLink = document.getElementById('theme-link');
+        const accountSelect = document.getElementById('account-select');
 
         function applyPreferences() {
             const theme = localStorage.getItem('theme') || 'light';
@@ -728,6 +774,11 @@
         fontSelect.addEventListener('change', () => {
             localStorage.setItem('font', fontSelect.value);
             applyPreferences();
+        });
+
+        accountSelect.addEventListener('change', () => {
+            selectedAccountId = accountSelect.value;
+            fetchTransactions();
         });
 
         document.getElementById('reset-transactions').addEventListener('click', async () => {
