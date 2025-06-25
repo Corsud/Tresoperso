@@ -64,6 +64,7 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
 a {
     color: var(--interactive-color);
     cursor: pointer;
+
 }
 
 button,
@@ -74,12 +75,14 @@ input[type="button"] {
     border: 1px solid var(--bg-color);
     padding: 4px 8px;
     cursor: pointer;
+
 }
 
 input[type="checkbox"],
 input[type="radio"] {
     accent-color: var(--interactive-color);
     cursor: pointer;
+
 }
 
 #sidebar .submenu button.selected,
