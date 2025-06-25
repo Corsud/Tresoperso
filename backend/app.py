@@ -60,6 +60,54 @@ def me():
     return jsonify({'error': 'Unauthorized'}), 401
 
 
+def parse_csv(content):
+    """Parse CSV content and return valid transactions and errors.
+
+    The CSV must contain at least the columns date, libellé/label and montant.
+    Duplicate rows based on (date, label, amount) are ignored and reported as
+    errors.
+    """
+
+    reader = csv.DictReader(content.splitlines())
+    transactions = []
+    errors = []
+    seen = set()
+
+    for i, row in enumerate(reader, start=1):
+        date_str = row.get('date') or row.get('Date')
+        label = row.get('libellé') or row.get('libelle') or row.get('label') or row.get('Libellé')
+        amount_str = row.get('montant') or row.get('amount') or row.get('Montant')
+
+        if not (date_str and label and amount_str):
+            errors.append(f'Ligne {i}: colonnes manquantes')
+            continue
+
+        try:
+            try:
+                date = datetime.strptime(date_str.strip(), '%Y-%m-%d').date()
+            except ValueError:
+                date = datetime.strptime(date_str.strip(), '%d/%m/%Y').date()
+        except ValueError:
+            errors.append(f'Ligne {i}: date invalide')
+            continue
+
+        try:
+            amount = float(amount_str.replace(',', '.'))
+        except ValueError:
+            errors.append(f'Ligne {i}: montant invalide')
+            continue
+
+        key = (date, label.strip(), amount)
+        if key in seen:
+            errors.append(f'Ligne {i}: doublon d\'entrée')
+            continue
+        seen.add(key)
+
+        transactions.append({'date': date, 'label': label.strip(), 'amount': amount})
+
+    return transactions, errors
+
+
 @app.route('/import', methods=['POST'])
 @login_required
 def import_csv():
@@ -71,42 +119,27 @@ def import_csv():
     if file.filename == '':
         return jsonify({'error': 'Aucun fichier fourni'}), 400
 
+    errors = []
+    try:
+        content = file.stream.read().decode('utf-8')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+    transactions, errors = parse_csv(content)
+
     session = SessionLocal()
     imported = 0
-    errors = []
+    skipped = 0
 
     try:
-        stream = file.stream.read().decode('utf-8')
-        reader = csv.DictReader(stream.splitlines())
-        for i, row in enumerate(reader, start=1):
-            date_str = row.get('date') or row.get('Date')
-            label = row.get('libellé') or row.get('libelle') or row.get('label') or row.get('Libellé')
-            amount_str = row.get('montant') or row.get('amount') or row.get('Montant')
-
-            if not (date_str and label and amount_str):
-                errors.append(f'Ligne {i}: colonnes manquantes')
+        for t in transactions:
+            exists = session.query(Transaction).filter_by(
+                date=t['date'], label=t['label'], amount=t['amount']
+            ).first()
+            if exists:
+                skipped += 1
                 continue
-
-            try:
-                try:
-                    date = datetime.strptime(date_str.strip(), '%Y-%m-%d').date()
-                except ValueError:
-                    date = datetime.strptime(date_str.strip(), '%d/%m/%Y').date()
-            except ValueError:
-                errors.append(f'Ligne {i}: date invalide')
-                continue
-
-            try:
-                amount = float(amount_str.replace(',', '.'))
-            except ValueError:
-                errors.append(f'Ligne {i}: montant invalide')
-                continue
-
-            existing = session.query(Transaction).filter_by(date=date, label=label, amount=amount).first()
-            if existing:
-                continue
-
-            session.add(Transaction(date=date, label=label, amount=amount))
+            session.add(Transaction(**t))
             imported += 1
         session.commit()
     except Exception as e:
@@ -115,9 +148,11 @@ def import_csv():
     finally:
         session.close()
 
+    response = {'imported': imported, 'skipped': skipped}
     if errors:
-        return jsonify({'imported': imported, 'errors': errors}), 400
-    return jsonify({'message': f'{imported} transactions importées'})
+        response['errors'] = errors
+        return jsonify(response), 400
+    return jsonify(response)
 
 
 @app.route('/transactions')
