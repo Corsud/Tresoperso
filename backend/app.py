@@ -3,6 +3,8 @@ import webbrowser
 import threading
 import os
 
+from .models import init_db
+
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
 
 @app.route('/')
@@ -15,6 +17,7 @@ def open_browser():
 
 
 def run():
+    init_db()
     threading.Timer(1, open_browser).start()
     app.run()
 
