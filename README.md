@@ -45,8 +45,9 @@ Pour créer un exécutable autonome pour macOS, PyInstaller est utilisé. Un
 make package
 ```
 
-Cette commande lance `pyinstaller --onefile run.py` et génère le binaire dans
-`dist/run`. La construction doit être effectuée sur macOS afin d'obtenir un
+Cette commande lance `pyinstaller --onefile --add-data "frontend:frontend" run.py`
+et génère le binaire dans `dist/run`. La construction doit être effectuée sur
+macOS afin d'obtenir un
 exécutable natif.
 
 ## Licence
