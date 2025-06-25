@@ -5,6 +5,7 @@ import webbrowser
 import threading
 import os
 import csv
+import re
 from datetime import datetime
 from sqlalchemy import func
 
@@ -12,6 +13,7 @@ from .models import (
     init_db,
     SessionLocal,
     Transaction,
+    BankAccount,
     Category,
     Subcategory,
     Rule,
@@ -76,7 +78,7 @@ def me():
 
 
 def parse_csv(content):
-    """Parse CSV content and return valid transactions and errors.
+    """Parse CSV content and return valid transactions, account info and errors.
 
     The BNP CSV files described in the README do not have a header line and
     use a semicolon (``;``) as delimiter. The first line contains account
@@ -93,7 +95,35 @@ def parse_csv(content):
     reader = csv.reader(content.splitlines(), delimiter=';')
     rows = list(reader)
     if not rows:
-        return [], [], ['Fichier vide']
+        return [], [], ['Fichier vide'], {}
+
+    account_row = rows[0]
+    info_str = ' '.join(account_row)
+    number = ''
+    export_date = None
+    account_type = info_str
+    m = re.search(r'(\d{2}/\d{2}/\d{4}|\d{4}-\d{2}-\d{2})', info_str)
+    if m:
+        date_str = m.group(1)
+        try:
+            export_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            try:
+                export_date = datetime.strptime(date_str, '%d/%m/%Y').date()
+            except ValueError:
+                export_date = None
+        account_type = info_str[:m.start()].strip()
+    n = re.search(r'(\d{4,})', info_str)
+    if n:
+        number = n.group(1)
+        if n.start() < len(account_type):
+            account_type = account_type[:n.start()].strip()
+
+    account_info = {
+        'account_type': account_type.strip(),
+        'number': number,
+        'export_date': export_date,
+    }
 
     transactions = []
     duplicates = []
@@ -156,7 +186,7 @@ def parse_csv(content):
             'to_analyze': True
         })
 
-    return transactions, duplicates, errors
+    return transactions, duplicates, errors, account_info
 
 
 @app.route('/import', methods=['POST'])
@@ -176,11 +206,25 @@ def import_csv():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
-    transactions, csv_duplicates, errors = parse_csv(content)
+    transactions, csv_duplicates, errors, account_info = parse_csv(content)
 
     session = SessionLocal()
     imported = 0
     duplicates = list(csv_duplicates)
+
+    account = session.query(BankAccount).filter_by(
+        account_type=account_info.get('account_type'),
+        number=account_info.get('number'),
+        export_date=account_info.get('export_date'),
+    ).first()
+    if not account:
+        account = BankAccount(
+            account_type=account_info.get('account_type'),
+            number=account_info.get('number'),
+            export_date=account_info.get('export_date'),
+        )
+        session.add(account)
+        session.commit()
 
     # Load rules once for auto-categorisation
     rules = session.query(Rule).all()
@@ -188,7 +232,7 @@ def import_csv():
     try:
         for t in transactions:
             exists = session.query(Transaction).filter_by(
-                date=t['date'], label=t['label'], amount=t['amount']
+                date=t['date'], label=t['label'], amount=t['amount'], bank_account_id=account.id
             ).first()
             if exists:
                 duplicates.append({
@@ -197,6 +241,7 @@ def import_csv():
                     'payment_method': t['payment_method'],
                     'label': t['label'],
                     'amount': t['amount'],
+                    'account_id': account.id,
                 })
                 continue
 
@@ -214,6 +259,7 @@ def import_csv():
                 payment_method=t['payment_method'],
                 label=t['label'],
                 amount=t['amount'],
+                bank_account_id=account.id,
                 category_id=category_id,
                 subcategory_id=subcategory_id,
                 reconciled=t['reconciled'],
@@ -227,7 +273,15 @@ def import_csv():
     finally:
         session.close()
 
-    response = {'imported': imported}
+    response = {
+        'imported': imported,
+        'account': {
+            'id': account.id,
+            'account_type': account.account_type,
+            'number': account.number,
+            'export_date': account.export_date.isoformat() if account.export_date else None,
+        }
+    }
     if duplicates:
         response['duplicates'] = [
             {
@@ -248,6 +302,7 @@ def confirm_import():
     """Insert transactions that were previously flagged as duplicates."""
     data = request.get_json() or {}
     rows = data.get('transactions', [])
+    account_id = data.get('account_id')
 
     session = SessionLocal()
     imported = 0
@@ -264,7 +319,7 @@ def confirm_import():
                 continue
 
             exists = session.query(Transaction).filter_by(
-                date=date, label=t.get('label'), amount=t.get('amount')
+                date=date, label=t.get('label'), amount=t.get('amount'), bank_account_id=account_id
             ).first()
             if exists:
                 continue
@@ -283,6 +338,7 @@ def confirm_import():
                 payment_method=t.get('payment_method', ''),
                 label=t.get('label', ''),
                 amount=t.get('amount'),
+                bank_account_id=account_id,
                 category_id=category_id,
                 subcategory_id=subcategory_id,
                 reconciled=False,
@@ -310,6 +366,13 @@ def list_transactions():
     """Return transactions with optional filtering and sorting."""
     session = SessionLocal()
     query = session.query(Transaction)
+
+    account_id = request.args.get('account_id')
+    if account_id:
+        try:
+            query = query.filter(Transaction.bank_account_id == int(account_id))
+        except ValueError:
+            pass
 
     category = request.args.get('category')
     if category:
@@ -360,6 +423,7 @@ def list_transactions():
             'payment_method': t.payment_method,
             'label': t.label,
             'amount': t.amount,
+            'account_id': t.bank_account_id,
             'category_id': t.category_id,
             'category': t.category.name if t.category else None,
             'category_color': t.category.color if t.category else None,
@@ -390,6 +454,7 @@ def update_transaction(tx_id):
             'payment_method': tx.payment_method,
             'label': tx.label,
             'amount': tx.amount,
+            'account_id': tx.bank_account_id,
             'category_id': tx.category_id,
             'subcategory_id': tx.subcategory_id,
             'reconciled': tx.reconciled,
