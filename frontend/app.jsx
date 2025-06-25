@@ -28,6 +28,10 @@ function TransactionTable() {
     fetchData();
   }, [fetchData]);
 
+  const tableStyle = { borderCollapse: 'collapse', width: '90%' };
+  const smallCol = { minWidth: '90px' };
+  const descCol = { whiteSpace: 'normal', wordBreak: 'break-word' };
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters(prev => ({ ...prev, [name]: value }));
@@ -52,29 +56,29 @@ function TransactionTable() {
         </select>
         <button onClick={fetchData}>Filtrer</button>
       </div>
-      <table border="1" cellPadding="5">
+      <table border="1" cellPadding="5" style={tableStyle}>
         <thead>
           <tr>
-            <th>Date</th>
+            <th style={smallCol}>Date</th>
             <th>Type</th>
             <th>Moyen de paiement</th>
-            <th>Libellé</th>
-            <th>Montant</th>
+            <th style={descCol}>Libellé</th>
+            <th style={smallCol}>Montant</th>
             <th>Catégorie</th>
-            <th>Pointée</th>
-            <th>A analyser</th>
+            <th style={smallCol}>Pointée</th>
+            <th style={smallCol}>A analyser</th>
           </tr>
         </thead>
         <tbody>
           {transactions.map(t => (
             <tr key={t.id}>
-              <td>{t.date}</td>
+              <td style={smallCol}>{t.date}</td>
               <td>{t.type}</td>
               <td>{t.payment_method}</td>
-              <td>{t.label}</td>
-              <td>{t.amount}</td>
+              <td style={descCol}>{t.label}</td>
+              <td style={smallCol}>{t.amount}</td>
               <td>{t.category || ''}</td>
-              <td><input type="checkbox" checked={t.reconciled} onChange={e => {
+              <td style={smallCol}><input type="checkbox" checked={t.reconciled} onChange={e => {
                 const value = e.target.checked;
                 setTransactions(prev => prev.map(tx => tx.id === t.id ? { ...tx, reconciled: value } : tx));
                 fetch('/transactions/' + t.id, {
@@ -83,7 +87,7 @@ function TransactionTable() {
                   body: JSON.stringify({ reconciled: value })
                 }).then(fetchData);
               }} /></td>
-              <td><input type="checkbox" checked={t.to_analyze} onChange={e => {
+              <td style={smallCol}><input type="checkbox" checked={t.to_analyze} onChange={e => {
                 const value = e.target.checked;
                 setTransactions(prev => prev.map(tx => tx.id === t.id ? { ...tx, to_analyze: value } : tx));
                 fetch('/transactions/' + t.id, {

@@ -7,6 +7,21 @@
     <style>
         table { border-collapse: collapse; width: 100%; }
         th, td { border: 1px solid #ccc; padding: 4px; }
+        #transactions-table { width: 90%; }
+        #transactions-table td:nth-child(4) {
+            white-space: normal;
+            word-break: break-word;
+        }
+        #transactions-table th:nth-child(1),
+        #transactions-table td:nth-child(1),
+        #transactions-table th:nth-child(5),
+        #transactions-table td:nth-child(5),
+        #transactions-table th:nth-child(8),
+        #transactions-table td:nth-child(8),
+        #transactions-table th:nth-child(9),
+        #transactions-table td:nth-child(9) {
+            min-width: 90px;
+        }
         .overlay {
             position: fixed;
             top: 0;
