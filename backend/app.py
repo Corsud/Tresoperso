@@ -267,10 +267,10 @@ def parse_csv(content):
 
 
 def apply_rule_to_transactions(session, rule):
-    """Update transactions matching a rule and lacking categorisation.
+    """Update transactions matching a rule.
 
-    Only transactions whose labels contain the rule pattern (case-insensitive)
-    and whose ``category_id`` or ``subcategory_id`` is null are updated.
+    All transactions whose labels contain the rule pattern (case-insensitive)
+    are updated regardless of any existing categorisation.
 
     Returns the number of rows updated.
     """
@@ -279,7 +279,6 @@ def apply_rule_to_transactions(session, rule):
     updated = (
         session.query(Transaction)
         .filter(func.lower(Transaction.label).contains(pattern))
-        .filter(or_(Transaction.category_id == None, Transaction.subcategory_id == None))
         .update(
             {
                 Transaction.category_id: rule.category_id,
