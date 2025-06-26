@@ -47,6 +47,8 @@ class BankAccount(Base):
     account_type = Column(String)
     number = Column(String)
     export_date = Column(Date)
+    initial_balance = Column(Float, default=0)
+    balance_date = Column(Date)
 
     transactions = relationship('Transaction', back_populates='account')
 
@@ -122,6 +124,13 @@ def init_db():
         cols = {row[1] for row in info}
         if 'subcategory_id' not in cols:
             conn.execute(text('ALTER TABLE rules ADD COLUMN subcategory_id INTEGER'))
+
+        info = conn.execute(text('PRAGMA table_info(bank_accounts)')).fetchall()
+        cols = {row[1] for row in info}
+        if 'initial_balance' not in cols:
+            conn.execute(text('ALTER TABLE bank_accounts ADD COLUMN initial_balance REAL DEFAULT 0'))
+        if 'balance_date' not in cols:
+            conn.execute(text('ALTER TABLE bank_accounts ADD COLUMN balance_date DATE'))
 
     # Create a default user if none exists
     session = SessionLocal()

@@ -62,6 +62,11 @@
                         </select>
                         <span id="account-info"></span>
                     </div>
+                    <form id="balance-form" style="margin-top:0.5em;">
+                        <input type="date" id="balance-date" />
+                        <input type="number" step="0.01" id="balance-amount" placeholder="Solde" />
+                        <button type="submit">Enregistrer</button>
+                    </form>
                 </div>
                 <div id="transaction-filters">
                     <div></div>
@@ -346,6 +351,21 @@
             }
         }
 
+        async function fetchBalanceInfo() {
+            const dateInput = document.getElementById('balance-date');
+            const amtInput = document.getElementById('balance-amount');
+            if (!selectedAccountId) {
+                dateInput.value = '';
+                amtInput.value = '';
+                return;
+            }
+            const resp = await fetch(`/accounts/${selectedAccountId}/balance`);
+            if (!resp.ok) return;
+            const data = await resp.json();
+            dateInput.value = data.balance_date || '';
+            amtInput.value = data.initial_balance != null ? data.initial_balance : '';
+        }
+
         async function fetchTransactions() {
             const params = new URLSearchParams();
             if (selectedAccountId) params.set('account_id', selectedAccountId);
@@ -523,6 +543,7 @@
                 document.getElementById('app').style.display = 'block';
                 updateAccountDropdown();
                 displayAccountInfo();
+                fetchBalanceInfo();
                 fetchTransactions();
                 fetchCategories();
                 fetchSubcategories();
@@ -553,6 +574,7 @@
                     selectedAccountId = data.account.id;
                     updateAccountDropdown();
                     displayAccountInfo();
+                    fetchBalanceInfo();
                 }
                 if (data.duplicates && data.duplicates.length) {
                     showDuplicates(data.duplicates, data.account ? data.account.id : '');
@@ -966,7 +988,7 @@
             if (!resp.ok) return;
             const data = await resp.json();
             document.getElementById('dashboard-content').textContent =
-                `Favoris: ${data.favorite_count} | Total 30j: ${formatAmount(data.recent_total)}`;
+                `Favoris: ${data.favorite_count} | Total 30j: ${formatAmount(data.recent_total)} | Solde: ${formatAmount(data.balance_total)}`;
             const ctx = document.getElementById('dashboardChart').getContext('2d');
             if (dashboardChart) dashboardChart.destroy();
             const hide = localStorage.getItem('hideAmounts') === 'true';
@@ -1262,6 +1284,22 @@
         accountSelect.addEventListener('change', () => {
             selectedAccountId = accountSelect.value;
             fetchTransactions();
+            fetchBalanceInfo();
+            displayAccountInfo();
+        });
+
+        document.getElementById('balance-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            if (!selectedAccountId) return;
+            const date = document.getElementById('balance-date').value;
+            const amount = document.getElementById('balance-amount').value;
+            await fetch(`/accounts/${selectedAccountId}/balance`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ balance_date: date, initial_balance: amount })
+            });
+            fetchDashboard();
+            fetchStats();
         });
 
         const filterInputs = [

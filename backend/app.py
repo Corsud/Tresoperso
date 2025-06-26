@@ -88,11 +88,57 @@ def accounts():
             'account_type': a.account_type,
             'number': a.number,
             'export_date': a.export_date.isoformat() if a.export_date else None,
+            'initial_balance': a.initial_balance,
+            'balance_date': a.balance_date.isoformat() if a.balance_date else None,
         }
         for a in session.query(BankAccount).all()
     ]
     session.close()
     return jsonify(data)
+
+
+@app.route('/accounts/<int:account_id>/balance', methods=['GET', 'PUT'])
+@login_required
+def account_balance(account_id):
+    """Retrieve or update an account's initial balance information."""
+    session = SessionLocal()
+    acc = session.query(BankAccount).get(account_id)
+    if not acc:
+        session.close()
+        return jsonify({'error': 'Not found'}), 404
+
+    if request.method == 'GET':
+        result = {
+            'id': acc.id,
+            'initial_balance': acc.initial_balance,
+            'balance_date': acc.balance_date.isoformat() if acc.balance_date else None,
+        }
+        session.close()
+        return jsonify(result)
+
+    data = request.get_json() or {}
+    if 'initial_balance' in data:
+        try:
+            acc.initial_balance = float(data['initial_balance'])
+        except (TypeError, ValueError):
+            pass
+    if 'balance_date' in data:
+        val = data['balance_date']
+        if val:
+            try:
+                acc.balance_date = datetime.strptime(val, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        else:
+            acc.balance_date = None
+    session.commit()
+    result = {
+        'id': acc.id,
+        'initial_balance': acc.initial_balance,
+        'balance_date': acc.balance_date.isoformat() if acc.balance_date else None,
+    }
+    session.close()
+    return jsonify(result)
 
 
 def parse_csv(content):
@@ -591,8 +637,15 @@ def stats():
             pass
 
     data = query.group_by('month').order_by('month').all()
+    accounts = session.query(BankAccount).all()
+    initial_total = sum(a.initial_balance or 0 for a in accounts)
+    result = []
+    running = initial_total
+    for m, total in data:
+        running += total or 0
+        result.append({'month': m, 'total': running})
     session.close()
-    return jsonify([{ 'month': m, 'total': t } for m, t in data])
+    return jsonify(result)
 
 
 @app.route('/stats/categories')
@@ -683,8 +736,10 @@ def dashboard():
     fav_count = session.query(func.count(Transaction.id)).filter(Transaction.favorite == True).scalar() or 0
     cutoff = datetime.now().date() - timedelta(days=30)
     recent_total = session.query(func.sum(Transaction.amount)).filter(Transaction.date >= cutoff).scalar() or 0
+    total = sum(a.initial_balance or 0 for a in session.query(BankAccount).all())
+    total += session.query(func.sum(Transaction.amount)).scalar() or 0
     session.close()
-    return jsonify({'favorite_count': fav_count, 'recent_total': recent_total})
+    return jsonify({'favorite_count': fav_count, 'recent_total': recent_total, 'balance_total': total})
 
 
 @app.route('/projection')
