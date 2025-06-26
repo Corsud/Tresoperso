@@ -69,6 +69,24 @@
                             <th>Pointée</th>
                             <th>A analyser</th>
                         </tr>
+                        <tr id="filter-row">
+                            <th>
+                                <input type="date" id="filter-start-date" />
+                                <input type="date" id="filter-end-date" />
+                            </th>
+                            <th><input type="text" id="filter-type" placeholder="Type" /></th>
+                            <th><input type="text" id="filter-payment" placeholder="Moyen" /></th>
+                            <th><input type="text" id="filter-label" placeholder="Libellé" /></th>
+                            <th>
+                                <input type="number" id="filter-min-amount" placeholder="Min" style="width:5em;" />
+                                <input type="number" id="filter-max-amount" placeholder="Max" style="width:5em;" />
+                            </th>
+                            <th><select id="filter-category"><option value="">(Toutes)</option></select></th>
+                            <th><select id="filter-subcategory"><option value="">(Toutes)</option></select></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
@@ -219,7 +237,27 @@
         }
 
         async function fetchTransactions() {
-            const url = selectedAccountId ? `/transactions?account_id=${selectedAccountId}` : '/transactions';
+            const params = new URLSearchParams();
+            if (selectedAccountId) params.set('account_id', selectedAccountId);
+            const start = document.getElementById('filter-start-date').value;
+            const end = document.getElementById('filter-end-date').value;
+            const txType = document.getElementById('filter-type').value.trim();
+            const pay = document.getElementById('filter-payment').value.trim();
+            const label = document.getElementById('filter-label').value.trim();
+            const minAmt = document.getElementById('filter-min-amount').value;
+            const maxAmt = document.getElementById('filter-max-amount').value;
+            const cat = document.getElementById('filter-category').value;
+            const sub = document.getElementById('filter-subcategory').value;
+            if (start) params.set('start_date', start);
+            if (end) params.set('end_date', end);
+            if (txType) params.set('type', txType);
+            if (pay) params.set('payment_method', pay);
+            if (label) params.set('label', label);
+            if (minAmt) params.set('min_amount', minAmt);
+            if (maxAmt) params.set('max_amount', maxAmt);
+            if (cat) params.set('category', cat);
+            if (sub) params.set('subcategory', sub);
+            const url = '/transactions' + (params.toString() ? `?${params.toString()}` : '');
             const resp = await fetch(url);
             if (!resp.ok) return;
             const data = await resp.json();
@@ -390,6 +428,8 @@
             popupSelect.innerHTML = '<option value="">(Aucune)</option>';
             const subSelectCat = document.getElementById('subcategory-category');
             subSelectCat.innerHTML = '';
+            const filterCat = document.getElementById('filter-category');
+            if (filterCat) filterCat.innerHTML = '<option value="">(Toutes)</option>';
             data.forEach(c => {
                 const li = document.createElement('li');
                 const colorSpan = document.createElement('span');
@@ -439,6 +479,13 @@
                 popOpt.value = c.id;
                 popOpt.textContent = c.name;
                 popupSelect.appendChild(popOpt);
+
+                if (filterCat) {
+                    const f = document.createElement('option');
+                    f.value = c.name;
+                    f.textContent = c.name;
+                    filterCat.appendChild(f);
+                }
             });
 
             subSelectCat.onchange = () => {
@@ -466,6 +513,8 @@
             if (overlaySub) overlaySub.innerHTML = '<option value="">(Aucune)</option>';
             const popupSelect = document.getElementById('popup-subcategory-select');
             popupSelect.innerHTML = '<option value="">(Aucune)</option>';
+            const filterSub = document.getElementById('filter-subcategory');
+            if (filterSub) filterSub.innerHTML = '<option value="">(Toutes)</option>';
             data.forEach(s => {
                 const li = document.createElement('li');
                 li.appendChild(document.createTextNode(`${s.category} → `));
@@ -510,6 +559,13 @@
                 popOpt.value = s.id;
                 popOpt.textContent = `${s.category} - ${s.name}`;
                 popupSelect.appendChild(popOpt);
+
+                if (filterSub) {
+                    const fs = document.createElement('option');
+                    fs.value = s.name;
+                    fs.textContent = `${s.category} - ${s.name}`;
+                    filterSub.appendChild(fs);
+                }
             });
         }
 
@@ -868,6 +924,19 @@
         accountSelect.addEventListener('change', () => {
             selectedAccountId = accountSelect.value;
             fetchTransactions();
+        });
+
+        const filterInputs = [
+            'filter-start-date', 'filter-end-date', 'filter-type', 'filter-payment',
+            'filter-label', 'filter-min-amount', 'filter-max-amount',
+            'filter-category', 'filter-subcategory'
+        ];
+        filterInputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', fetchTransactions);
+                el.addEventListener('change', fetchTransactions);
+            }
         });
 
         document.getElementById('reset-transactions').addEventListener('click', async () => {
