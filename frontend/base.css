@@ -23,18 +23,20 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
 #transactions-table {
     font-size: 0.85rem;
     width: 95%;
-    table-layout: fixed;
+    table-layout: auto;
 }
-#transactions-table th,
 #transactions-table td {
     white-space: nowrap;
+}
+#transactions-table th {
+    white-space: normal;
 }
 
 /* Filter inputs aligned with transactions table */
 #transaction-filters {
     width: 95%;
     display: grid;
-    grid-template-columns: 2em 8em 6em 10em auto 6em 8em 8em 5em 5em 6em;
+    grid-template-columns: 2em auto auto auto 1fr auto auto auto auto auto auto;
 }
 #transaction-filters select {
     max-width: 100%;
@@ -57,18 +59,6 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
 #transactions-table td:nth-child(1) {
     width: 2em;
     text-align: right;
-}
-#transactions-table th:nth-child(2),
-#transactions-table td:nth-child(2) {
-    width: 8em;
-}
-#transactions-table th:nth-child(3),
-#transactions-table td:nth-child(3) {
-    width: 6em;
-}
-#transactions-table th:nth-child(4),
-#transactions-table td:nth-child(4) {
-    width: 10em;
 }
 #transactions-table th:nth-child(5),
 #transactions-table td:nth-child(5) {
