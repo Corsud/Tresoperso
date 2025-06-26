@@ -78,31 +78,37 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
 }
 #transactions-table th:nth-child(6),
 #transactions-table td:nth-child(6) {
-    width: 6em;
     text-align: right;
+    padding-left: 5px;
+    padding-right: 5px;
 }
 #transactions-table th:nth-child(7),
 #transactions-table td:nth-child(7) {
-    width: 8em;
+    padding-left: 5px;
+    padding-right: 5px;
 }
 #transactions-table th:nth-child(8),
 #transactions-table td:nth-child(8) {
-    width: 8em;
+    padding-left: 5px;
+    padding-right: 5px;
 }
 #transactions-table th:nth-child(9),
 #transactions-table td:nth-child(9) {
-    width: 5em;
     text-align: center;
+    padding-left: 5px;
+    padding-right: 5px;
 }
 #transactions-table th:nth-child(10),
 #transactions-table td:nth-child(10) {
-    width: 5em;
     text-align: center;
+    padding-left: 5px;
+    padding-right: 5px;
 }
 #transactions-table th:nth-child(11),
 #transactions-table td:nth-child(11) {
-    width: 6em;
     text-align: center;
+    padding-left: 5px;
+    padding-right: 5px;
 }
 
 #catsubs-container {
