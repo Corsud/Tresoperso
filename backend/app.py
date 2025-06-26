@@ -7,7 +7,7 @@ import os
 import csv
 import re
 from datetime import datetime
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 from .models import (
     init_db,
@@ -187,6 +187,32 @@ def parse_csv(content):
         })
 
     return transactions, duplicates, errors, account_info
+
+
+def apply_rule_to_transactions(session, rule):
+    """Update transactions matching a rule and lacking categorisation.
+
+    Only transactions whose labels contain the rule pattern (case-insensitive)
+    and whose ``category_id`` or ``subcategory_id`` is null are updated.
+
+    Returns the number of rows updated.
+    """
+
+    pattern = rule.pattern.lower()
+    updated = (
+        session.query(Transaction)
+        .filter(func.lower(Transaction.label).contains(pattern))
+        .filter(or_(Transaction.category_id == None, Transaction.subcategory_id == None))
+        .update(
+            {
+                Transaction.category_id: rule.category_id,
+                Transaction.subcategory_id: rule.subcategory_id,
+            },
+            synchronize_session=False,
+        )
+    )
+    session.commit()
+    return updated
 
 
 @app.route('/import', methods=['POST'])
@@ -750,6 +776,7 @@ def rules(rule_id=None):
 
         session.add(rule)
         session.commit()
+        updated = apply_rule_to_transactions(session, rule)
         result = {
             'id': rule.id,
             'pattern': rule.pattern,
@@ -757,6 +784,7 @@ def rules(rule_id=None):
             'subcategory_id': rule.subcategory_id,
             'category': rule.category.name if rule.category else None,
             'subcategory': rule.subcategory.name if rule.subcategory else None,
+            'updated': updated,
         }
         session.close()
         return jsonify(result), 201
@@ -778,6 +806,7 @@ def rules(rule_id=None):
             rule.subcategory_id = int(sid) if sid else None
 
         session.commit()
+        updated = apply_rule_to_transactions(session, rule)
         result = {
             'id': rule.id,
             'pattern': rule.pattern,
@@ -785,6 +814,7 @@ def rules(rule_id=None):
             'subcategory_id': rule.subcategory_id,
             'category': rule.category.name if rule.category else None,
             'subcategory': rule.subcategory.name if rule.subcategory else None,
+            'updated': updated,
         }
         session.close()
         return jsonify(result)
