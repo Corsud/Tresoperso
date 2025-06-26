@@ -94,6 +94,16 @@
 
             <section id="stats-section" style="display:none;">
                 <h2>Statistiques mensuelles</h2>
+                <select id="stats-period">
+                    <option value="current-week">Semaine en cours</option>
+                    <option value="previous-week">Semaine précédente</option>
+                    <option value="current-month" selected>Mois en cours</option>
+                    <option value="previous-month">Mois précédent</option>
+                    <option value="ytd">Année en cours</option>
+                    <option value="last-6-months">6 derniers mois</option>
+                    <option value="previous-year">Année précédente</option>
+                    <option value="all">Tout</option>
+                </select>
                 <canvas id="statsChart" width="400" height="200"></canvas>
                 <div id="category-charts">
                     <canvas id="incomeChart" width="300" height="300"></canvas>
@@ -215,6 +225,49 @@
         function formatDate(dateStr) {
             const [y, m, d] = dateStr.split('-');
             return `${d}/${m}/${y}`;
+        }
+
+        function getPeriodDates(option) {
+            const today = new Date();
+            let start = null;
+            let end = new Date(today);
+            const day = today.getDay();
+            switch (option) {
+                case 'current-week':
+                    start = new Date(today);
+                    start.setDate(today.getDate() - ((day + 6) % 7));
+                    break;
+                case 'previous-week':
+                    end.setDate(today.getDate() - ((day + 6) % 7) - 1);
+                    start = new Date(end);
+                    start.setDate(end.getDate() - 6);
+                    break;
+                case 'current-month':
+                    start = new Date(today.getFullYear(), today.getMonth(), 1);
+                    break;
+                case 'previous-month':
+                    start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    end = new Date(today.getFullYear(), today.getMonth(), 0);
+                    break;
+                case 'ytd':
+                    start = new Date(today.getFullYear(), 0, 1);
+                    break;
+                case 'last-6-months':
+                    start = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+                    break;
+                case 'previous-year':
+                    start = new Date(today.getFullYear() - 1, 0, 1);
+                    end = new Date(today.getFullYear() - 1, 11, 31);
+                    break;
+                default:
+                    start = null;
+                    end = null;
+            }
+            const fmt = d => d.toISOString().slice(0, 10);
+            return {
+                start: start ? fmt(start) : '',
+                end: end ? fmt(end) : ''
+            };
         }
 
         function updateAccountDropdown() {
@@ -665,7 +718,13 @@
         let expenseChart;
 
         async function fetchStats() {
-            const resp = await fetch('/stats');
+            const period = document.getElementById('stats-period').value;
+            const { start, end } = getPeriodDates(period);
+            const params = new URLSearchParams();
+            if (start) params.set('start_date', start);
+            if (end) params.set('end_date', end);
+            const url = '/stats' + (params.toString() ? `?${params.toString()}` : '');
+            const resp = await fetch(url);
             if (!resp.ok) return;
             const data = await resp.json();
             const ctx = document.getElementById('statsChart').getContext('2d');
@@ -684,9 +743,9 @@
         }
 
         async function fetchCategoryStats() {
+            const period = document.getElementById('stats-period').value;
+            const { start, end } = getPeriodDates(period);
             const params = new URLSearchParams();
-            const start = document.getElementById('filter-start-date').value;
-            const end = document.getElementById('filter-end-date').value;
             if (start) params.set('start_date', start);
             if (end) params.set('end_date', end);
             const url = '/stats/categories' + (params.toString() ? `?${params.toString()}` : '');
@@ -955,6 +1014,7 @@
         const fontSelect = document.getElementById('font-select');
         const themeLink = document.getElementById('theme-link');
         const accountSelect = document.getElementById('account-select');
+        const statsPeriodSelect = document.getElementById('stats-period');
 
         function applyPreferences() {
             const theme = localStorage.getItem('theme') || 'light';
@@ -973,6 +1033,11 @@
         fontSelect.addEventListener('change', () => {
             localStorage.setItem('font', fontSelect.value);
             applyPreferences();
+        });
+
+        statsPeriodSelect.addEventListener('change', () => {
+            fetchStats();
+            fetchCategoryStats();
         });
 
         accountSelect.addEventListener('change', () => {
