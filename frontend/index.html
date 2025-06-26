@@ -1010,7 +1010,7 @@
                 const input = document.createElement('input');
                 input.type = 'number';
                 input.step = '0.01';
-                input.value = d.amount;
+                input.value = Number(d.amount).toFixed(2);
                 input.className = 'amount-input';
                 amountCell.appendChild(input);
                 tr.appendChild(amountCell);
