@@ -183,6 +183,7 @@
                     <option value="arial">Arial</option>
                     <option value="geneva">Geneva</option>
                 </select>
+                <label><input type="checkbox" id="hide-amounts"> Masquer montants</label>
 
                 <h2>RESET</h2>
                 <button id="reset-transactions">Effacer les transactions</button>
@@ -234,6 +235,9 @@
         }
 
         function formatAmount(v) {
+            if (localStorage.getItem('hideAmounts') === 'true') {
+                return '•••';
+            }
             return (v || 0).toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         }
 
@@ -397,6 +401,7 @@
                 tr.appendChild(labelCell);
 
                 const amountCell = document.createElement('td');
+                amountCell.className = 'amount';
                 amountCell.textContent = formatAmount(t.amount);
                 tr.appendChild(amountCell);
 
@@ -922,6 +927,7 @@
                 input.type = 'number';
                 input.step = '0.01';
                 input.value = d.amount;
+                input.className = 'amount-input';
                 amountCell.appendChild(input);
                 tr.appendChild(amountCell);
 
@@ -1109,6 +1115,7 @@
 
         const themeSelect = document.getElementById('theme-select');
         const fontSelect = document.getElementById('font-select');
+        const hideAmountsBox = document.getElementById('hide-amounts');
         const themeLink = document.getElementById('theme-link');
         const accountSelect = document.getElementById('account-select');
         const statsPeriodSelect = document.getElementById('stats-period');
@@ -1116,11 +1123,14 @@
         function applyPreferences() {
             const theme = localStorage.getItem('theme') || 'light';
             const font = localStorage.getItem('font') || 'roboto';
+            const hide = localStorage.getItem('hideAmounts') === 'true';
             themeLink.href = theme + '.css';
             document.body.classList.remove('font-roboto', 'font-arial', 'font-geneva');
             document.body.classList.add('font-' + font);
+            document.body.classList.toggle('hide-amounts', hide);
             themeSelect.value = theme;
             fontSelect.value = font;
+            hideAmountsBox.checked = hide;
         }
 
         themeSelect.addEventListener('change', () => {
@@ -1130,6 +1140,15 @@
         fontSelect.addEventListener('change', () => {
             localStorage.setItem('font', fontSelect.value);
             applyPreferences();
+        });
+        hideAmountsBox.addEventListener('change', () => {
+            localStorage.setItem('hideAmounts', hideAmountsBox.checked);
+            applyPreferences();
+            fetchTransactions();
+            fetchStats();
+            fetchProjection();
+            fetchCategoryStats();
+            fetchSankeyStats();
         });
 
         statsPeriodSelect.addEventListener('change', () => {
