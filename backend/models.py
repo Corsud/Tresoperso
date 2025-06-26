@@ -85,6 +85,18 @@ class Rule(Base):
     subcategory = relationship('Subcategory')
 
 
+class FavoriteFilter(Base):
+    __tablename__ = 'favorite_filters'
+
+    id = Column(Integer, primary_key=True)
+    pattern = Column(String, default='')
+    category_id = Column(Integer, ForeignKey('categories.id'))
+    subcategory_id = Column(Integer, ForeignKey('subcategories.id'))
+
+    category = relationship('Category')
+    subcategory = relationship('Subcategory')
+
+
 def init_db():
     """Create database tables if they do not exist."""
     Base.metadata.create_all(engine)
