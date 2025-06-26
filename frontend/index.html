@@ -65,6 +65,7 @@
                             <th>Montant</th>
                             <th>Catégorie</th>
                             <th>Sous-catégorie</th>
+                            <th>Règle</th>
                             <th>Pointée</th>
                             <th>A analyser</th>
                         </tr>
@@ -112,8 +113,8 @@
                     </div>
                 </div>
 
-                <h2>Règles</h2>
-                <form id="rule-form">
+                <h2 style="display:none;">Règles</h2>
+                <form id="rule-form" style="display:none;">
                     <input type="hidden" id="rule-id" />
                     <input type="text" id="rule-pattern" placeholder="Mot-clé" required />
                     <select id="rule-category"></select>
@@ -122,7 +123,7 @@
                     </select>
                     <button type="submit">Enregistrer</button>
                 </form>
-                <ul id="rules-list"></ul>
+                <ul id="rules-list" style="display:none;"></ul>
                 <h2>Préférences d'affichage</h2>
                 <label for="theme-select">Thème :</label>
                 <select id="theme-select">
@@ -160,6 +161,14 @@
                     <ul id="duplicate-list"></ul>
                     <button type="submit">Insérer la sélection</button>
                 </form>
+            </div>
+        </div>
+        <div id="rule-overlay" class="overlay">
+            <div class="popup">
+                <div id="rule-label-checkboxes"></div>
+                <select id="rule-overlay-category"></select>
+                <select id="rule-overlay-subcategory"></select>
+                <button id="rule-overlay-save">OK</button>
             </div>
         </div>
     </div>
@@ -267,6 +276,16 @@
                 subCell.appendChild(subBtn);
                 tr.appendChild(subCell);
 
+                const ruleCell = document.createElement('td');
+                const ruleBtn = document.createElement('button');
+                ruleBtn.className = 'tx-rule-btn';
+                ruleBtn.textContent = '⚙️';
+                ruleBtn.dataset.label = t.label;
+                ruleBtn.dataset.category = t.category_id || '';
+                ruleBtn.dataset.subcategory = t.subcategory_id || '';
+                ruleCell.appendChild(ruleBtn);
+                tr.appendChild(ruleCell);
+
                 const recCell = document.createElement('td');
                 const recBox = document.createElement('input');
                 recBox.type = 'checkbox';
@@ -360,6 +379,8 @@
             list.innerHTML = '';
             const select = document.getElementById('rule-category');
             select.innerHTML = '';
+            const overlayCat = document.getElementById('rule-overlay-category');
+            if (overlayCat) overlayCat.innerHTML = '';
             const popupSelect = document.getElementById('popup-category-select');
             popupSelect.innerHTML = '<option value="">(Aucune)</option>';
             const subSelectCat = document.getElementById('subcategory-category');
@@ -397,6 +418,12 @@
                 opt.value = c.id;
                 opt.textContent = c.name;
                 select.appendChild(opt);
+                if (overlayCat) {
+                    const o2 = document.createElement('option');
+                    o2.value = c.id;
+                    o2.textContent = c.name;
+                    overlayCat.appendChild(o2);
+                }
 
                 const catOpt = document.createElement('option');
                 catOpt.value = c.id;
@@ -430,6 +457,8 @@
             list.innerHTML = '';
             const select = document.getElementById('rule-subcategory');
             select.innerHTML = '<option value="">(Aucune)</option>';
+            const overlaySub = document.getElementById('rule-overlay-subcategory');
+            if (overlaySub) overlaySub.innerHTML = '<option value="">(Aucune)</option>';
             const popupSelect = document.getElementById('popup-subcategory-select');
             popupSelect.innerHTML = '<option value="">(Aucune)</option>';
             data.forEach(s => {
@@ -465,6 +494,12 @@
                 opt.value = s.id;
                 opt.textContent = `${s.category} - ${s.name}`;
                 select.appendChild(opt);
+                if (overlaySub) {
+                    const o2 = document.createElement('option');
+                    o2.value = s.id;
+                    o2.textContent = `${s.category} - ${s.name}`;
+                    overlaySub.appendChild(o2);
+                }
 
                 const popOpt = document.createElement('option');
                 popOpt.value = s.id;
@@ -632,9 +667,11 @@
 
         let currentCatBtn = null;
         let currentSubBtn = null;
+        let currentRuleBtn = null;
         const catOverlay = document.getElementById('category-overlay');
         const subOverlay = document.getElementById('subcategory-overlay');
         const dupOverlay = document.getElementById('duplicate-overlay');
+        const ruleOverlay = document.getElementById('rule-overlay');
 
         document.getElementById('transactions-table').addEventListener('click', e => {
             if (e.target.classList.contains('tx-cat-btn')) {
@@ -645,11 +682,29 @@
                 currentSubBtn = e.target;
                 document.getElementById('popup-subcategory-select').value = currentSubBtn.dataset.current || '';
                 subOverlay.style.display = 'flex';
+            } else if (e.target.classList.contains('tx-rule-btn')) {
+                currentRuleBtn = e.target;
+                const words = (currentRuleBtn.dataset.label || '').split(/[^\wÀ-ÿ]+/).filter(Boolean);
+                const cont = document.getElementById('rule-label-checkboxes');
+                cont.innerHTML = '';
+                words.forEach(w => {
+                    const lbl = document.createElement('label');
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.value = w;
+                    lbl.appendChild(cb);
+                    lbl.append(' ' + w + ' ');
+                    cont.appendChild(lbl);
+                });
+                document.getElementById('rule-overlay-category').value = currentRuleBtn.dataset.category || '';
+                document.getElementById('rule-overlay-subcategory').value = currentRuleBtn.dataset.subcategory || '';
+                ruleOverlay.style.display = 'flex';
             }
         });
 
         catOverlay.addEventListener('click', e => { if (e.target === catOverlay) catOverlay.style.display = 'none'; });
         subOverlay.addEventListener('click', e => { if (e.target === subOverlay) subOverlay.style.display = 'none'; });
+        ruleOverlay.addEventListener('click', e => { if (e.target === ruleOverlay) ruleOverlay.style.display = 'none'; });
 
         function showDuplicates(dups, accountId) {
             const list = document.getElementById('duplicate-list');
@@ -739,6 +794,24 @@
             }
             subOverlay.style.display = 'none';
             currentSubBtn = null;
+        });
+
+        document.getElementById('rule-overlay-save').addEventListener('click', async () => {
+            if (!currentRuleBtn) return;
+            const words = Array.from(document.querySelectorAll('#rule-label-checkboxes input:checked')).map(cb => cb.value);
+            const category_id = document.getElementById('rule-overlay-category').value;
+            const subcategory_id = document.getElementById('rule-overlay-subcategory').value;
+            const pattern = words.join(' ');
+            if (pattern && category_id) {
+                await fetch('/rules', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ pattern, category_id, subcategory_id })
+                });
+                fetchTransactions();
+            }
+            ruleOverlay.style.display = 'none';
+            currentRuleBtn = null;
         });
 
         const sectionIds = ['transactions-section', 'stats-section', 'projection-section', 'settings-section'];
