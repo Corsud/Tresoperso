@@ -161,6 +161,13 @@ input[type="button"] {
 
 }
 
+.tx-fav-btn {
+    color: var(--interactive-color);
+}
+.tx-fav-btn.selected {
+    color: #fc9107;
+}
+
 /* Ensure menu buttons have no visible border */
 #navbar .submenu button,
 .menu-header {

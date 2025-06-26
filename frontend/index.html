@@ -391,7 +391,7 @@
 
                 const favCell = document.createElement('td');
                 const favBtn = document.createElement('button');
-                favBtn.className = 'tx-fav-btn';
+                favBtn.className = 'tx-fav-btn' + (t.favorite ? ' selected' : '');
                 favBtn.textContent = t.favorite ? '★' : '☆';
                 favBtn.addEventListener('click', async () => {
                     await fetch('/transactions/' + t.id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({favorite: !t.favorite})});
