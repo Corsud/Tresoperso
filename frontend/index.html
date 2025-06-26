@@ -498,6 +498,10 @@
                 body: JSON.stringify({ username, password })
             });
             if (resp.ok) {
+                const accResp = await fetch('/accounts');
+                if (accResp.ok) {
+                    accountsData = await accResp.json();
+                }
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
                 updateAccountDropdown();
