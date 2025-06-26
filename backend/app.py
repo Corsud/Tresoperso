@@ -6,7 +6,7 @@ import threading
 import os
 import csv
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import func, or_
 
 from .models import (
@@ -643,6 +643,17 @@ def stats_sankey():
         for src, tgt, total in data
     ]
     return jsonify(result)
+
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    session = SessionLocal()
+    fav_count = session.query(func.count(Transaction.id)).filter(Transaction.favorite == True).scalar() or 0
+    cutoff = datetime.now().date() - timedelta(days=30)
+    recent_total = session.query(func.sum(Transaction.amount)).filter(Transaction.date >= cutoff).scalar() or 0
+    session.close()
+    return jsonify({'favorite_count': fav_count, 'recent_total': recent_total})
 
 
 @app.route('/projection')
