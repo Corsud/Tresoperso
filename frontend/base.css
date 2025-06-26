@@ -60,20 +60,15 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
     width: 2em;
     text-align: right;
 }
-#transactions-table th:nth-child(5),
-#transactions-table td:nth-child(5) {
-    width: auto;
+#transactions-table th:nth-child(6),
+#transactions-table td:nth-child(6) {
+    width: 100%;
     white-space: normal;
     word-break: break-word;
 }
-#transactions-table th:nth-child(6),
-#transactions-table td:nth-child(6) {
-    text-align: right;
-    padding-left: 5px;
-    padding-right: 5px;
-}
 #transactions-table th:nth-child(7),
 #transactions-table td:nth-child(7) {
+    text-align: right;
     padding-left: 5px;
     padding-right: 5px;
 }
@@ -84,7 +79,6 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
 }
 #transactions-table th:nth-child(9),
 #transactions-table td:nth-child(9) {
-    text-align: center;
     padding-left: 5px;
     padding-right: 5px;
 }
@@ -96,6 +90,12 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
 }
 #transactions-table th:nth-child(11),
 #transactions-table td:nth-child(11) {
+    text-align: center;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+#transactions-table th:nth-child(12),
+#transactions-table td:nth-child(12) {
     text-align: center;
     padding-left: 5px;
     padding-right: 5px;
