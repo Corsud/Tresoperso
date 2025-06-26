@@ -21,37 +21,32 @@ body {
 table { border-collapse: collapse; width: 100%; }
 th, td { border: 1px solid var(--border-color); padding: 4px; }
 #transactions-table {
-    width: 90%;
     font-size: 0.85rem;
+    table-layout: auto;
 }
-#transactions-table th:nth-child(4),
-#transactions-table td:nth-child(4) {
+#transactions-table th,
+#transactions-table td {
+    white-space: nowrap;
+}
+#transactions-table th:nth-child(5),
+#transactions-table td:nth-child(5) {
     white-space: normal;
     word-break: break-word;
-    min-width: 150px;
-}
-#transactions-table th:nth-child(1),
-#transactions-table td:nth-child(1),
-#transactions-table th:nth-child(5),
-#transactions-table td:nth-child(5),
-#transactions-table th:nth-child(8),
-#transactions-table td:nth-child(8),
-#transactions-table th:nth-child(9),
-#transactions-table td:nth-child(9) {
-    min-width: 90px;
 }
 #transactions-table th:nth-child(1),
 #transactions-table td:nth-child(1) {
     text-align: right;
 }
-#transactions-table th:nth-child(5),
-#transactions-table td:nth-child(5) {
+#transactions-table th:nth-child(6),
+#transactions-table td:nth-child(6) {
     text-align: right;
 }
-#transactions-table th:nth-child(8),
-#transactions-table td:nth-child(8),
 #transactions-table th:nth-child(9),
-#transactions-table td:nth-child(9) {
+#transactions-table td:nth-child(9),
+#transactions-table th:nth-child(10),
+#transactions-table td:nth-child(10),
+#transactions-table th:nth-child(11),
+#transactions-table td:nth-child(11) {
     text-align: center;
 }
 
