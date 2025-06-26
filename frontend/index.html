@@ -130,6 +130,7 @@
                     <canvas id="incomeChart" width="300" height="300"></canvas>
                     <canvas id="expenseChart" width="300" height="300"></canvas>
                 </div>
+                <div id="category-no-data" style="display:none;">No data</div>
                 <canvas id="sankeyChart" width="600" height="300"></canvas>
             </section>
 
@@ -885,6 +886,17 @@
                     expColors.push(d.color || 'gray');
                 }
             });
+            const chartsDiv = document.getElementById('category-charts');
+            const emptyNotice = document.getElementById('category-no-data');
+            if (incData.length === 0 && expData.length === 0) {
+                if (incomeChart) { incomeChart.destroy(); incomeChart = null; }
+                if (expenseChart) { expenseChart.destroy(); expenseChart = null; }
+                chartsDiv.style.display = 'none';
+                emptyNotice.style.display = 'block';
+                return;
+            }
+            chartsDiv.style.display = 'flex';
+            emptyNotice.style.display = 'none';
             const ictx = document.getElementById('incomeChart').getContext('2d');
             if (incomeChart) incomeChart.destroy();
             const hide = localStorage.getItem('hideAmounts') === 'true';

@@ -122,6 +122,12 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
     gap: 20px;
 }
 
+#category-no-data {
+    text-align: center;
+    font-style: italic;
+    margin-top: 10px;
+}
+
 #categories-list li,
 #subcategories-list li,
 #rules-list li {
