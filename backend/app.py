@@ -7,7 +7,7 @@ import os
 import csv
 import re
 from datetime import datetime, timedelta
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, and_
 
 from .models import (
     init_db,
@@ -17,6 +17,7 @@ from .models import (
     Category,
     Subcategory,
     Rule,
+    FavoriteFilter,
     User,
 )
 
@@ -733,7 +734,19 @@ def stats_sankey():
 @login_required
 def dashboard():
     session = SessionLocal()
-    fav_count = session.query(func.count(Transaction.id)).filter(Transaction.favorite == True).scalar() or 0
+    filters = session.query(FavoriteFilter).all()
+    conditions = [Transaction.favorite == True]
+    for f in filters:
+        subconds = []
+        if f.pattern:
+            subconds.append(func.lower(Transaction.label).contains(f.pattern.lower()))
+        if f.category_id:
+            subconds.append(Transaction.category_id == f.category_id)
+        if f.subcategory_id:
+            subconds.append(Transaction.subcategory_id == f.subcategory_id)
+        if subconds:
+            conditions.append(and_(*subconds))
+    fav_count = session.query(func.count(Transaction.id)).filter(or_(*conditions)).scalar() or 0
     cutoff = datetime.now().date() - timedelta(days=30)
     recent_total = session.query(func.sum(Transaction.amount)).filter(Transaction.date >= cutoff).scalar() or 0
     total = sum(a.initial_balance or 0 for a in session.query(BankAccount).all())
@@ -1059,6 +1072,100 @@ def rules(rule_id=None):
         return jsonify(result)
 
     session.delete(rule)
+    session.commit()
+    session.close()
+    return jsonify({'message': 'deleted'})
+
+
+@app.route('/favorite_filters', methods=['GET', 'POST'])
+@app.route('/favorite_filters/<int:filter_id>', methods=['GET', 'PUT', 'DELETE'])
+@login_required
+def favorite_filters(filter_id=None):
+    session = SessionLocal()
+    if request.method == 'GET':
+        if filter_id is None:
+            data = [
+                {
+                    'id': f.id,
+                    'pattern': f.pattern,
+                    'category_id': f.category_id,
+                    'subcategory_id': f.subcategory_id,
+                    'category': f.category.name if f.category else None,
+                    'subcategory': f.subcategory.name if f.subcategory else None,
+                }
+                for f in session.query(FavoriteFilter).all()
+            ]
+            session.close()
+            return jsonify(data)
+        fil = session.query(FavoriteFilter).get(filter_id)
+        if not fil:
+            session.close()
+            return jsonify({'error': 'Not found'}), 404
+        result = {
+            'id': fil.id,
+            'pattern': fil.pattern,
+            'category_id': fil.category_id,
+            'subcategory_id': fil.subcategory_id,
+            'category': fil.category.name if fil.category else None,
+            'subcategory': fil.subcategory.name if fil.subcategory else None,
+        }
+        session.close()
+        return jsonify(result)
+
+    if request.method == 'POST':
+        data = request.get_json() or {}
+        pattern = (data.get('pattern') or '').strip()
+        category_id = data.get('category_id')
+        subcategory_id = data.get('subcategory_id')
+        if not pattern and not category_id and not subcategory_id:
+            session.close()
+            return jsonify({'error': 'Missing fields'}), 400
+        fil = FavoriteFilter(
+            pattern=pattern,
+            category_id=int(category_id) if category_id else None,
+            subcategory_id=int(subcategory_id) if subcategory_id else None,
+        )
+        session.add(fil)
+        session.commit()
+        result = {
+            'id': fil.id,
+            'pattern': fil.pattern,
+            'category_id': fil.category_id,
+            'subcategory_id': fil.subcategory_id,
+            'category': fil.category.name if fil.category else None,
+            'subcategory': fil.subcategory.name if fil.subcategory else None,
+        }
+        session.close()
+        return jsonify(result), 201
+
+    fil = session.query(FavoriteFilter).get(filter_id)
+    if not fil:
+        session.close()
+        return jsonify({'error': 'Not found'}), 404
+
+    if request.method == 'PUT':
+        data = request.get_json() or {}
+        if 'pattern' in data:
+            fil.pattern = data['pattern']
+        if 'category_id' in data:
+            cid = data['category_id']
+            fil.category_id = int(cid) if cid else None
+        if 'subcategory_id' in data:
+            sid = data['subcategory_id']
+            fil.subcategory_id = int(sid) if sid else None
+        session.commit()
+        result = {
+            'id': fil.id,
+            'pattern': fil.pattern,
+            'category_id': fil.category_id,
+            'subcategory_id': fil.subcategory_id,
+            'category': fil.category.name if fil.category else None,
+            'subcategory': fil.subcategory.name if fil.subcategory else None,
+        }
+        session.close()
+        return jsonify(result)
+
+    session.delete(fil)
     session.commit()
     session.close()
     return jsonify({'message': 'deleted'})

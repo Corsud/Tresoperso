@@ -102,6 +102,7 @@
                     <thead>
                         <tr>
                             <th>★</th>
+                            <th>Filtre</th>
                             <th>Date</th>
                             <th>Type</th>
                             <th>Moyen de paiement</th>
@@ -232,6 +233,14 @@
                 <select id="rule-overlay-category"></select>
                 <select id="rule-overlay-subcategory"></select>
                 <button id="rule-overlay-save">OK</button>
+            </div>
+        </div>
+        <div id="fav-filter-overlay" class="overlay">
+            <div class="popup">
+                <div id="fav-filter-label-checkboxes"></div>
+                <select id="fav-filter-overlay-category"></select>
+                <select id="fav-filter-overlay-subcategory"></select>
+                <button id="fav-filter-overlay-save">OK</button>
             </div>
         </div>
     </div>
@@ -437,6 +446,16 @@
                 });
                 favCell.appendChild(favBtn);
                 tr.appendChild(favCell);
+
+                const filterCell = document.createElement('td');
+                const filterBtn = document.createElement('button');
+                filterBtn.className = 'tx-filter-btn';
+                filterBtn.textContent = '➕';
+                filterBtn.dataset.label = t.label;
+                filterBtn.dataset.category = t.category_id || '';
+                filterBtn.dataset.subcategory = t.subcategory_id || '';
+                filterCell.appendChild(filterBtn);
+                tr.appendChild(filterCell);
 
                 const dateCell = document.createElement('td');
                 dateCell.textContent = formatDate(t.date);
@@ -1063,10 +1082,12 @@
         let currentCatBtn = null;
         let currentSubBtn = null;
         let currentRuleBtn = null;
+        let currentFilterBtn = null;
         const catOverlay = document.getElementById('category-overlay');
         const subOverlay = document.getElementById('subcategory-overlay');
         const dupOverlay = document.getElementById('duplicate-overlay');
         const ruleOverlay = document.getElementById('rule-overlay');
+        const favFilterOverlay = document.getElementById('fav-filter-overlay');
 
         document.getElementById('transactions-table').addEventListener('click', e => {
             if (e.target.classList.contains('tx-cat-btn')) {
@@ -1094,12 +1115,30 @@
                 document.getElementById('rule-overlay-category').value = currentRuleBtn.dataset.category || '';
                 document.getElementById('rule-overlay-subcategory').value = currentRuleBtn.dataset.subcategory || '';
                 ruleOverlay.style.display = 'flex';
+            } else if (e.target.classList.contains('tx-filter-btn')) {
+                currentFilterBtn = e.target;
+                const words = (currentFilterBtn.dataset.label || '').split(/[^\wÀ-ÿ]+/).filter(Boolean);
+                const cont = document.getElementById('fav-filter-label-checkboxes');
+                cont.innerHTML = '';
+                words.forEach(w => {
+                    const lbl = document.createElement('label');
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.value = w;
+                    lbl.appendChild(cb);
+                    lbl.append(' ' + w + ' ');
+                    cont.appendChild(lbl);
+                });
+                document.getElementById('fav-filter-overlay-category').value = currentFilterBtn.dataset.category || '';
+                document.getElementById('fav-filter-overlay-subcategory').value = currentFilterBtn.dataset.subcategory || '';
+                favFilterOverlay.style.display = 'flex';
             }
         });
 
         catOverlay.addEventListener('click', e => { if (e.target === catOverlay) catOverlay.style.display = 'none'; });
         subOverlay.addEventListener('click', e => { if (e.target === subOverlay) subOverlay.style.display = 'none'; });
         ruleOverlay.addEventListener('click', e => { if (e.target === ruleOverlay) ruleOverlay.style.display = 'none'; });
+        favFilterOverlay.addEventListener('click', e => { if (e.target === favFilterOverlay) favFilterOverlay.style.display = 'none'; });
 
         function showDuplicates(dups, accountId) {
             const list = document.getElementById('duplicate-list');
@@ -1213,6 +1252,24 @@
             }
             ruleOverlay.style.display = 'none';
             currentRuleBtn = null;
+        });
+
+        document.getElementById('fav-filter-overlay-save').addEventListener('click', async () => {
+            if (!currentFilterBtn) return;
+            const words = Array.from(document.querySelectorAll('#fav-filter-label-checkboxes input:checked')).map(cb => cb.value);
+            const category_id = document.getElementById('fav-filter-overlay-category').value;
+            const subcategory_id = document.getElementById('fav-filter-overlay-subcategory').value;
+            const pattern = words.join(' ');
+            if (pattern || category_id || subcategory_id) {
+                await fetch('/favorite_filters', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ pattern, category_id, subcategory_id })
+                });
+                fetchDashboard();
+            }
+            favFilterOverlay.style.display = 'none';
+            currentFilterBtn = null;
         });
 
         const sectionIds = ['transactions-section', 'dashboard-section', 'stats-section', 'projection-section', 'settings-section'];
