@@ -145,8 +145,7 @@ tr.selected {
 .font-geneva { --font-family: 'Geneva', sans-serif; }
 
 body.hide-amounts .amount,
-body.hide-amounts .amount-input,
-body.hide-amounts canvas {
+body.hide-amounts .amount-input {
     visibility: hidden;
 }
 
