@@ -86,6 +86,10 @@ et génère le binaire dans `dist/run`. La construction doit être effectuée su
 macOS afin d'obtenir un
 exécutable natif.
 
+Les bibliothèques JavaScript **Chart.js** et **chartjs-chart-sankey** sont
+fournies localement dans `frontend/lib`, ce qui permet d'exécuter l'interface
+sans connexion réseau.
+
 ## Licence
 
 Ce projet est distribué sous licence MIT. Voir le fichier [LICENSE](LICENSE).
