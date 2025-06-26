@@ -252,9 +252,25 @@
         }
 
         function getChartOptions(hide, withScale = true) {
-            const opts = { plugins: { tooltip: { enabled: !hide } } };
+            const opts = {
+                plugins: {
+                    tooltip: {
+                        enabled: !hide,
+                        callbacks: {
+                            label: ctx => formatAmount(ctx.parsed.y ?? ctx.parsed)
+                        }
+                    }
+                }
+            };
             if (withScale) {
-                opts.scales = { y: { ticks: { display: !hide } } };
+                opts.scales = {
+                    y: {
+                        ticks: {
+                            display: !hide,
+                            callback: val => formatAmount(val)
+                        }
+                    }
+                };
             }
             return opts;
         }
