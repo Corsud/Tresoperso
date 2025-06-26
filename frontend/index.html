@@ -74,9 +74,20 @@
                             <th>
                                 <input type="date" id="filter-start-date" />
                                 <input type="date" id="filter-end-date" />
+                                <select id="filter-period">
+                                    <option value="">(Période)</option>
+                                    <option value="current-week">Semaine en cours</option>
+                                    <option value="previous-week">Semaine précédente</option>
+                                    <option value="current-month">Mois en cours</option>
+                                    <option value="previous-month">Mois précédent</option>
+                                    <option value="ytd">Année en cours</option>
+                                    <option value="last-6-months">6 derniers mois</option>
+                                    <option value="previous-year">Année précédente</option>
+                                    <option value="all">Tout</option>
+                                </select>
                             </th>
-                            <th><input type="text" id="filter-type" placeholder="Type" /></th>
-                            <th><input type="text" id="filter-payment" placeholder="Moyen" /></th>
+                            <th><select id="filter-type"><option value="">(Tous)</option></select></th>
+                            <th><select id="filter-payment"><option value="">(Tous)</option></select></th>
                             <th><input type="text" id="filter-label" placeholder="Libellé" /></th>
                             <th>
                                 <input type="number" id="filter-min-amount" placeholder="Min" style="width:5em;" />
@@ -298,8 +309,14 @@
         async function fetchTransactions() {
             const params = new URLSearchParams();
             if (selectedAccountId) params.set('account_id', selectedAccountId);
-            const start = document.getElementById('filter-start-date').value;
-            const end = document.getElementById('filter-end-date').value;
+            let start = document.getElementById('filter-start-date').value;
+            let end = document.getElementById('filter-end-date').value;
+            const period = document.getElementById('filter-period').value;
+            if (period) {
+                const d = getPeriodDates(period);
+                start = d.start;
+                end = d.end;
+            }
             const txType = document.getElementById('filter-type').value.trim();
             const pay = document.getElementById('filter-payment').value.trim();
             const label = document.getElementById('filter-label').value.trim();
@@ -321,6 +338,28 @@
             if (!resp.ok) return;
             const data = await resp.json();
             displayAccountInfo();
+            const typeSel = document.getElementById('filter-type');
+            const paySel = document.getElementById('filter-payment');
+            const currentType = typeSel.value;
+            const currentPay = paySel.value;
+            const types = [...new Set(data.map(t => t.type).filter(v => v))];
+            const pays = [...new Set(data.map(t => t.payment_method).filter(v => v))];
+            typeSel.innerHTML = '<option value="">(Tous)</option>';
+            types.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v;
+                opt.textContent = v;
+                typeSel.appendChild(opt);
+            });
+            if (currentType) typeSel.value = currentType;
+            paySel.innerHTML = '<option value="">(Tous)</option>';
+            pays.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v;
+                opt.textContent = v;
+                paySel.appendChild(opt);
+            });
+            if (currentPay) paySel.value = currentPay;
             const tbody = document.querySelector('#transactions-table tbody');
             tbody.innerHTML = '';
             data.forEach(t => {
@@ -1077,7 +1116,8 @@
         });
 
         const filterInputs = [
-            'filter-start-date', 'filter-end-date', 'filter-type', 'filter-payment',
+            'filter-start-date', 'filter-end-date', 'filter-period',
+            'filter-type', 'filter-payment',
             'filter-label', 'filter-min-amount', 'filter-max-amount',
             'filter-category', 'filter-subcategory'
         ];

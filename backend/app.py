@@ -404,6 +404,22 @@ def list_transactions():
     if category:
         query = query.join(Category).filter(Category.name == category)
 
+    tx_type = request.args.get('type')
+    if tx_type:
+        query = query.filter(Transaction.tx_type == tx_type)
+
+    payment_method = request.args.get('payment_method')
+    if payment_method:
+        query = query.filter(Transaction.payment_method == payment_method)
+
+    label = request.args.get('label')
+    if label:
+        query = query.filter(Transaction.label.contains(label))
+
+    subcategory = request.args.get('subcategory')
+    if subcategory:
+        query = query.join(Subcategory).filter(Subcategory.name == subcategory)
+
     start_date = request.args.get('start_date')
     if start_date:
         try:
