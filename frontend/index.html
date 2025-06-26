@@ -581,9 +581,17 @@
                 li.appendChild(document.createTextNode(c.name));
 
                 const fav = document.createElement('button');
+                fav.className = 'tx-fav-btn' + (c.favorite ? ' selected' : '');
                 fav.textContent = c.favorite ? '★' : '☆';
                 fav.onclick = async () => {
-                    await fetch('/categories/' + c.id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ favorite: !c.favorite }) });
+                    const resp = await fetch('/categories/' + c.id, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ favorite: !c.favorite })
+                    });
+                    if (resp.ok) {
+                        fav.classList.toggle('selected');
+                    }
                     fetchCategories();
                     fetchSubcategories();
                 };
@@ -675,9 +683,17 @@
                 li.appendChild(document.createTextNode(s.name));
 
                 const fav = document.createElement('button');
+                fav.className = 'tx-fav-btn' + (s.favorite ? ' selected' : '');
                 fav.textContent = s.favorite ? '★' : '☆';
                 fav.onclick = async () => {
-                    await fetch('/subcategories/' + s.id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ favorite: !s.favorite }) });
+                    const resp = await fetch('/subcategories/' + s.id, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ favorite: !s.favorite })
+                    });
+                    if (resp.ok) {
+                        fav.classList.toggle('selected');
+                    }
                     fetchSubcategories();
                 };
 
