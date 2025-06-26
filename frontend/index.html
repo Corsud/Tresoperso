@@ -27,6 +27,7 @@
                 <li>
                     <div class="menu-header">Analyses</div>
                     <ul class="submenu">
+                        <li><button data-target="dashboard-section">Dashboard</button></li>
                         <li><button data-target="stats-section">Statistiques</button></li>
                         <li><button data-target="projection-section">Projections</button></li>
                     </ul>
@@ -41,6 +42,11 @@
         </nav>
         <div id="content">
             <h1>Tresoperso</h1>
+            <section id="dashboard-section" style="display:none;">
+                <h2>Dashboard</h2>
+                <div id="dashboard-content">Chargement...</div>
+                <canvas id="dashboardChart" width="400" height="200"></canvas>
+            </section>
             <section id="transactions-section">
                 <form id="upload-form">
                     <input type="file" id="csv-file" name="file" accept=".csv" required />
@@ -489,6 +495,7 @@
                 fetchCategories();
                 fetchSubcategories();
                 fetchRules();
+                fetchDashboard();
                 fetchStats();
                 fetchProjection();
                 fetchCategoryStats();
@@ -519,6 +526,7 @@
                     showDuplicates(data.duplicates, data.account ? data.account.id : '');
                 } else {
                     fetchTransactions();
+                    fetchDashboard();
                     fetchStats();
                     fetchProjection();
                     fetchCategoryStats();
@@ -788,6 +796,7 @@
             fetchRules();
         });
 
+        let dashboardChart;
         let statsChart;
         let projChart;
         let incomeChart;
@@ -881,6 +890,27 @@
                     datasets: [{
                         label: 'Flux',
                         data: data.map(d => ({ from: d.source, to: d.target, flow: d.value }))
+                    }]
+                }
+            });
+        }
+
+        async function fetchDashboard() {
+            const resp = await fetch('/dashboard');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            document.getElementById('dashboard-content').textContent =
+                `Favoris: ${data.favorite_count} | Total 30j: ${formatAmount(data.recent_total)}`;
+            const ctx = document.getElementById('dashboardChart').getContext('2d');
+            if (dashboardChart) dashboardChart.destroy();
+            dashboardChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['30 derniers jours'],
+                    datasets: [{
+                        label: 'Total',
+                        data: [data.recent_total],
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)'
                     }]
                 }
             });
@@ -1008,6 +1038,7 @@
             dupOverlay.style.display = 'none';
             if (!selected.length) {
                 fetchTransactions();
+                fetchDashboard();
                 fetchStats();
                 fetchProjection();
                 fetchCategoryStats();
@@ -1022,6 +1053,7 @@
             const data = await resp.json().catch(() => ({}));
             if (resp.ok) {
                 fetchTransactions();
+                fetchDashboard();
                 fetchStats();
                 fetchProjection();
                 fetchCategoryStats();
@@ -1091,7 +1123,7 @@
             currentRuleBtn = null;
         });
 
-        const sectionIds = ['transactions-section', 'stats-section', 'projection-section', 'settings-section'];
+        const sectionIds = ['transactions-section', 'dashboard-section', 'stats-section', 'projection-section', 'settings-section'];
         const sidebarButtons = document.querySelectorAll('#navbar .submenu button');
         sidebarButtons.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -1189,6 +1221,7 @@
             const resp = await fetch('/reset', {method: 'POST'});
             if (resp.ok) {
                 fetchTransactions();
+                fetchDashboard();
                 fetchStats();
                 fetchProjection();
                 fetchCategoryStats();
