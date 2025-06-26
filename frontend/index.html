@@ -24,10 +24,10 @@
                         <li><button data-target="transactions-section">Transactions</button></li>
                     </ul>
                 </li>
+                <li><button data-target="dashboard-section">Tableau de bord</button></li>
                 <li>
                     <div class="menu-header">Analyses</div>
                     <ul class="submenu">
-                        <li><button data-target="dashboard-section">Dashboard</button></li>
                         <li><button data-target="stats-section">Statistiques</button></li>
                         <li><button data-target="projection-section">Projections</button></li>
                     </ul>
@@ -1145,7 +1145,7 @@
         });
 
         const sectionIds = ['transactions-section', 'dashboard-section', 'stats-section', 'projection-section', 'settings-section'];
-        const sidebarButtons = document.querySelectorAll('#navbar .submenu button');
+        const sidebarButtons = document.querySelectorAll('#navbar button[data-target]');
         sidebarButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 const target = btn.dataset.target;
