@@ -77,6 +77,24 @@ def me():
     return jsonify({'error': 'Unauthorized'}), 401
 
 
+@app.route('/accounts')
+@login_required
+def accounts():
+    """Return all bank accounts."""
+    session = SessionLocal()
+    data = [
+        {
+            'id': a.id,
+            'account_type': a.account_type,
+            'number': a.number,
+            'export_date': a.export_date.isoformat() if a.export_date else None,
+        }
+        for a in session.query(BankAccount).all()
+    ]
+    session.close()
+    return jsonify(data)
+
+
 def parse_csv(content):
     """Parse CSV content and return valid transactions, account info and errors.
 
