@@ -730,6 +730,45 @@ def stats_sankey():
     return jsonify(result)
 
 
+def _shift_month(date, offset):
+    """Return the first day of the month shifted by ``offset`` months."""
+    y = date.year + (date.month - 1 + offset) // 12
+    m = (date.month - 1 + offset) % 12 + 1
+    return date.replace(year=y, month=m, day=1)
+
+
+def compute_dashboard_averages(session):
+    """Return per-category averages and income average of the last 3 months."""
+
+    cat_avgs = dict(
+        session.query(
+            Transaction.category_id,
+            func.avg(func.abs(Transaction.amount)),
+        )
+        .filter(Transaction.category_id != None)
+        .group_by(Transaction.category_id)
+        .all()
+    )
+
+    today = datetime.now().date()
+    curr_first = today.replace(day=1)
+    months = []
+    for i in range(1, 4):
+        start = _shift_month(curr_first, -i)
+        end = _shift_month(curr_first, -(i - 1)) - timedelta(days=1)
+        total = (
+            session.query(func.sum(Transaction.amount))
+            .filter(Transaction.amount > 0)
+            .filter(Transaction.date >= start)
+            .filter(Transaction.date <= end)
+            .scalar()
+            or 0
+        )
+        months.append(total)
+    income_avg = sum(months) / len(months) if months else 0
+    return cat_avgs, income_avg
+
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -748,11 +787,152 @@ def dashboard():
             conditions.append(and_(*subconds))
     fav_count = session.query(func.count(Transaction.id)).filter(or_(*conditions)).scalar() or 0
     cutoff = datetime.now().date() - timedelta(days=30)
-    recent_total = session.query(func.sum(Transaction.amount)).filter(Transaction.date >= cutoff).scalar() or 0
+    recent_total = (
+        session.query(func.sum(Transaction.amount))
+        .filter(Transaction.date >= cutoff)
+        .scalar()
+        or 0
+    )
     total = sum(a.initial_balance or 0 for a in session.query(BankAccount).all())
     total += session.query(func.sum(Transaction.amount)).scalar() or 0
+
+    cat_avgs, income_avg = compute_dashboard_averages(session)
+
+    alerts = []
+    recent_txs = (
+        session.query(Transaction)
+        .outerjoin(Category)
+        .filter(Transaction.date >= cutoff)
+        .all()
+    )
+    for tx in recent_txs:
+        cat_avg = cat_avgs.get(tx.category_id)
+        if cat_avg and abs(tx.amount) > 1.5 * cat_avg:
+            name = tx.category.name if tx.category else 'Inconnu'
+            alerts.append(
+                f"{tx.label} {tx.date.isoformat()} depasse 150% de {name}"
+            )
+        if abs(tx.amount) > income_avg:
+            alerts.append(
+                f"{tx.label} {tx.date.isoformat()} depasse la moyenne revenus"
+            )
+
+    current_start = datetime.now().date().replace(day=1)
+    summaries = []
+
+    for f in filters:
+        subconds = []
+        if f.pattern:
+            subconds.append(func.lower(Transaction.label).contains(f.pattern.lower()))
+        if f.category_id:
+            subconds.append(Transaction.category_id == f.category_id)
+        if f.subcategory_id:
+            subconds.append(Transaction.subcategory_id == f.subcategory_id)
+        cond = and_(*subconds) if subconds else True
+        current = (
+            session.query(func.sum(Transaction.amount))
+            .filter(cond)
+            .filter(Transaction.date >= current_start)
+            .scalar()
+            or 0
+        )
+        prev = []
+        for i in range(1, 7):
+            start = _shift_month(current_start, -i)
+            end = _shift_month(current_start, -(i - 1)) - timedelta(days=1)
+            val = (
+                session.query(func.sum(Transaction.amount))
+                .filter(cond)
+                .filter(Transaction.date >= start)
+                .filter(Transaction.date <= end)
+                .scalar()
+                or 0
+            )
+            prev.append(val)
+        avg6 = sum(prev) / 6 if prev else 0
+        summaries.append(
+            {
+                'type': 'filter',
+                'name': f.pattern or 'Filtre',
+                'current_total': current,
+                'six_month_avg': avg6,
+            }
+        )
+
+    for c in session.query(Category).filter_by(favorite=True).all():
+        cond = Transaction.category_id == c.id
+        current = (
+            session.query(func.sum(Transaction.amount))
+            .filter(cond)
+            .filter(Transaction.date >= current_start)
+            .scalar()
+            or 0
+        )
+        prev = []
+        for i in range(1, 7):
+            start = _shift_month(current_start, -i)
+            end = _shift_month(current_start, -(i - 1)) - timedelta(days=1)
+            val = (
+                session.query(func.sum(Transaction.amount))
+                .filter(cond)
+                .filter(Transaction.date >= start)
+                .filter(Transaction.date <= end)
+                .scalar()
+                or 0
+            )
+            prev.append(val)
+        avg6 = sum(prev) / 6 if prev else 0
+        summaries.append(
+            {
+                'type': 'category',
+                'name': c.name,
+                'current_total': current,
+                'six_month_avg': avg6,
+            }
+        )
+
+    for s in session.query(Subcategory).filter_by(favorite=True).all():
+        cond = Transaction.subcategory_id == s.id
+        current = (
+            session.query(func.sum(Transaction.amount))
+            .filter(cond)
+            .filter(Transaction.date >= current_start)
+            .scalar()
+            or 0
+        )
+        prev = []
+        for i in range(1, 7):
+            start = _shift_month(current_start, -i)
+            end = _shift_month(current_start, -(i - 1)) - timedelta(days=1)
+            val = (
+                session.query(func.sum(Transaction.amount))
+                .filter(cond)
+                .filter(Transaction.date >= start)
+                .filter(Transaction.date <= end)
+                .scalar()
+                or 0
+            )
+            prev.append(val)
+        avg6 = sum(prev) / 6 if prev else 0
+        summaries.append(
+            {
+                'type': 'subcategory',
+                'name': s.name,
+                'current_total': current,
+                'six_month_avg': avg6,
+            }
+        )
+
     session.close()
-    return jsonify({'favorite_count': fav_count, 'recent_total': recent_total, 'balance_total': total})
+    return jsonify(
+        {
+            'favorite_count': fav_count,
+            'recent_total': recent_total,
+            'balance_total': total,
+            'alerts': alerts,
+            'favorite_summaries': summaries,
+        }
+    )
 
 
 @app.route('/projection')
