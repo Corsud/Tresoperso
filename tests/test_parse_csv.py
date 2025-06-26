@@ -44,3 +44,16 @@ def test_parse_csv_missing_fields():
     assert duplicates == []
     assert errors
     assert "colonnes manquantes" in errors[0]
+
+
+def test_parse_csv_trailing_minus():
+    csv_data = """Compte courant 12345678 2021-01-01
+2021-01-02;Debit;CB;Achat;123,45-
+"""
+
+    transactions, duplicates, errors, info = parse_csv(csv_data)
+
+    assert not errors
+    assert duplicates == []
+    assert len(transactions) == 1
+    assert transactions[0]["amount"] == -123.45
