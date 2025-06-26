@@ -466,6 +466,7 @@ def list_transactions():
             'label': t.label,
             'amount': t.amount,
             'account_id': t.bank_account_id,
+            'favorite': t.favorite,
             'category_id': t.category_id,
             'category': t.category.name if t.category else None,
             'category_color': t.category.color if t.category else None,
@@ -497,6 +498,7 @@ def update_transaction(tx_id):
             'label': tx.label,
             'amount': tx.amount,
             'account_id': tx.bank_account_id,
+            'favorite': tx.favorite,
             'category_id': tx.category_id,
             'subcategory_id': tx.subcategory_id,
             'reconciled': tx.reconciled,
@@ -510,6 +512,8 @@ def update_transaction(tx_id):
         tx.category_id = data['category_id'] or None
     if 'subcategory_id' in data:
         tx.subcategory_id = data['subcategory_id'] or None
+    if 'favorite' in data:
+        tx.favorite = bool(data['favorite'])
     if 'reconciled' in data:
         tx.reconciled = bool(data['reconciled'])
     if 'to_analyze' in data:
@@ -517,6 +521,7 @@ def update_transaction(tx_id):
     session.commit()
     result = {
         'id': tx.id,
+        'favorite': tx.favorite,
         'category_id': tx.category_id,
         'subcategory_id': tx.subcategory_id,
         'reconciled': tx.reconciled,
@@ -677,8 +682,14 @@ def categories(category_id=None):
                     'id': c.id,
                     'name': c.name,
                     'color': c.color,
+                    'favorite': c.favorite,
                     'subcategories': [
-                        {'id': s.id, 'name': s.name, 'color': s.color}
+                        {
+                            'id': s.id,
+                            'name': s.name,
+                            'color': s.color,
+                            'favorite': s.favorite,
+                        }
                         for s in c.subcategories
                     ],
                 }
@@ -694,8 +705,14 @@ def categories(category_id=None):
             'id': category.id,
             'name': category.name,
             'color': category.color,
+            'favorite': category.favorite,
             'subcategories': [
-                {'id': s.id, 'name': s.name, 'color': s.color}
+                {
+                    'id': s.id,
+                    'name': s.name,
+                    'color': s.color,
+                    'favorite': s.favorite,
+                }
                 for s in category.subcategories
             ],
         }
@@ -706,13 +723,14 @@ def categories(category_id=None):
         data = request.get_json() or {}
         name = data.get('name')
         color = data.get('color', '')
+        favorite = bool(data.get('favorite', False))
         if not name:
             session.close()
             return jsonify({'error': 'Missing name'}), 400
-        category = Category(name=name, color=color)
+        category = Category(name=name, color=color, favorite=favorite)
         session.add(category)
         session.commit()
-        result = {'id': category.id, 'name': category.name, 'color': category.color}
+        result = {'id': category.id, 'name': category.name, 'color': category.color, 'favorite': category.favorite}
         session.close()
         return jsonify(result), 201
 
@@ -726,12 +744,14 @@ def categories(category_id=None):
         data = request.get_json() or {}
         name = data.get('name')
         color = data.get('color')
+        if 'favorite' in data:
+            category.favorite = bool(data['favorite'])
         if name is not None:
             category.name = name
         if color is not None:
             category.color = color
         session.commit()
-        result = {'id': category.id, 'name': category.name, 'color': category.color}
+        result = {'id': category.id, 'name': category.name, 'color': category.color, 'favorite': category.favorite}
         session.close()
         return jsonify(result)
 
@@ -753,6 +773,7 @@ def subcategories(sub_id=None):
                     'id': s.id,
                     'name': s.name,
                     'color': s.color,
+                    'favorite': s.favorite,
                     'category_id': s.category_id,
                     'category': s.category.name if s.category else None,
                 }
@@ -768,6 +789,7 @@ def subcategories(sub_id=None):
             'id': sub.id,
             'name': sub.name,
             'color': sub.color,
+            'favorite': sub.favorite,
             'category_id': sub.category_id,
             'category': sub.category.name if sub.category else None,
         }
@@ -779,6 +801,7 @@ def subcategories(sub_id=None):
         name = data.get('name')
         category_id = data.get('category_id')
         color = data.get('color', '')
+        favorite = bool(data.get('favorite', False))
         if not name or not category_id:
             session.close()
             return jsonify({'error': 'Missing fields'}), 400
@@ -787,7 +810,7 @@ def subcategories(sub_id=None):
             cat = session.query(Category).get(int(category_id))
             color = cat.color if cat else ''
 
-        sub = Subcategory(name=name, category_id=int(category_id), color=color)
+        sub = Subcategory(name=name, category_id=int(category_id), color=color, favorite=favorite)
 
         session.add(sub)
         session.commit()
@@ -795,6 +818,7 @@ def subcategories(sub_id=None):
             'id': sub.id,
             'name': sub.name,
             'color': sub.color,
+            'favorite': sub.favorite,
             'category_id': sub.category_id,
         }
         session.close()
@@ -812,6 +836,8 @@ def subcategories(sub_id=None):
         if 'category_id' in data:
             cid = data['category_id']
             sub.category_id = int(cid) if cid else None
+        if 'favorite' in data:
+            sub.favorite = bool(data['favorite'])
 
         if 'color' in data:
             new_color = data['color']
@@ -829,6 +855,7 @@ def subcategories(sub_id=None):
             'id': sub.id,
             'name': sub.name,
             'color': sub.color,
+            'favorite': sub.favorite,
             'category_id': sub.category_id,
         }
         session.close()
