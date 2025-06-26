@@ -30,12 +30,16 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
     white-space: nowrap;
 }
 
-/* Keep filter dropdowns within their cells when collapsed */
-#filter-row select {
+/* Filter inputs aligned with transactions table */
+#transaction-filters {
+    width: 95%;
+    display: grid;
+    grid-template-columns: 2em 8em 6em 10em auto 6em 8em 8em 5em 5em 6em;
+}
+#transaction-filters select {
     max-width: 100%;
 }
-#filter-row th,
-#filter-row td {
+#transaction-filters > div {
     position: relative;
     overflow: visible;
 }

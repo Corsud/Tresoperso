@@ -63,6 +63,36 @@
                         <span id="account-info"></span>
                     </div>
                 </div>
+                <div id="transaction-filters">
+                    <div></div>
+                    <div>
+                        <input type="date" id="filter-start-date" />
+                        <input type="date" id="filter-end-date" />
+                        <select id="filter-period">
+                            <option value="">(Période)</option>
+                            <option value="current-week">Semaine en cours</option>
+                            <option value="previous-week">Semaine précédente</option>
+                            <option value="current-month">Mois en cours</option>
+                            <option value="previous-month">Mois précédent</option>
+                            <option value="ytd">Année en cours</option>
+                            <option value="last-6-months">6 derniers mois</option>
+                            <option value="previous-year">Année précédente</option>
+                            <option value="all">Tout</option>
+                        </select>
+                    </div>
+                    <div><select id="filter-type"><option value="">(Tous)</option></select></div>
+                    <div><select id="filter-payment"><option value="">(Tous)</option></select></div>
+                    <div><input type="text" id="filter-label" placeholder="Libellé" /></div>
+                    <div>
+                        <input type="number" id="filter-min-amount" placeholder="Min" style="width:5em;" />
+                        <input type="number" id="filter-max-amount" placeholder="Max" style="width:5em;" />
+                    </div>
+                    <div><select id="filter-category"><option value="">(Toutes)</option></select></div>
+                    <div><select id="filter-subcategory"><option value="">(Toutes)</option></select></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
                 <table id="transactions-table">
                     <thead>
                         <tr>
@@ -77,36 +107,6 @@
                             <th>Règle</th>
                             <th>Pointée</th>
                             <th>A analyser</th>
-                        </tr>
-                        <tr id="filter-row">
-                            <th></th>
-                            <th>
-                                <input type="date" id="filter-start-date" />
-                                <input type="date" id="filter-end-date" />
-                                <select id="filter-period">
-                                    <option value="">(Période)</option>
-                                    <option value="current-week">Semaine en cours</option>
-                                    <option value="previous-week">Semaine précédente</option>
-                                    <option value="current-month">Mois en cours</option>
-                                    <option value="previous-month">Mois précédent</option>
-                                    <option value="ytd">Année en cours</option>
-                                    <option value="last-6-months">6 derniers mois</option>
-                                    <option value="previous-year">Année précédente</option>
-                                    <option value="all">Tout</option>
-                                </select>
-                            </th>
-                            <th><select id="filter-type"><option value="">(Tous)</option></select></th>
-                            <th><select id="filter-payment"><option value="">(Tous)</option></select></th>
-                            <th><input type="text" id="filter-label" placeholder="Libellé" /></th>
-                            <th>
-                                <input type="number" id="filter-min-amount" placeholder="Min" style="width:5em;" />
-                                <input type="number" id="filter-max-amount" placeholder="Max" style="width:5em;" />
-                            </th>
-                            <th><select id="filter-category"><option value="">(Toutes)</option></select></th>
-                            <th><select id="filter-subcategory"><option value="">(Toutes)</option></select></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
                         </tr>
                     </thead>
                     <tbody></tbody>
