@@ -41,6 +41,20 @@ python run.py
 Le fichier `tresoperso.db` est placé dans le répertoire courant et peut être
 supprimé en cas de réinitialisation souhaitée.
 
+## Tests
+
+Avant de lancer la suite de tests, installez les dépendances du projet :
+
+```bash
+pip install -r requirements.txt
+```
+
+Les tests s'appuient sur **pytest**. Une fois les dépendances en place, exécutez :
+
+```bash
+pytest
+```
+
 ## Format des fichiers CSV
 
 Pour la BNP : Les champs du CSV doivent être séparés par des point-virgules (`;`). 
