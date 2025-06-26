@@ -247,6 +247,14 @@
             return (v || 0).toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         }
 
+        function getChartOptions(hide, withScale = true) {
+            const opts = { plugins: { tooltip: { enabled: !hide } } };
+            if (withScale) {
+                opts.scales = { y: { ticks: { display: !hide } } };
+            }
+            return opts;
+        }
+
         function formatDate(dateStr) {
             const [y, m, d] = dateStr.split('-');
             return `${d}/${m}/${y}`;
@@ -815,6 +823,7 @@
             const data = await resp.json();
             const ctx = document.getElementById('statsChart').getContext('2d');
             if (statsChart) statsChart.destroy();
+            const hide = localStorage.getItem('hideAmounts') === 'true';
             statsChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -824,7 +833,8 @@
                         data: data.map(d => d.total),
                         backgroundColor: 'rgba(75, 192, 192, 0.5)'
                     }]
-                }
+                },
+                options: getChartOptions(hide)
             });
         }
 
@@ -854,12 +864,14 @@
             });
             const ictx = document.getElementById('incomeChart').getContext('2d');
             if (incomeChart) incomeChart.destroy();
+            const hide = localStorage.getItem('hideAmounts') === 'true';
             incomeChart = new Chart(ictx, {
                 type: 'doughnut',
                 data: {
                     labels: incLabels,
                     datasets: [{ data: incData, backgroundColor: incColors }]
-                }
+                },
+                options: getChartOptions(hide, false)
             });
             const ectx = document.getElementById('expenseChart').getContext('2d');
             if (expenseChart) expenseChart.destroy();
@@ -868,7 +880,8 @@
                 data: {
                     labels: expLabels,
                     datasets: [{ data: expData, backgroundColor: expColors }]
-                }
+                },
+                options: getChartOptions(hide, false)
             });
         }
 
@@ -884,6 +897,7 @@
             const data = await resp.json();
             const sctx = document.getElementById('sankeyChart').getContext('2d');
             if (sankeyChart) sankeyChart.destroy();
+            const hide = localStorage.getItem('hideAmounts') === 'true';
             sankeyChart = new Chart(sctx, {
                 type: 'sankey',
                 data: {
@@ -891,7 +905,8 @@
                         label: 'Flux',
                         data: data.map(d => ({ from: d.source, to: d.target, flow: d.value }))
                     }]
-                }
+                },
+                options: getChartOptions(hide, false)
             });
         }
 
@@ -903,6 +918,7 @@
                 `Favoris: ${data.favorite_count} | Total 30j: ${formatAmount(data.recent_total)}`;
             const ctx = document.getElementById('dashboardChart').getContext('2d');
             if (dashboardChart) dashboardChart.destroy();
+            const hide = localStorage.getItem('hideAmounts') === 'true';
             dashboardChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -912,7 +928,8 @@
                         data: [data.recent_total],
                         backgroundColor: 'rgba(54, 162, 235, 0.5)'
                     }]
-                }
+                },
+                options: getChartOptions(hide)
             });
         }
 
@@ -926,6 +943,7 @@
             });
             const ctx = document.getElementById('projectionChart').getContext('2d');
             if (projChart) projChart.destroy();
+            const hide = localStorage.getItem('hideAmounts') === 'true';
             projChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -936,7 +954,8 @@
                         fill: false,
                         borderColor: 'rgba(153, 102, 255, 1)'
                     }]
-                }
+                },
+                options: getChartOptions(hide)
             });
         }
 
