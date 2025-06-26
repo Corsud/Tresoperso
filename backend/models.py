@@ -23,6 +23,7 @@ class Category(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True, nullable=False)
     color = Column(String, default='')
+    favorite = Column(Boolean, default=False)
     transactions = relationship('Transaction', back_populates='category')
     rules = relationship('Rule', back_populates='category')
     subcategories = relationship('Subcategory', back_populates='category')
@@ -33,6 +34,7 @@ class Subcategory(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     color = Column(String, default='')
+    favorite = Column(Boolean, default=False)
     category_id = Column(Integer, ForeignKey('categories.id'), nullable=False)
 
     category = relationship('Category', back_populates='subcategories')
@@ -58,6 +60,7 @@ class Transaction(Base):
     tx_type = Column(String)
     payment_method = Column(String)
     bank_account_id = Column(Integer, ForeignKey('bank_accounts.id'))
+    favorite = Column(Boolean, default=False)
     category_id = Column(Integer, ForeignKey('categories.id'))
     subcategory_id = Column(Integer, ForeignKey('subcategories.id'))
     reconciled = Column(Boolean, default=False)
@@ -100,11 +103,20 @@ def init_db():
             conn.execute(text('ALTER TABLE transactions ADD COLUMN to_analyze INTEGER DEFAULT 1'))
         if 'bank_account_id' not in cols:
             conn.execute(text('ALTER TABLE transactions ADD COLUMN bank_account_id INTEGER'))
+        if 'favorite' not in cols:
+            conn.execute(text('ALTER TABLE transactions ADD COLUMN favorite INTEGER DEFAULT 0'))
 
         info = conn.execute(text('PRAGMA table_info(categories)')).fetchall()
         cols = {row[1] for row in info}
         if 'color' not in cols:
             conn.execute(text('ALTER TABLE categories ADD COLUMN color TEXT'))
+        if 'favorite' not in cols:
+            conn.execute(text('ALTER TABLE categories ADD COLUMN favorite INTEGER DEFAULT 0'))
+
+        info = conn.execute(text('PRAGMA table_info(subcategories)')).fetchall()
+        cols = {row[1] for row in info}
+        if 'favorite' not in cols:
+            conn.execute(text('ALTER TABLE subcategories ADD COLUMN favorite INTEGER DEFAULT 0'))
 
         info = conn.execute(text('PRAGMA table_info(rules)')).fetchall()
         cols = {row[1] for row in info}

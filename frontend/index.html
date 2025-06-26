@@ -59,6 +59,7 @@
                 <table id="transactions-table">
                     <thead>
                         <tr>
+                            <th>★</th>
                             <th>Date</th>
                             <th>Type</th>
                             <th>Moyen de paiement</th>
@@ -71,6 +72,7 @@
                             <th>A analyser</th>
                         </tr>
                         <tr id="filter-row">
+                            <th></th>
                             <th>
                                 <input type="date" id="filter-start-date" />
                                 <input type="date" id="filter-end-date" />
@@ -367,6 +369,17 @@
                 const type = t.type || '';
                 const pay = t.payment_method || '';
 
+                const favCell = document.createElement('td');
+                const favBtn = document.createElement('button');
+                favBtn.className = 'tx-fav-btn';
+                favBtn.textContent = t.favorite ? '★' : '☆';
+                favBtn.addEventListener('click', async () => {
+                    await fetch('/transactions/' + t.id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({favorite: !t.favorite})});
+                    fetchTransactions();
+                });
+                favCell.appendChild(favBtn);
+                tr.appendChild(favCell);
+
                 const dateCell = document.createElement('td');
                 dateCell.textContent = formatDate(t.date);
                 tr.appendChild(dateCell);
@@ -543,6 +556,14 @@
                 li.appendChild(colorSpan);
                 li.appendChild(document.createTextNode(c.name));
 
+                const fav = document.createElement('button');
+                fav.textContent = c.favorite ? '★' : '☆';
+                fav.onclick = async () => {
+                    await fetch('/categories/' + c.id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ favorite: !c.favorite }) });
+                    fetchCategories();
+                    fetchSubcategories();
+                };
+
                 const edit = document.createElement('button');
                 edit.textContent = 'Éditer';
                 edit.onclick = () => {
@@ -558,7 +579,7 @@
                     fetchRules();
                     fetchSubcategories();
                 };
-                li.append(' ', edit, ' ', del);
+                li.append(' ', fav, ' ', edit, ' ', del);
                 list.appendChild(li);
 
                 const opt = document.createElement('option');
@@ -629,6 +650,13 @@
                 li.appendChild(colorSpan);
                 li.appendChild(document.createTextNode(s.name));
 
+                const fav = document.createElement('button');
+                fav.textContent = s.favorite ? '★' : '☆';
+                fav.onclick = async () => {
+                    await fetch('/subcategories/' + s.id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ favorite: !s.favorite }) });
+                    fetchSubcategories();
+                };
+
                 const edit = document.createElement('button');
                 edit.textContent = 'Éditer';
                 edit.onclick = () => {
@@ -643,7 +671,7 @@
                     await fetch('/subcategories/' + s.id, { method: 'DELETE' });
                     fetchSubcategories();
                 };
-                li.append(' ', edit, ' ', del);
+                li.append(' ', fav, ' ', edit, ' ', del);
                 list.appendChild(li);
 
                 const opt = document.createElement('option');
