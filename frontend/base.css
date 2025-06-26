@@ -29,6 +29,16 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
 #transactions-table td {
     white-space: nowrap;
 }
+
+/* Keep filter dropdowns within their cells when collapsed */
+#filter-row select {
+    max-width: 100%;
+}
+#filter-row th,
+#filter-row td {
+    position: relative;
+    overflow: visible;
+}
 #transactions-table th:nth-child(1),
 #transactions-table td:nth-child(1) {
     width: 2em;
