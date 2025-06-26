@@ -583,6 +583,47 @@ def stats_categories():
     return jsonify(result)
 
 
+@app.route('/stats/sankey')
+@login_required
+def stats_sankey():
+    """Aggregate amounts from categories to subcategories for Sankey chart."""
+    session = SessionLocal()
+    query = session.query(
+        Category.name.label('source'),
+        Subcategory.name.label('target'),
+        func.sum(Transaction.amount).label('total')
+    ).join(Subcategory, Subcategory.category_id == Category.id)
+    query = query.join(Transaction, Transaction.subcategory_id == Subcategory.id)
+
+    start_date = request.args.get('start_date')
+    if start_date:
+        try:
+            date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            query = query.filter(Transaction.date >= date)
+        except ValueError:
+            pass
+
+    end_date = request.args.get('end_date')
+    if end_date:
+        try:
+            date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            query = query.filter(Transaction.date <= date)
+        except ValueError:
+            pass
+
+    data = query.group_by(Category.id, Subcategory.id).all()
+    session.close()
+    result = [
+        {
+            'source': src,
+            'target': tgt,
+            'value': abs(total) if total is not None else 0,
+        }
+        for src, tgt, total in data
+    ]
+    return jsonify(result)
+
+
 @app.route('/projection')
 @login_required
 def projection():

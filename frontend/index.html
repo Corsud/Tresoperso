@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="base.css">
     <link rel="stylesheet" id="theme-link" href="light.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-sankey"></script>
 </head>
 <body>
     <form id="login-form">
@@ -109,6 +110,7 @@
                     <canvas id="incomeChart" width="300" height="300"></canvas>
                     <canvas id="expenseChart" width="300" height="300"></canvas>
                 </div>
+                <canvas id="sankeyChart" width="600" height="300"></canvas>
             </section>
 
             <section id="projection-section" style="display:none;">
@@ -433,6 +435,7 @@
                 fetchStats();
                 fetchProjection();
                 fetchCategoryStats();
+                fetchSankeyStats();
             } else {
                 alert('Connexion échouée');
             }
@@ -462,6 +465,7 @@
                     fetchStats();
                     fetchProjection();
                     fetchCategoryStats();
+                    fetchSankeyStats();
                 }
             } else {
                 if (data.errors) {
@@ -716,6 +720,7 @@
         let projChart;
         let incomeChart;
         let expenseChart;
+        let sankeyChart;
 
         async function fetchStats() {
             const period = document.getElementById('stats-period').value;
@@ -782,6 +787,29 @@
                 data: {
                     labels: expLabels,
                     datasets: [{ data: expData, backgroundColor: expColors }]
+                }
+            });
+        }
+
+        async function fetchSankeyStats() {
+            const period = document.getElementById('stats-period').value;
+            const { start, end } = getPeriodDates(period);
+            const params = new URLSearchParams();
+            if (start) params.set('start_date', start);
+            if (end) params.set('end_date', end);
+            const url = '/stats/sankey' + (params.toString() ? `?${params.toString()}` : '');
+            const resp = await fetch(url);
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const sctx = document.getElementById('sankeyChart').getContext('2d');
+            if (sankeyChart) sankeyChart.destroy();
+            sankeyChart = new Chart(sctx, {
+                type: 'sankey',
+                data: {
+                    datasets: [{
+                        label: 'Flux',
+                        data: data.map(d => ({ from: d.source, to: d.target, flow: d.value }))
+                    }]
                 }
             });
         }
@@ -910,6 +938,7 @@
                 fetchStats();
                 fetchProjection();
                 fetchCategoryStats();
+                fetchSankeyStats();
                 return;
             }
             const resp = await fetch('/import/confirm', {
@@ -923,6 +952,7 @@
                 fetchStats();
                 fetchProjection();
                 fetchCategoryStats();
+                fetchSankeyStats();
             } else {
                 if (data.errors) alert(data.errors.join('\n')); else alert(data.error || 'Erreur import');
             }
@@ -1038,6 +1068,7 @@
         statsPeriodSelect.addEventListener('change', () => {
             fetchStats();
             fetchCategoryStats();
+            fetchSankeyStats();
         });
 
         accountSelect.addEventListener('change', () => {
@@ -1056,10 +1087,12 @@
                 el.addEventListener('input', () => {
                     fetchTransactions();
                     fetchCategoryStats();
+                    fetchSankeyStats();
                 });
                 el.addEventListener('change', () => {
                     fetchTransactions();
                     fetchCategoryStats();
+                    fetchSankeyStats();
                 });
             }
         });
@@ -1072,6 +1105,7 @@
                 fetchStats();
                 fetchProjection();
                 fetchCategoryStats();
+                fetchSankeyStats();
             }
         });
 
