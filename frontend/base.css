@@ -111,6 +111,11 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
 }
 .settings-col { flex: 1; }
 
+#category-charts {
+    display: flex;
+    gap: 20px;
+}
+
 #categories-list li,
 #subcategories-list li,
 #rules-list li {
