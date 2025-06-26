@@ -157,8 +157,20 @@ def parse_csv(content):
 
         try:
             cleaned = amount_str.replace('\xa0', '').replace(' ', '')
+
+            # Detect negative formats like "123,45-" or "(123,45)"
+            negative = False
+            if cleaned.endswith('-'):
+                negative = True
+                cleaned = cleaned[:-1]
+            elif cleaned.startswith('(') and cleaned.endswith(')'):
+                negative = True
+                cleaned = cleaned[1:-1]
+
             cleaned = cleaned.replace(',', '.')
             amount = float(cleaned)
+            if negative:
+                amount = -amount
         except ValueError:
             errors.append(f'Ligne {line_no}: montant invalide')
             continue
