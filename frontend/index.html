@@ -190,6 +190,11 @@
             return (v || 0).toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         }
 
+        function formatDate(dateStr) {
+            const [y, m, d] = dateStr.split('-');
+            return `${d}/${m}/${y}`;
+        }
+
         function updateAccountDropdown() {
             const select = document.getElementById('account-select');
             select.innerHTML = '<option value="">(Tous)</option>';
@@ -206,7 +211,7 @@
             const info = document.getElementById('account-info');
             const acc = accountsData.find(a => String(a.id) === String(selectedAccountId));
             if (acc) {
-                const date = acc.export_date ? ` - export ${acc.export_date}` : '';
+                const date = acc.export_date ? ` - export ${formatDate(acc.export_date)}` : '';
                 info.textContent = `${acc.account_type} ${acc.number}${date}`.trim();
             } else {
                 info.textContent = '';
@@ -227,7 +232,7 @@
                 const pay = t.payment_method || '';
 
                 const dateCell = document.createElement('td');
-                dateCell.textContent = t.date;
+                dateCell.textContent = formatDate(t.date);
                 tr.appendChild(dateCell);
 
                 const typeCell = document.createElement('td');
@@ -718,7 +723,7 @@
                 cb.checked = true;
                 cb.dataset.index = idx;
                 li.appendChild(cb);
-                li.appendChild(document.createTextNode(`${d.date} - ${d.label} - ${formatAmount(d.amount)}`));
+                li.appendChild(document.createTextNode(`${formatDate(d.date)} - ${d.label} - ${formatAmount(d.amount)}`));
                 list.appendChild(li);
             });
             dupOverlay.style.display = 'flex';
