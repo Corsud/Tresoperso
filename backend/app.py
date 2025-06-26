@@ -262,7 +262,8 @@ def import_csv():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
-    transactions, csv_duplicates, errors, account_info = parse_csv(content)
+    transactions, csv_duplicates, csv_errors, account_info = parse_csv(content)
+    errors = list(csv_errors)
 
     session = SessionLocal()
     imported = 0
