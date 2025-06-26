@@ -525,6 +525,46 @@ def stats():
     return jsonify([{ 'month': m, 'total': t } for m, t in data])
 
 
+@app.route('/stats/categories')
+@login_required
+def stats_categories():
+    session = SessionLocal()
+    query = session.query(
+        Category.name,
+        Category.color,
+        func.sum(func.case([(Transaction.amount >= 0, Transaction.amount)], else_=0)).label('positive'),
+        func.sum(func.case([(Transaction.amount < 0, Transaction.amount)], else_=0)).label('negative')
+    ).join(Transaction, Transaction.category_id == Category.id)
+
+    start_date = request.args.get('start_date')
+    if start_date:
+        try:
+            date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            query = query.filter(Transaction.date >= date)
+        except ValueError:
+            pass
+
+    end_date = request.args.get('end_date')
+    if end_date:
+        try:
+            date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            query = query.filter(Transaction.date <= date)
+        except ValueError:
+            pass
+
+    data = query.group_by(Category.id).all()
+    session.close()
+    result = []
+    for name, color, pos, neg in data:
+        result.append({
+            'name': name,
+            'color': color,
+            'positive': pos or 0,
+            'negative': neg or 0,
+        })
+    return jsonify(result)
+
+
 @app.route('/projection')
 @login_required
 def projection():

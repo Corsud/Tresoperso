@@ -95,6 +95,10 @@
             <section id="stats-section" style="display:none;">
                 <h2>Statistiques mensuelles</h2>
                 <canvas id="statsChart" width="400" height="200"></canvas>
+                <div id="category-charts">
+                    <canvas id="incomeChart" width="300" height="300"></canvas>
+                    <canvas id="expenseChart" width="300" height="300"></canvas>
+                </div>
             </section>
 
             <section id="projection-section" style="display:none;">
@@ -375,6 +379,7 @@
                 fetchRules();
                 fetchStats();
                 fetchProjection();
+                fetchCategoryStats();
             } else {
                 alert('Connexion échouée');
             }
@@ -403,6 +408,7 @@
                     fetchTransactions();
                     fetchStats();
                     fetchProjection();
+                    fetchCategoryStats();
                 }
             } else {
                 if (data.errors) {
@@ -655,6 +661,8 @@
 
         let statsChart;
         let projChart;
+        let incomeChart;
+        let expenseChart;
 
         async function fetchStats() {
             const resp = await fetch('/stats');
@@ -671,6 +679,50 @@
                         data: data.map(d => d.total),
                         backgroundColor: 'rgba(75, 192, 192, 0.5)'
                     }]
+                }
+            });
+        }
+
+        async function fetchCategoryStats() {
+            const params = new URLSearchParams();
+            const start = document.getElementById('filter-start-date').value;
+            const end = document.getElementById('filter-end-date').value;
+            if (start) params.set('start_date', start);
+            if (end) params.set('end_date', end);
+            const url = '/stats/categories' + (params.toString() ? `?${params.toString()}` : '');
+            const resp = await fetch(url);
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const incLabels = [], incData = [], incColors = [];
+            const expLabels = [], expData = [], expColors = [];
+            data.forEach(d => {
+                if (d.positive > 0) {
+                    incLabels.push(d.name);
+                    incData.push(d.positive);
+                    incColors.push(d.color || 'gray');
+                }
+                if (Math.abs(d.negative) > 0) {
+                    expLabels.push(d.name);
+                    expData.push(Math.abs(d.negative));
+                    expColors.push(d.color || 'gray');
+                }
+            });
+            const ictx = document.getElementById('incomeChart').getContext('2d');
+            if (incomeChart) incomeChart.destroy();
+            incomeChart = new Chart(ictx, {
+                type: 'doughnut',
+                data: {
+                    labels: incLabels,
+                    datasets: [{ data: incData, backgroundColor: incColors }]
+                }
+            });
+            const ectx = document.getElementById('expenseChart').getContext('2d');
+            if (expenseChart) expenseChart.destroy();
+            expenseChart = new Chart(ectx, {
+                type: 'doughnut',
+                data: {
+                    labels: expLabels,
+                    datasets: [{ data: expData, backgroundColor: expColors }]
                 }
             });
         }
@@ -798,6 +850,7 @@
                 fetchTransactions();
                 fetchStats();
                 fetchProjection();
+                fetchCategoryStats();
                 return;
             }
             const resp = await fetch('/import/confirm', {
@@ -810,6 +863,7 @@
                 fetchTransactions();
                 fetchStats();
                 fetchProjection();
+                fetchCategoryStats();
             } else {
                 if (data.errors) alert(data.errors.join('\n')); else alert(data.error || 'Erreur import');
             }
@@ -934,8 +988,14 @@
         filterInputs.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
-                el.addEventListener('input', fetchTransactions);
-                el.addEventListener('change', fetchTransactions);
+                el.addEventListener('input', () => {
+                    fetchTransactions();
+                    fetchCategoryStats();
+                });
+                el.addEventListener('change', () => {
+                    fetchTransactions();
+                    fetchCategoryStats();
+                });
             }
         });
 
@@ -946,6 +1006,7 @@
                 fetchTransactions();
                 fetchStats();
                 fetchProjection();
+                fetchCategoryStats();
             }
         });
 
