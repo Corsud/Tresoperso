@@ -517,10 +517,28 @@ def update_transaction(tx_id):
 @login_required
 def stats():
     session = SessionLocal()
-    data = session.query(
+    query = session.query(
         func.strftime('%Y-%m', Transaction.date).label('month'),
         func.sum(Transaction.amount).label('total')
-    ).group_by('month').order_by('month').all()
+    )
+
+    start_date = request.args.get('start_date')
+    if start_date:
+        try:
+            date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            query = query.filter(Transaction.date >= date)
+        except ValueError:
+            pass
+
+    end_date = request.args.get('end_date')
+    if end_date:
+        try:
+            date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            query = query.filter(Transaction.date <= date)
+        except ValueError:
+            pass
+
+    data = query.group_by('month').order_by('month').all()
     session.close()
     return jsonify([{ 'month': m, 'total': t } for m, t in data])
 
