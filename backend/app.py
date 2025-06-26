@@ -641,6 +641,11 @@ def subcategories(sub_id=None):
         if not name or not category_id:
             session.close()
             return jsonify({'error': 'Missing fields'}), 400
+
+        if not color:
+            cat = session.query(Category).get(int(category_id))
+            color = cat.color if cat else ''
+
         sub = Subcategory(name=name, category_id=int(category_id), color=color)
 
         session.add(sub)
@@ -668,7 +673,16 @@ def subcategories(sub_id=None):
             sub.category_id = int(cid) if cid else None
 
         if 'color' in data:
-            sub.color = data['color']
+            new_color = data['color']
+        else:
+            new_color = None
+
+        if new_color is None or new_color == '':
+            cat = session.query(Category).get(sub.category_id)
+            new_color = cat.color if cat else ''
+
+        if new_color is not None:
+            sub.color = new_color
         session.commit()
         result = {
             'id': sub.id,

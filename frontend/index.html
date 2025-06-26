@@ -408,6 +408,17 @@
                 popOpt.textContent = c.name;
                 popupSelect.appendChild(popOpt);
             });
+
+            subSelectCat.onchange = () => {
+                const cat = findCategory(subSelectCat.value);
+                const colorInput = document.getElementById('subcategory-color');
+                if (cat && colorInput) {
+                    colorInput.value = cat.color || '#000000';
+                }
+            };
+            if (subSelectCat.value) {
+                subSelectCat.onchange();
+            }
         }
 
         async function fetchSubcategories() {
