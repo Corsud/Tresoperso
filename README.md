@@ -19,6 +19,7 @@ Avant le premier démarrage, installez les dépendances du projet&nbsp;:
 
 ```bash
 pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python run.py
 ```
 
@@ -26,6 +27,16 @@ Par défaut, l'application s'ouvrira automatiquement dans votre navigateur à l'
 Si ce n'est pas le cas, ouvrez manuellement cette URL.
 Le serveur Flask écoute sur l'adresse `0.0.0.0`, ce qui permet d'exposer
 l'application sur le réseau local.
+
+## Environnement de développement
+
+Les dépendances principales (**Flask**, **SQLAlchemy**, **Flask-Login**) ainsi que
+**pytest** pour les tests sont listées dans `requirements-dev.txt`. Installez-les
+pour disposer d'un environnement complet :
+
+```bash
+pip install -r requirements-dev.txt
+```
 
 ## Base de données
 
@@ -43,10 +54,10 @@ supprimé en cas de réinitialisation souhaitée.
 
 ## Tests
 
-Avant de lancer la suite de tests, installez les dépendances du projet :
+Avant de lancer la suite de tests, installez les dépendances de développement :
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 ```
 
 Les tests s'appuient sur **pytest**. Une fois les dépendances en place, exécutez :
