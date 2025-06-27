@@ -34,12 +34,19 @@ def test_reimport_returns_duplicates(client):
     first = import_file(client, csv)
     assert first.status_code == 200
     data1 = first.get_json()
+    acc_id = data1['account']['id']
     assert data1.get('imported') == 2
     assert 'duplicates' not in data1
 
     second = import_file(client, csv)
     assert second.status_code == 200
     data2 = second.get_json()
+    assert data2['account']['id'] == acc_id
     assert not data2.get('errors')
     assert 'duplicates' in data2
     assert len(data2['duplicates']) == 2
+
+    session = models.SessionLocal()
+    accounts = session.query(models.BankAccount).all()
+    session.close()
+    assert len(accounts) == 1
