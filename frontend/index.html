@@ -65,38 +65,44 @@
                         <button type="submit">Enregistrer</button>
                     </form>
                 </div>
-                <div id="transaction-filters">
-                    <div></div>
-                    <div>
-                        <input type="date" id="filter-start-date" />
-                        <input type="date" id="filter-end-date" />
-                        <select id="filter-period">
-                            <option value="">(Période)</option>
-                            <option value="current-week">Semaine en cours</option>
-                            <option value="previous-week">Semaine précédente</option>
-                            <option value="current-month">Mois en cours</option>
-                            <option value="previous-month">Mois précédent</option>
-                            <option value="ytd">Année en cours</option>
-                            <option value="last-6-months">6 derniers mois</option>
-                            <option value="previous-year">Année précédente</option>
-                            <option value="all">Tout</option>
-                        </select>
-                    </div>
-                    <div><select id="filter-type"><option value="">(Tous)</option></select></div>
-                    <div><select id="filter-payment"><option value="">(Tous)</option></select></div>
-                    <div><input type="text" id="filter-label" placeholder="Libellé" /></div>
-                    <div>
-                        <input type="number" id="filter-min-amount" placeholder="Min" style="width:5em;" />
-                        <input type="number" id="filter-max-amount" placeholder="Max" style="width:5em;" />
-                    </div>
-                    <div><select id="filter-category"><option value="">(Toutes)</option></select></div>
-                    <div><select id="filter-subcategory"><option value="">(Toutes)</option></select></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                </div>
                 <table id="transactions-table">
                     <thead>
+                        <tr class="filter-row">
+                            <th></th>
+                            <th></th>
+                            <th class="stack">
+                                <input type="date" id="filter-start-date" />
+                                <input type="date" id="filter-end-date" />
+                                <select id="filter-period">
+                                    <option value="">(Période)</option>
+                                    <option value="current-week">Semaine en cours</option>
+                                    <option value="previous-week">Semaine précédente</option>
+                                    <option value="current-month">Mois en cours</option>
+                                    <option value="previous-month">Mois précédent</option>
+                                    <option value="ytd">Année en cours</option>
+                                    <option value="last-6-months">6 derniers mois</option>
+                                    <option value="previous-year">Année précédente</option>
+                                    <option value="all">Tout</option>
+                                </select>
+                            </th>
+                            <th><select id="filter-type"><option value="">(Tous)</option></select></th>
+                            <th><select id="filter-payment"><option value="">(Tous)</option></select></th>
+                            <th><input type="text" id="filter-label" placeholder="Libellé" /></th>
+                            <th class="stack">
+                                <input type="number" id="filter-min-amount" placeholder="Min" style="width:5em;" />
+                                <input type="number" id="filter-max-amount" placeholder="Max" style="width:5em;" />
+                                <select id="filter-amount-order">
+                                    <option value="">(Date)</option>
+                                    <option value="asc">Croissant</option>
+                                    <option value="desc">Décroissant</option>
+                                </select>
+                            </th>
+                            <th><select id="filter-category"><option value="">(Toutes)</option></select></th>
+                            <th><select id="filter-subcategory"><option value="">(Toutes)</option></select></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
                         <tr>
                             <th>★</th>
                             <th>Filtre</th>
@@ -598,6 +604,7 @@
             const label = document.getElementById('filter-label').value.trim();
             const minAmt = document.getElementById('filter-min-amount').value;
             const maxAmt = document.getElementById('filter-max-amount').value;
+            const amtOrder = document.getElementById('filter-amount-order').value;
             const cat = document.getElementById('filter-category').value;
             const sub = document.getElementById('filter-subcategory').value;
             if (start) params.set('start_date', start);
@@ -609,6 +616,10 @@
             if (maxAmt) params.set('max_amount', maxAmt);
             if (cat) params.set('category', cat);
             if (sub) params.set('subcategory', sub);
+            if (amtOrder === 'asc' || amtOrder === 'desc') {
+                params.set('sort_by', 'amount');
+                params.set('order', amtOrder);
+            }
             const url = '/transactions' + (params.toString() ? `?${params.toString()}` : '');
             const resp = await fetch(url);
             if (!resp.ok) return;
@@ -1607,7 +1618,7 @@
             'filter-start-date', 'filter-end-date', 'filter-period',
             'filter-type', 'filter-payment',
             'filter-label', 'filter-min-amount', 'filter-max-amount',
-            'filter-category', 'filter-subcategory'
+            'filter-category', 'filter-subcategory', 'filter-amount-order'
         ];
         filterInputs.forEach(id => {
             const el = document.getElementById(id);
