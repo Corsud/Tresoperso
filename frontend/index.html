@@ -924,7 +924,8 @@
         document.getElementById('rule-form').addEventListener('submit', async e => {
             e.preventDefault();
             const id = document.getElementById('rule-id').value;
-            const pattern = document.getElementById('rule-pattern').value;
+            let pattern = document.getElementById('rule-pattern').value;
+            pattern = pattern.trim().replace(/\s+/g, ' ');
             const category_id = document.getElementById('rule-category').value;
             const subcategory_id = document.getElementById('rule-subcategory').value;
             const payload = { pattern, category_id, subcategory_id };
