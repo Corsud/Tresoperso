@@ -266,6 +266,12 @@
             populateCategorySelects();
         }
 
+        async function refreshCategoryData() {
+            await fetchCategories();
+            await fetchSubcategories();
+            await fetchCategoryOptions();
+        }
+
         function populateCategorySelects() {
             const catSelectIds = [
                 'popup-category-select',
@@ -646,9 +652,7 @@
                 displayAccountInfo();
                 fetchBalanceInfo();
                 fetchTransactions();
-                await fetchCategories();
-                await fetchSubcategories();
-                await fetchCategoryOptions();
+                await refreshCategoryData();
                 fetchRules();
                 fetchDashboard();
                 fetchStats();
@@ -727,9 +731,7 @@
                     if (resp.ok) {
                         fav.classList.toggle('selected');
                     }
-                    await fetchCategories();
-                    await fetchSubcategories();
-                    await fetchCategoryOptions();
+                    await refreshCategoryData();
                 };
 
                 const edit = document.createElement('button');
@@ -743,10 +745,8 @@
                 del.textContent = 'Supprimer';
                 del.onclick = async () => {
                     await fetch('/categories/' + c.id, { method: 'DELETE' });
-                    await fetchCategories();
+                    await refreshCategoryData();
                     fetchRules();
-                    await fetchSubcategories();
-                    await fetchCategoryOptions();
                 };
                 li.append(' ', fav, ' ', edit, ' ', del);
                 list.appendChild(li);
@@ -786,8 +786,7 @@
                     if (resp.ok) {
                         fav.classList.toggle('selected');
                     }
-                    await fetchSubcategories();
-                    await fetchCategoryOptions();
+                    await refreshCategoryData();
                 };
 
                 const edit = document.createElement('button');
@@ -802,8 +801,7 @@
                 del.textContent = 'Supprimer';
                 del.onclick = async () => {
                     await fetch('/subcategories/' + s.id, { method: 'DELETE' });
-                    await fetchSubcategories();
-                    await fetchCategoryOptions();
+                    await refreshCategoryData();
                 };
                 li.append(' ', fav, ' ', edit, ' ', del);
                 list.appendChild(li);
@@ -855,10 +853,8 @@
             document.getElementById('category-id').value = '';
             document.getElementById('category-name').value = '';
             document.getElementById('category-color').value = '#000000';
-            await fetchCategories();
+            await refreshCategoryData();
             fetchRules();
-            await fetchSubcategories();
-            await fetchCategoryOptions();
         });
 
         document.getElementById('subcategory-form').addEventListener('submit', async e => {
@@ -876,8 +872,7 @@
             document.getElementById('subcategory-id').value = '';
             document.getElementById('subcategory-name').value = '';
             document.getElementById('subcategory-color').value = '#000000';
-            await fetchSubcategories();
-            await fetchCategoryOptions();
+            await refreshCategoryData();
         });
 
         document.getElementById('rule-form').addEventListener('submit', async e => {
