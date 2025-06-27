@@ -1062,6 +1062,7 @@ def categories(category_id=None):
 
     if request.method == 'PUT':
         data = request.get_json() or {}
+        old_name = category.name
         name = data.get('name')
         color = data.get('color')
         if 'favorite' in data:
@@ -1071,12 +1072,28 @@ def categories(category_id=None):
         if color is not None:
             category.color = color
         session.commit()
+
+        # update categories.json if name has changed
+        if name is not None and name != old_name:
+            data_json = load_categories_json()
+            lst = data_json.pop(old_name, [])
+            data_json.setdefault(name, lst)
+            save_categories_json(data_json)
+
         result = {'id': category.id, 'name': category.name, 'color': category.color, 'favorite': category.favorite}
         session.close()
         return jsonify(result)
 
+    cat_name = category.name
     session.delete(category)
     session.commit()
+
+    # remove category from categories.json
+    data_json = load_categories_json()
+    if cat_name in data_json:
+        data_json.pop(cat_name, None)
+        save_categories_json(data_json)
+
     session.close()
     return jsonify({'message': 'deleted'})
 
@@ -1158,6 +1175,10 @@ def subcategories(sub_id=None):
 
     if request.method == 'PUT':
         data = request.get_json() or {}
+
+        old_name = sub.name
+        old_cat_name = sub.category.name if sub.category else None
+
         if 'name' in data:
             sub.name = data['name']
         if 'category_id' in data:
@@ -1178,6 +1199,29 @@ def subcategories(sub_id=None):
         if new_color is not None:
             sub.color = new_color
         session.commit()
+
+        new_name = sub.name
+        new_cat = session.query(Category).get(sub.category_id)
+        new_cat_name = new_cat.name if new_cat else None
+
+        # update categories.json if name or category changed
+        data_json = load_categories_json()
+        modified = False
+        if old_cat_name and old_name in data_json.get(old_cat_name, []):
+            if old_cat_name != new_cat_name or old_name != new_name:
+                try:
+                    data_json[old_cat_name].remove(old_name)
+                    modified = True
+                except ValueError:
+                    pass
+        if new_cat_name:
+            lst = data_json.setdefault(new_cat_name, [])
+            if new_name not in lst:
+                lst.append(new_name)
+                modified = True
+        if modified:
+            save_categories_json(data_json)
+
         result = {
             'id': sub.id,
             'name': sub.name,
@@ -1188,8 +1232,21 @@ def subcategories(sub_id=None):
         session.close()
         return jsonify(result)
 
+    sub_name = sub.name
+    cat_name = sub.category.name if sub.category else None
+
     session.delete(sub)
     session.commit()
+
+    # remove subcategory from categories.json
+    data_json = load_categories_json()
+    if cat_name and sub_name in data_json.get(cat_name, []):
+        try:
+            data_json[cat_name].remove(sub_name)
+            save_categories_json(data_json)
+        except ValueError:
+            pass
+
     session.close()
     return jsonify({'message': 'deleted'})
 
