@@ -93,3 +93,60 @@ def test_put_rule_updates_existing_transactions(client):
     for tx in txs:
         assert tx.category_id == client.new_cat_id
         assert tx.subcategory_id == client.new_sub_id
+
+
+@pytest.fixture
+def multi_client():
+    engine = create_engine('sqlite:///:memory:')
+    models.engine = engine
+    models.SessionLocal = sessionmaker(bind=engine)
+    app_module.SessionLocal = models.SessionLocal
+    models.init_db()
+    session = models.SessionLocal()
+    cat_old = models.Category(name='OldCat')
+    cat_new = models.Category(name='NewCat')
+    sub_old = models.Subcategory(name='OldSub', category=cat_old)
+    sub_new = models.Subcategory(name='NewSub', category=cat_new)
+    session.add_all([cat_old, cat_new, sub_old, sub_new])
+    tx1 = models.Transaction(
+        date=datetime.date(2021, 1, 1),
+        label='hello amazing world',
+        amount=-10,
+        category=cat_old,
+        subcategory=sub_old,
+    )
+    tx2 = models.Transaction(
+        date=datetime.date(2021, 1, 2),
+        label='world hello',
+        amount=-20,
+    )
+    session.add_all([tx1, tx2])
+    session.commit()
+    new_cat_id = cat_new.id
+    new_sub_id = sub_new.id
+    session.close()
+    with app_module.app.test_client() as client:
+        client.new_cat_id = new_cat_id
+        client.new_sub_id = new_sub_id
+        yield client
+
+
+def test_rule_with_multiple_words(multi_client):
+    login(multi_client)
+    resp = multi_client.post(
+        '/rules',
+        json={
+            'pattern': 'hello world',
+            'category_id': multi_client.new_cat_id,
+            'subcategory_id': multi_client.new_sub_id,
+        },
+    )
+    assert resp.status_code == 201
+    data = resp.get_json()
+    assert data['updated'] == 1
+    session = models.SessionLocal()
+    txs = session.query(models.Transaction).order_by(models.Transaction.date).all()
+    session.close()
+    assert len(txs) == 2
+    assert txs[0].category_id == multi_client.new_cat_id
+    assert txs[1].category_id != multi_client.new_cat_id

@@ -289,16 +289,21 @@ def parse_csv(content):
 def apply_rule_to_transactions(session, rule):
     """Update transactions matching a rule.
 
-    All transactions whose labels contain the rule pattern (case-insensitive)
-    are updated regardless of any existing categorisation.
+    All transactions whose labels contain the words from the rule pattern in
+    the same order (case-insensitive) are updated regardless of any existing
+    categorisation. Arbitrary text may appear between the words.
 
     Returns the number of rows updated.
     """
 
-    pattern = rule.pattern.lower()
+    words = [w for w in rule.pattern.split() if w]
+    if not words:
+        return 0
+
+    like_pattern = '%' + '%'.join(words) + '%'
     updated = (
         session.query(Transaction)
-        .filter(func.lower(Transaction.label).contains(pattern))
+        .filter(func.lower(Transaction.label).like(like_pattern.lower()))
         .update(
             {
                 Transaction.category_id: rule.category_id,
