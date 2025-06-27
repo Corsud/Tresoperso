@@ -1106,6 +1106,8 @@ def categories(category_id=None):
             category.name = name
         if color is not None:
             category.color = color
+            for sub in category.subcategories:
+                sub.color = color
         session.commit()
 
         # update categories.json if name has changed
