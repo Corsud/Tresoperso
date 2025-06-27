@@ -247,6 +247,7 @@
     <script>
         let categoriesData = [];
         let subcategoriesData = [];
+        let categoryOptions = {};
         let accountsData = [];
         let selectedAccountId = '';
 
@@ -256,6 +257,87 @@
 
         function findSubcategory(id) {
             return subcategoriesData.find(s => String(s.id) === String(id));
+        }
+
+        async function fetchCategoryOptions() {
+            const resp = await fetch('/category-options');
+            if (!resp.ok) return;
+            categoryOptions = await resp.json();
+            populateCategorySelects();
+        }
+
+        function populateCategorySelects() {
+            const catSelectIds = [
+                'popup-category-select',
+                'rule-category',
+                'rule-overlay-category',
+                'subcategory-category',
+                'filter-category',
+                'fav-filter-overlay-category'
+            ];
+            const subSelectIds = [
+                'popup-subcategory-select',
+                'rule-subcategory',
+                'rule-overlay-subcategory',
+                'filter-subcategory',
+                'fav-filter-overlay-subcategory'
+            ];
+
+            const catByName = {};
+            categoriesData.forEach(c => { catByName[c.name] = c; });
+            const subByKey = {};
+            subcategoriesData.forEach(s => { subByKey[`${s.category}::${s.name}`] = s; });
+
+            catSelectIds.forEach(id => {
+                const sel = document.getElementById(id);
+                if (!sel) return;
+                const noneText = id === 'filter-category' ? '(Toutes)' : '(Aucune)';
+                sel.innerHTML = `<option value="">${noneText}</option>`;
+            });
+
+            subSelectIds.forEach(id => {
+                const sel = document.getElementById(id);
+                if (!sel) return;
+                const noneText = id === 'filter-subcategory' ? '(Toutes)' : '(Aucune)';
+                sel.innerHTML = `<option value="">${noneText}</option>`;
+            });
+
+            Object.entries(categoryOptions).forEach(([catName, subs]) => {
+                const cat = catByName[catName];
+                if (!cat) return;
+                catSelectIds.forEach(id => {
+                    const sel = document.getElementById(id);
+                    if (!sel) return;
+                    const opt = document.createElement('option');
+                    opt.value = cat.id;
+                    opt.textContent = cat.name;
+                    sel.appendChild(opt.cloneNode(true));
+                });
+                subs.forEach(subName => {
+                    const sub = subByKey[`${catName}::${subName}`];
+                    if (!sub) return;
+                    subSelectIds.forEach(id => {
+                        const sel = document.getElementById(id);
+                        if (!sel) return;
+                        const opt = document.createElement('option');
+                        opt.value = sub.id;
+                        opt.textContent = `${catName} - ${subName}`;
+                        sel.appendChild(opt.cloneNode(true));
+                    });
+                });
+            });
+
+            const subSelectCat = document.getElementById('subcategory-category');
+            if (subSelectCat) {
+                subSelectCat.onchange = () => {
+                    const cat = findCategory(subSelectCat.value);
+                    const colorInput = document.getElementById('subcategory-color');
+                    if (cat && colorInput) {
+                        colorInput.value = cat.color || '#000000';
+                    }
+                };
+                if (subSelectCat.value) subSelectCat.onchange();
+            }
         }
 
         function formatAmount(v) {
@@ -564,8 +646,9 @@
                 displayAccountInfo();
                 fetchBalanceInfo();
                 fetchTransactions();
-                fetchCategories();
-                fetchSubcategories();
+                await fetchCategories();
+                await fetchSubcategories();
+                await fetchCategoryOptions();
                 fetchRules();
                 fetchDashboard();
                 fetchStats();
@@ -621,16 +704,6 @@
             categoriesData = data;
             const list = document.getElementById('categories-list');
             list.innerHTML = '';
-            const select = document.getElementById('rule-category');
-            select.innerHTML = '';
-            const overlayCat = document.getElementById('rule-overlay-category');
-            if (overlayCat) overlayCat.innerHTML = '';
-            const popupSelect = document.getElementById('popup-category-select');
-            popupSelect.innerHTML = '<option value="">(Aucune)</option>';
-            const subSelectCat = document.getElementById('subcategory-category');
-            subSelectCat.innerHTML = '';
-            const filterCat = document.getElementById('filter-category');
-            if (filterCat) filterCat.innerHTML = '<option value="">(Toutes)</option>';
             data.forEach(c => {
                 const li = document.createElement('li');
                 const colorSpan = document.createElement('span');
@@ -676,45 +749,8 @@
                 li.append(' ', fav, ' ', edit, ' ', del);
                 list.appendChild(li);
 
-                const opt = document.createElement('option');
-                opt.value = c.id;
-                opt.textContent = c.name;
-                select.appendChild(opt);
-                if (overlayCat) {
-                    const o2 = document.createElement('option');
-                    o2.value = c.id;
-                    o2.textContent = c.name;
-                    overlayCat.appendChild(o2);
-                }
-
-                const catOpt = document.createElement('option');
-                catOpt.value = c.id;
-                catOpt.textContent = c.name;
-                subSelectCat.appendChild(catOpt);
-
-                const popOpt = document.createElement('option');
-                popOpt.value = c.id;
-                popOpt.textContent = c.name;
-                popupSelect.appendChild(popOpt);
-
-                if (filterCat) {
-                    const f = document.createElement('option');
-                    f.value = c.name;
-                    f.textContent = c.name;
-                    filterCat.appendChild(f);
-                }
             });
-
-            subSelectCat.onchange = () => {
-                const cat = findCategory(subSelectCat.value);
-                const colorInput = document.getElementById('subcategory-color');
-                if (cat && colorInput) {
-                    colorInput.value = cat.color || '#000000';
-                }
-            };
-            if (subSelectCat.value) {
-                subSelectCat.onchange();
-            }
+            populateCategorySelects();
         }
 
         async function fetchSubcategories() {
@@ -724,14 +760,6 @@
             subcategoriesData = data;
             const list = document.getElementById('subcategories-list');
             list.innerHTML = '';
-            const select = document.getElementById('rule-subcategory');
-            select.innerHTML = '<option value="">(Aucune)</option>';
-            const overlaySub = document.getElementById('rule-overlay-subcategory');
-            if (overlaySub) overlaySub.innerHTML = '<option value="">(Aucune)</option>';
-            const popupSelect = document.getElementById('popup-subcategory-select');
-            popupSelect.innerHTML = '<option value="">(Aucune)</option>';
-            const filterSub = document.getElementById('filter-subcategory');
-            if (filterSub) filterSub.innerHTML = '<option value="">(Toutes)</option>';
             data.forEach(s => {
                 const li = document.createElement('li');
                 li.appendChild(document.createTextNode(`${s.category} → `));
@@ -776,29 +804,8 @@
                 li.append(' ', fav, ' ', edit, ' ', del);
                 list.appendChild(li);
 
-                const opt = document.createElement('option');
-                opt.value = s.id;
-                opt.textContent = `${s.category} - ${s.name}`;
-                select.appendChild(opt);
-                if (overlaySub) {
-                    const o2 = document.createElement('option');
-                    o2.value = s.id;
-                    o2.textContent = `${s.category} - ${s.name}`;
-                    overlaySub.appendChild(o2);
-                }
-
-                const popOpt = document.createElement('option');
-                popOpt.value = s.id;
-                popOpt.textContent = `${s.category} - ${s.name}`;
-                popupSelect.appendChild(popOpt);
-
-                if (filterSub) {
-                    const fs = document.createElement('option');
-                    fs.value = s.name;
-                    fs.textContent = `${s.category} - ${s.name}`;
-                    filterSub.appendChild(fs);
-                }
             });
+            populateCategorySelects();
         }
 
         async function fetchRules() {
