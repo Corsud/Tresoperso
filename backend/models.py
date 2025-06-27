@@ -46,6 +46,7 @@ class BankAccount(Base):
     __tablename__ = 'bank_accounts'
 
     id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False, default='')
     account_type = Column(String)
     number = Column(String)
     export_date = Column(Date)
@@ -141,6 +142,8 @@ def init_db():
 
         info = conn.execute(text('PRAGMA table_info(bank_accounts)')).fetchall()
         cols = {row[1] for row in info}
+        if 'name' not in cols:
+            conn.execute(text("ALTER TABLE bank_accounts ADD COLUMN name TEXT DEFAULT '' NOT NULL"))
         if 'initial_balance' not in cols:
             conn.execute(text('ALTER TABLE bank_accounts ADD COLUMN initial_balance REAL DEFAULT 0'))
         if 'balance_date' not in cols:

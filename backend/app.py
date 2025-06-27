@@ -98,14 +98,36 @@ def me():
     return jsonify({'error': 'Unauthorized'}), 401
 
 
-@app.route('/accounts')
+@app.route('/accounts', methods=['GET', 'POST'])
 @login_required
 def accounts():
-    """Return all bank accounts."""
+    """Return all bank accounts or create a new one."""
     session = SessionLocal()
+    if request.method == 'POST':
+        data = request.get_json() or {}
+        acc = BankAccount(
+            name=data.get('name', ''),
+            account_type=data.get('account_type'),
+            number=data.get('number'),
+        )
+        session.add(acc)
+        session.commit()
+        result = {
+            'id': acc.id,
+            'name': acc.name,
+            'account_type': acc.account_type,
+            'number': acc.number,
+            'export_date': acc.export_date.isoformat() if acc.export_date else None,
+            'initial_balance': acc.initial_balance,
+            'balance_date': acc.balance_date.isoformat() if acc.balance_date else None,
+        }
+        session.close()
+        return jsonify(result), 201
+
     data = [
         {
             'id': a.id,
+            'name': a.name,
             'account_type': a.account_type,
             'number': a.number,
             'export_date': a.export_date.isoformat() if a.export_date else None,
@@ -155,6 +177,65 @@ def account_balance(account_id):
     session.commit()
     result = {
         'id': acc.id,
+        'initial_balance': acc.initial_balance,
+        'balance_date': acc.balance_date.isoformat() if acc.balance_date else None,
+    }
+    session.close()
+    return jsonify(result)
+
+
+@app.route('/accounts/<int:account_id>', methods=['GET', 'PUT', 'DELETE'])
+@login_required
+def account_detail(account_id):
+    """Retrieve, update or delete a bank account."""
+    session = SessionLocal()
+    acc = session.query(BankAccount).get(account_id)
+    if not acc:
+        session.close()
+        return jsonify({'error': 'Not found'}), 404
+
+    if request.method == 'GET':
+        result = {
+            'id': acc.id,
+            'name': acc.name,
+            'account_type': acc.account_type,
+            'number': acc.number,
+            'export_date': acc.export_date.isoformat() if acc.export_date else None,
+            'initial_balance': acc.initial_balance,
+            'balance_date': acc.balance_date.isoformat() if acc.balance_date else None,
+        }
+        session.close()
+        return jsonify(result)
+
+    if request.method == 'DELETE':
+        session.delete(acc)
+        session.commit()
+        session.close()
+        return '', 204
+
+    data = request.get_json() or {}
+    if 'name' in data:
+        acc.name = data['name'] or ''
+    if 'account_type' in data:
+        acc.account_type = data['account_type']
+    if 'number' in data:
+        acc.number = data['number']
+    if 'export_date' in data:
+        val = data['export_date']
+        if val:
+            try:
+                acc.export_date = datetime.strptime(val, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        else:
+            acc.export_date = None
+    session.commit()
+    result = {
+        'id': acc.id,
+        'name': acc.name,
+        'account_type': acc.account_type,
+        'number': acc.number,
+        'export_date': acc.export_date.isoformat() if acc.export_date else None,
         'initial_balance': acc.initial_balance,
         'balance_date': acc.balance_date.isoformat() if acc.balance_date else None,
     }
@@ -343,7 +424,6 @@ def import_csv():
     account = session.query(BankAccount).filter_by(
         account_type=account_info.get('account_type'),
         number=account_info.get('number'),
-        export_date=account_info.get('export_date'),
     ).first()
     if not account:
         account = BankAccount(
@@ -352,6 +432,9 @@ def import_csv():
             export_date=account_info.get('export_date'),
         )
         session.add(account)
+        session.commit()
+    else:
+        account.export_date = account_info.get('export_date')
         session.commit()
 
     # Load rules once for auto-categorisation
