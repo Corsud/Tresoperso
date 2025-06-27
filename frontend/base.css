@@ -32,18 +32,21 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
     white-space: normal;
 }
 
-/* Filter inputs aligned with transactions table */
-#transaction-filters {
-    width: 95%;
-    display: grid;
-    grid-template-columns: 2em auto auto auto 1fr auto auto auto auto auto auto;
-}
-#transaction-filters select {
-    max-width: 100%;
-}
-#transaction-filters > div {
+/* Filter row inside transactions table */
+#transactions-table thead .filter-row th {
     position: relative;
     overflow: visible;
+    padding: 2px;
+}
+#transactions-table thead .filter-row .stack {
+    display: flex;
+    flex-direction: column;
+}
+#transactions-table thead .filter-row input,
+#transactions-table thead .filter-row select {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
 }
 #transactions-section .transactions-header {
     display: flex;
