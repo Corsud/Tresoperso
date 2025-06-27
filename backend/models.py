@@ -1,11 +1,23 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, Date, Boolean, ForeignKey, text
+from sqlalchemy import (
+    create_engine,
+    Column,
+    Integer,
+    String,
+    Float,
+    Date,
+    Boolean,
+    ForeignKey,
+    text,
+)
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash
 import os
 import json
 
-engine = create_engine('sqlite:///tresoperso.db')
+from . import config
+
+engine = create_engine(config.DATABASE_URI)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
