@@ -337,6 +337,22 @@
             }
         }
 
+        function populateSubPopup(catId) {
+            const sel = document.getElementById('popup-subcategory-select');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">(Aucune)</option>';
+            categoryOptions.forEach(cat => {
+                (cat.subcategories || []).forEach(sub => {
+                    if (!catId || String(cat.id) === String(catId)) {
+                        const opt = document.createElement('option');
+                        opt.value = sub.id;
+                        opt.textContent = `${cat.name} - ${sub.name}`;
+                        sel.appendChild(opt);
+                    }
+                });
+            });
+        }
+
         function formatAmount(v) {
             if (localStorage.getItem('hideAmounts') === 'true') {
                 return '•••';
@@ -577,6 +593,7 @@
                 subBtn.className = 'tx-sub-btn';
                 subBtn.dataset.id = t.id;
                 subBtn.dataset.current = t.subcategory_id || '';
+                subBtn.dataset.categoryId = t.category_id || '';
                 if (t.subcategory) {
                     subBtn.textContent = t.subcategory;
                     subBtn.style.color = t.subcategory_color || '';
@@ -1115,6 +1132,7 @@
                 catOverlay.style.display = 'flex';
             } else if (e.target.classList.contains('tx-sub-btn')) {
                 currentSubBtn = e.target;
+                populateSubPopup(currentSubBtn.dataset.categoryId);
                 document.getElementById('popup-subcategory-select').value = currentSubBtn.dataset.current || '';
                 subOverlay.style.display = 'flex';
             } else if (e.target.classList.contains('tx-rule-btn')) {
