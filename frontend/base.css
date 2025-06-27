@@ -25,6 +25,9 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
     width: 95%;
     table-layout: auto;
 }
+#transactions-table.long-label {
+    font-size: 0.75rem;
+}
 #transactions-table td {
     white-space: nowrap;
 }
@@ -63,11 +66,24 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
     width: 2em;
     text-align: right;
 }
+#transactions-table.long-label th:nth-child(1),
+#transactions-table.long-label td:nth-child(1) {
+    width: 1.5em;
+}
 #transactions-table th:nth-child(6),
 #transactions-table td:nth-child(6) {
     width: 100%;
     white-space: normal;
     word-break: break-word;
+}
+#transactions-table.long-label th,
+#transactions-table.long-label td {
+    padding-left: 2px;
+    padding-right: 2px;
+}
+#transactions-table.long-label th:nth-child(6),
+#transactions-table.long-label td:nth-child(6) {
+    width: auto;
 }
 #transactions-table th:nth-child(7),
 #transactions-table td:nth-child(7) {

@@ -514,6 +514,22 @@
 
                 tbody.appendChild(tr);
             });
+            adjustLabelColumns();
+        }
+
+        function adjustLabelColumns() {
+            const table = document.getElementById('transactions-table');
+            if (!table) return;
+            table.classList.remove('long-label');
+            const cells = table.querySelectorAll('tbody td:nth-child(6)');
+            for (const td of cells) {
+                const lh = parseFloat(getComputedStyle(td).lineHeight);
+                const lines = Math.round(td.getBoundingClientRect().height / lh);
+                if (lines >= 6) {
+                    table.classList.add('long-label');
+                    break;
+                }
+            }
         }
 
         async function fetchAccounts() {
@@ -761,6 +777,7 @@
 
                 tbody.appendChild(tr);
             });
+            adjustLabelColumns();
         }
 
         document.getElementById('login-form').addEventListener('submit', async e => {
