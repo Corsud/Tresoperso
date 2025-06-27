@@ -727,8 +727,9 @@
                     if (resp.ok) {
                         fav.classList.toggle('selected');
                     }
-                    fetchCategories();
-                    fetchSubcategories();
+                    await fetchCategories();
+                    await fetchSubcategories();
+                    await fetchCategoryOptions();
                 };
 
                 const edit = document.createElement('button');
@@ -742,9 +743,10 @@
                 del.textContent = 'Supprimer';
                 del.onclick = async () => {
                     await fetch('/categories/' + c.id, { method: 'DELETE' });
-                    fetchCategories();
+                    await fetchCategories();
                     fetchRules();
-                    fetchSubcategories();
+                    await fetchSubcategories();
+                    await fetchCategoryOptions();
                 };
                 li.append(' ', fav, ' ', edit, ' ', del);
                 list.appendChild(li);
@@ -784,7 +786,8 @@
                     if (resp.ok) {
                         fav.classList.toggle('selected');
                     }
-                    fetchSubcategories();
+                    await fetchSubcategories();
+                    await fetchCategoryOptions();
                 };
 
                 const edit = document.createElement('button');
@@ -799,7 +802,8 @@
                 del.textContent = 'Supprimer';
                 del.onclick = async () => {
                     await fetch('/subcategories/' + s.id, { method: 'DELETE' });
-                    fetchSubcategories();
+                    await fetchSubcategories();
+                    await fetchCategoryOptions();
                 };
                 li.append(' ', fav, ' ', edit, ' ', del);
                 list.appendChild(li);
@@ -851,9 +855,10 @@
             document.getElementById('category-id').value = '';
             document.getElementById('category-name').value = '';
             document.getElementById('category-color').value = '#000000';
-            fetchCategories();
+            await fetchCategories();
             fetchRules();
-            fetchSubcategories();
+            await fetchSubcategories();
+            await fetchCategoryOptions();
         });
 
         document.getElementById('subcategory-form').addEventListener('submit', async e => {
@@ -871,7 +876,8 @@
             document.getElementById('subcategory-id').value = '';
             document.getElementById('subcategory-name').value = '';
             document.getElementById('subcategory-color').value = '#000000';
-            fetchSubcategories();
+            await fetchSubcategories();
+            await fetchCategoryOptions();
         });
 
         document.getElementById('rule-form').addEventListener('submit', async e => {
