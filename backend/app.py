@@ -6,6 +6,7 @@ import threading
 import os
 import csv
 import re
+import json
 from datetime import datetime, timedelta
 from sqlalchemy import func, or_, and_
 
@@ -26,12 +27,31 @@ from .models import (
 # started from.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FRONTEND_DIR = os.path.join(BASE_DIR, '..', 'frontend')
+CATEGORIES_JSON = os.path.join(BASE_DIR, 'categories.json')
 
 app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path='')
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret')
 
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+
+def load_categories_json():
+    if os.path.exists(CATEGORIES_JSON):
+        try:
+            with open(CATEGORIES_JSON, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+
+def save_categories_json(data):
+    try:
+        with open(CATEGORIES_JSON, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
 
 
 @login_manager.user_loader
@@ -959,6 +979,13 @@ def projection():
     return jsonify(result)
 
 
+@app.route('/category-options')
+@login_required
+def category_options():
+    data = load_categories_json()
+    return jsonify(data)
+
+
 @app.route('/categories', methods=['GET', 'POST'])
 @app.route('/categories/<int:category_id>', methods=['GET', 'PUT', 'DELETE'])
 @login_required
@@ -1019,6 +1046,10 @@ def categories(category_id=None):
         category = Category(name=name, color=color, favorite=favorite)
         session.add(category)
         session.commit()
+        data_json = load_categories_json()
+        if name not in data_json:
+            data_json[name] = []
+            save_categories_json(data_json)
         result = {'id': category.id, 'name': category.name, 'color': category.color, 'favorite': category.favorite}
         session.close()
         return jsonify(result), 201
@@ -1098,11 +1129,18 @@ def subcategories(sub_id=None):
         if not color:
             cat = session.query(Category).get(int(category_id))
             color = cat.color if cat else ''
-
+        
         sub = Subcategory(name=name, category_id=int(category_id), color=color, favorite=favorite)
 
         session.add(sub)
         session.commit()
+        cat = session.query(Category).get(int(category_id)) if not locals().get('cat') else cat
+        data_json = load_categories_json()
+        if cat and cat.name:
+            lst = data_json.setdefault(cat.name, [])
+            if name not in lst:
+                lst.append(name)
+                save_categories_json(data_json)
         result = {
             'id': sub.id,
             'name': sub.name,
