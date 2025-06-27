@@ -2,6 +2,8 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, Date, Bool
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash
+import os
+import json
 
 engine = create_engine('sqlite:///tresoperso.db')
 SessionLocal = sessionmaker(bind=engine)
@@ -150,4 +152,20 @@ def init_db():
         user = User(username='admin', password=generate_password_hash('admin'))
         session.add(user)
         session.commit()
+
+    # Populate default categories and subcategories if provided
+    if not session.query(Category).first():
+        path = os.path.join(os.path.dirname(__file__), 'categories.json')
+        if os.path.exists(path):
+            with open(path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            for cat_name, subcats in data.items():
+                cat = Category(name=cat_name)
+                session.add(cat)
+                session.flush()
+                for sub_name in subcats:
+                    sub = Subcategory(name=sub_name, category_id=cat.id)
+                    session.add(sub)
+            session.commit()
+
     session.close()
