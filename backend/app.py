@@ -337,6 +337,9 @@ def parse_csv(content):
 
     # Skip header/account information lines
     for line_no, row in enumerate(rows[start_idx:], start=start_idx + 1):
+        # Ignore completely empty lines which may appear at the end of the file
+        if not any(cell.strip() for cell in row):
+            continue
         if len(row) < 5:
             errors.append(f'Ligne {line_no}: colonnes manquantes')
             continue
