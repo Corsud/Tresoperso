@@ -6,13 +6,11 @@ import webbrowser
 from flask import Flask
 
 from .models import init_db, SessionLocal
+from . import config
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-FRONTEND_DIR = os.path.join(BASE_DIR, '..', 'frontend')
-CATEGORIES_JSON = os.path.join(BASE_DIR, 'categories.json')
-
-app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path='')
-app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret')
+app = Flask(__name__, static_folder=str(config.FRONTEND_DIR), static_url_path='')
+app.secret_key = config.SECRET_KEY
+CATEGORIES_JSON = config.CATEGORIES_JSON
 
 
 def load_categories_json():

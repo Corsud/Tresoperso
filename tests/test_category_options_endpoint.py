@@ -16,7 +16,7 @@ def client(tmp_path, monkeypatch):
     # temp categories.json
     cat_json = tmp_path / "categories.json"
     cat_json.write_text("{}", encoding="utf-8")
-    monkeypatch.setattr(app_module, "CATEGORIES_JSON", str(cat_json))
+    monkeypatch.setattr(app_module.config, "CATEGORIES_JSON", str(cat_json))
     monkeypatch.setattr(models, "__file__", str(tmp_path / "models.py"))
     models.init_db()
     with app_module.app.test_client() as client:
