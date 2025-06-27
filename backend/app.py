@@ -982,8 +982,43 @@ def projection():
 @app.route('/category-options')
 @login_required
 def category_options():
+    """Return categories and subcategories from categories.json with DB IDs.
+
+    Any missing categories or subcategories are created automatically.
+    """
     data = load_categories_json()
-    return jsonify(data)
+    session = SessionLocal()
+    result = []
+    try:
+        for cat_name, sub_names in data.items():
+            cat = session.query(Category).filter_by(name=cat_name).first()
+            if not cat:
+                cat = Category(name=cat_name)
+                session.add(cat)
+                session.commit()
+            cat_entry = {
+                'id': cat.id,
+                'name': cat.name,
+                'subcategories': []
+            }
+            for sub_name in sub_names:
+                sub = (
+                    session.query(Subcategory)
+                    .filter_by(name=sub_name, category_id=cat.id)
+                    .first()
+                )
+                if not sub:
+                    sub = Subcategory(name=sub_name, category_id=cat.id)
+                    session.add(sub)
+                    session.commit()
+                cat_entry['subcategories'].append({
+                    'id': sub.id,
+                    'name': sub.name,
+                })
+            result.append(cat_entry)
+    finally:
+        session.close()
+    return jsonify(result)
 
 
 @app.route('/categories', methods=['GET', 'POST'])

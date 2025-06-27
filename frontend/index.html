@@ -247,7 +247,7 @@
     <script>
         let categoriesData = [];
         let subcategoriesData = [];
-        let categoryOptions = {};
+        let categoryOptions = [];
         let accountsData = [];
         let selectedAccountId = '';
 
@@ -289,11 +289,6 @@
                 'fav-filter-overlay-subcategory'
             ];
 
-            const catByName = {};
-            categoriesData.forEach(c => { catByName[c.name] = c; });
-            const subByKey = {};
-            subcategoriesData.forEach(s => { subByKey[`${s.category}::${s.name}`] = s; });
-
             catSelectIds.forEach(id => {
                 const sel = document.getElementById(id);
                 if (!sel) return;
@@ -308,9 +303,7 @@
                 sel.innerHTML = `<option value="">${noneText}</option>`;
             });
 
-            Object.entries(categoryOptions).forEach(([catName, subs]) => {
-                const cat = catByName[catName];
-                if (!cat) return;
+            categoryOptions.forEach(cat => {
                 catSelectIds.forEach(id => {
                     const sel = document.getElementById(id);
                     if (!sel) return;
@@ -319,15 +312,13 @@
                     opt.textContent = cat.name;
                     sel.appendChild(opt.cloneNode(true));
                 });
-                subs.forEach(subName => {
-                    const sub = subByKey[`${catName}::${subName}`];
-                    if (!sub) return;
+                (cat.subcategories || []).forEach(sub => {
                     subSelectIds.forEach(id => {
                         const sel = document.getElementById(id);
                         if (!sel) return;
                         const opt = document.createElement('option');
                         opt.value = sub.id;
-                        opt.textContent = `${catName} - ${subName}`;
+                        opt.textContent = `${cat.name} - ${sub.name}`;
                         sel.appendChild(opt.cloneNode(true));
                     });
                 });
