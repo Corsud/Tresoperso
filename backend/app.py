@@ -263,41 +263,80 @@ def parse_csv(content):
     if not rows:
         return [], [], ['Fichier vide'], {}
 
-    account_row = rows[0]
-    info_str = ' '.join(account_row)
-    number = ''
-    export_date = None
-    account_type = info_str
-    m = re.search(r'(\d{2}/\d{2}/\d{4}|\d{4}-\d{2}-\d{2})', info_str)
-    if m:
-        date_str = m.group(1)
-        try:
-            export_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        except ValueError:
-            try:
-                export_date = datetime.strptime(date_str, '%d/%m/%Y').date()
-            except ValueError:
-                export_date = None
-        account_type = info_str[:m.start()].strip()
-    n = re.search(r'(\d{4,})', info_str)
-    if n:
-        number = n.group(1)
-        if n.start() < len(account_type):
-            account_type = account_type[:n.start()].strip()
+    # Detect a BNP export with a header line after an empty row
+    header_mode = False
+    if len(rows) >= 3 and not any(c.strip() for c in rows[1]):
+        hdr = [c.lower() for c in rows[2]]
+        if hdr and 'date' in hdr[0] and 'montant' in hdr[-1]:
+            header_mode = True
 
-    account_info = {
-        'account_type': account_type.strip(),
-        'number': number,
-        'export_date': export_date,
-    }
+    if header_mode and len(rows[0]) >= 4:
+        raw = rows[0]
+        account_type = raw[0].strip()
+        name = raw[1].strip() if len(raw) > 1 else ''
+        number = raw[2].strip() if len(raw) > 2 else ''
+        export_date = None
+        if len(raw) > 3 and raw[3].strip():
+            for fmt in ('%Y-%m-%d', '%d/%m/%Y'):
+                try:
+                    export_date = datetime.strptime(raw[3].strip(), fmt).date()
+                    break
+                except ValueError:
+                    continue
+        balance = None
+        if len(raw) > 5 and raw[5].strip():
+            cleaned = raw[5].replace('\xa0', '').replace(' ', '').replace(',', '.')
+            try:
+                balance = float(cleaned)
+            except ValueError:
+                balance = None
+        account_info = {
+            'account_type': account_type,
+            'name': name,
+            'number': number,
+            'export_date': export_date,
+        }
+        if balance is not None:
+            account_info['initial_balance'] = balance
+            account_info['balance_date'] = export_date
+        start_idx = 3
+    else:
+        account_row = rows[0]
+        info_str = ' '.join(account_row)
+        number = ''
+        export_date = None
+        account_type = info_str
+        m = re.search(r'(\d{2}/\d{2}/\d{4}|\d{4}-\d{2}-\d{2})', info_str)
+        if m:
+            date_str = m.group(1)
+            try:
+                export_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            except ValueError:
+                try:
+                    export_date = datetime.strptime(date_str, '%d/%m/%Y').date()
+                except ValueError:
+                    export_date = None
+            account_type = info_str[:m.start()].strip()
+        n = re.search(r'(\d{4,})', info_str)
+        if n:
+            number = n.group(1)
+            if n.start() < len(account_type):
+                account_type = account_type[:n.start()].strip()
+
+        account_info = {
+            'account_type': account_type.strip(),
+            'number': number,
+            'export_date': export_date,
+        }
+        start_idx = 1
 
     transactions = []
     duplicates = []
     errors = []
     seen = set()
 
-    # Skip the first line which contains account information
-    for line_no, row in enumerate(rows[1:], start=2):
+    # Skip header/account information lines
+    for line_no, row in enumerate(rows[start_idx:], start=start_idx + 1):
         if len(row) < 5:
             errors.append(f'Ligne {line_no}: colonnes manquantes')
             continue
@@ -430,11 +469,17 @@ def import_csv():
             account_type=account_info.get('account_type'),
             number=account_info.get('number'),
             export_date=account_info.get('export_date'),
+            name=account_info.get('name', ''),
         )
+        if account_info.get('initial_balance') is not None:
+            account.initial_balance = account_info['initial_balance']
+            account.balance_date = account_info.get('balance_date')
         session.add(account)
         session.commit()
     else:
         account.export_date = account_info.get('export_date')
+        if account_info.get('name'):
+            account.name = account_info['name']
         session.commit()
 
     # Load rules once for auto-categorisation
@@ -488,9 +533,12 @@ def import_csv():
         'imported': imported,
         'account': {
             'id': account.id,
+            'name': account.name,
             'account_type': account.account_type,
             'number': account.number,
             'export_date': account.export_date.isoformat() if account.export_date else None,
+            'initial_balance': account.initial_balance,
+            'balance_date': account.balance_date.isoformat() if account.balance_date else None,
         }
     }
     if duplicates:

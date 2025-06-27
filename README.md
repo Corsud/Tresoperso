@@ -77,11 +77,13 @@ pytest
 
 ## Format des fichiers CSV
 
-Pour la BNP : Les champs du CSV doivent être séparés par des point-virgules (`;`). 
-Les fichiers de la bnp ne comportent pas d'entete de colonnes. la premiere ligne decrit le compte bancaire. A partir de la deuxieme ligne se trouvent les transactions.
-Elles sont au format :`date`, `type de transaction`, `moyen de paiement`, `libellé` et
-`montant`. Les colonnes `type de transaction` et `moyen de paiement` sont
-désormais enregistrées dans la base pour chaque opération.
+Pour la BNP, les champs du CSV doivent être séparés par des point‑virgules (`;`).
+La première ligne décrit le compte bancaire sous la forme :
+`type de compte ; nom ; numéro ; date du fichier ; ; solde à la date`.
+La seconde ligne est vide et la troisième contient les en‑têtes :
+`Date opération ; Libellé court ; Type opération ; Libellé opération ; Montant opération en euro`.
+Les lignes suivantes contiennent les opérations au même ordre que ces en‑têtes.
+Les colonnes `type opération` et `libellé court` sont enregistrées dans la base pour chaque opération.
 
 Les montants peuvent contenir un espace comme séparateur de milliers et
 utiliser soit la virgule soit le point pour indiquer les décimales.
