@@ -159,7 +159,9 @@
                             <input type="color" id="category-color" value="#000000" />
                             <button type="submit">Enregistrer</button>
                         </form>
-                        <ul id="categories-list"></ul>
+                        <table id="categories-table">
+                            <tbody></tbody>
+                        </table>
                     </div>
                     <div class="settings-col">
                         <h3>Sous-catégories</h3>
@@ -170,7 +172,7 @@
                             <input type="color" id="subcategory-color" value="#000000" />
                             <button type="submit">Enregistrer</button>
                         </form>
-                        <ul id="subcategories-list"></ul>
+                        <ul id="subcategories-list" style="display:none;"></ul>
                     </div>
                 </div>
 
@@ -714,19 +716,24 @@
             if (!resp.ok) return;
             const data = await resp.json();
             categoriesData = data;
-            const list = document.getElementById('categories-list');
-            list.innerHTML = '';
+            const tbody = document.querySelector('#categories-table tbody');
+            tbody.innerHTML = '';
             data.forEach(c => {
-                const li = document.createElement('li');
+                const tr = document.createElement('tr');
+                const colorTd = document.createElement('td');
                 const colorSpan = document.createElement('span');
                 colorSpan.style.display = 'inline-block';
                 colorSpan.style.width = '12px';
                 colorSpan.style.height = '12px';
                 colorSpan.style.background = c.color;
-                colorSpan.style.marginRight = '4px';
-                li.appendChild(colorSpan);
-                li.appendChild(document.createTextNode(c.name));
+                colorTd.appendChild(colorSpan);
+                tr.appendChild(colorTd);
 
+                const nameTd = document.createElement('td');
+                nameTd.textContent = c.name;
+                tr.appendChild(nameTd);
+
+                const favTd = document.createElement('td');
                 const fav = document.createElement('button');
                 fav.className = 'tx-fav-btn' + (c.favorite ? ' selected' : '');
                 fav.textContent = c.favorite ? '★' : '☆';
@@ -741,7 +748,10 @@
                     }
                     await refreshCategoryData();
                 };
+                favTd.appendChild(fav);
+                tr.appendChild(favTd);
 
+                const editTd = document.createElement('td');
                 const edit = document.createElement('button');
                 edit.textContent = 'Éditer';
                 edit.onclick = () => {
@@ -749,6 +759,10 @@
                     document.getElementById('category-name').value = c.name;
                     document.getElementById('category-color').value = c.color || '#000000';
                 };
+                editTd.appendChild(edit);
+                tr.appendChild(editTd);
+
+                const delTd = document.createElement('td');
                 const del = document.createElement('button');
                 del.textContent = 'Supprimer';
                 del.onclick = async () => {
@@ -756,8 +770,22 @@
                     await refreshCategoryData();
                     fetchRules();
                 };
-                li.append(' ', fav, ' ', edit, ' ', del);
-                list.appendChild(li);
+                delTd.appendChild(del);
+                tr.appendChild(delTd);
+
+                const subTd = document.createElement('td');
+                const subBtn = document.createElement('button');
+                subBtn.textContent = 'Sous-catégorie';
+                subBtn.onclick = () => {
+                    document.getElementById('subcategory-category').value = c.id;
+                    document.getElementById('subcategory-id').value = '';
+                    document.getElementById('subcategory-name').value = '';
+                    document.getElementById('subcategory-color').value = c.color || '#000000';
+                };
+                subTd.appendChild(subBtn);
+                tr.appendChild(subTd);
+
+                tbody.appendChild(tr);
 
             });
             populateCategorySelects();

@@ -118,6 +118,16 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
     margin-top: 10px;
 }
 
+#categories-table td {
+    text-align: left;
+}
+#categories-table td:nth-child(3),
+#categories-table td:nth-child(4),
+#categories-table td:nth-child(5),
+#categories-table td:nth-child(6) {
+    text-align: center;
+}
+
 #categories-list li,
 #subcategories-list li,
 #rules-list li {
