@@ -44,6 +44,8 @@ Le backend repose sur **SQLAlchemy** avec une base SQLite créée dans le
 fichier `tresoperso.db`. Lors du premier démarrage, les tables ainsi qu'un
 compte administrateur `admin` (mot de passe `admin`) sont générés
 automatiquement.
+Les catégories et sous-catégories sont également synchronisées depuis le fichier
+`backend/categories.json` à chaque démarrage.
 
 ```bash
 python run.py
