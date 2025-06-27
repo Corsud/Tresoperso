@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from backend import models
-from backend import app as app_module
+import backend as app_module
 
 
 @pytest.fixture
