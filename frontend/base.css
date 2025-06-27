@@ -128,6 +128,15 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
     text-align: center;
 }
 
+#manage-subcats-table td {
+    text-align: left;
+}
+#manage-subcats-table td:nth-child(3),
+#manage-subcats-table td:nth-child(4),
+#manage-subcats-table td:nth-child(5) {
+    text-align: center;
+}
+
 #categories-list li,
 #subcategories-list li,
 #rules-list li {

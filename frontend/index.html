@@ -245,6 +245,13 @@
                 <button id="fav-filter-overlay-save">OK</button>
             </div>
         </div>
+        <div id="manage-subcats-overlay" class="overlay">
+            <div class="popup">
+                <table id="manage-subcats-table">
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
     </div>
     <script>
         let categoriesData = [];
@@ -781,6 +788,7 @@
                     document.getElementById('subcategory-id').value = '';
                     document.getElementById('subcategory-name').value = '';
                     document.getElementById('subcategory-color').value = c.color || '#000000';
+                    showManageSubcats(c.id);
                 };
                 subTd.appendChild(subBtn);
                 tr.appendChild(subTd);
@@ -1152,6 +1160,8 @@
         const dupOverlay = document.getElementById('duplicate-overlay');
         const ruleOverlay = document.getElementById('rule-overlay');
         const favFilterOverlay = document.getElementById('fav-filter-overlay');
+        const manageSubcatsOverlay = document.getElementById('manage-subcats-overlay');
+        let manageCatId = null;
 
         function showPopupAt(overlay, x, y) {
             overlay.style.display = 'block';
@@ -1163,6 +1173,75 @@
                 popup.style.left = x + 'px';
                 popup.style.top = y + 'px';
             }
+        }
+
+        function populateManageSubcats(catId) {
+            const tbody = document.querySelector('#manage-subcats-table tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            subcategoriesData.filter(s => String(s.category_id) === String(catId)).forEach(s => {
+                const tr = document.createElement('tr');
+
+                const colorTd = document.createElement('td');
+                const colorSpan = document.createElement('span');
+                colorSpan.style.display = 'inline-block';
+                colorSpan.style.width = '12px';
+                colorSpan.style.height = '12px';
+                colorSpan.style.background = s.color;
+                colorTd.appendChild(colorSpan);
+                tr.appendChild(colorTd);
+
+                const nameTd = document.createElement('td');
+                nameTd.textContent = s.name;
+                tr.appendChild(nameTd);
+
+                const favTd = document.createElement('td');
+                const favBtn = document.createElement('button');
+                favBtn.className = 'tx-fav-btn' + (s.favorite ? ' selected' : '');
+                favBtn.textContent = s.favorite ? '★' : '☆';
+                favBtn.onclick = async () => {
+                    await fetch('/subcategories/' + s.id, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ favorite: !s.favorite })
+                    });
+                    await refreshCategoryData();
+                    populateManageSubcats(catId);
+                };
+                favTd.appendChild(favBtn);
+                tr.appendChild(favTd);
+
+                const editTd = document.createElement('td');
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Éditer';
+                editBtn.onclick = () => {
+                    document.getElementById('subcategory-id').value = s.id;
+                    document.getElementById('subcategory-name').value = s.name;
+                    document.getElementById('subcategory-category').value = s.category_id;
+                    document.getElementById('subcategory-color').value = s.color || '#000000';
+                };
+                editTd.appendChild(editBtn);
+                tr.appendChild(editTd);
+
+                const delTd = document.createElement('td');
+                const delBtn = document.createElement('button');
+                delBtn.textContent = 'Supprimer';
+                delBtn.onclick = async () => {
+                    await fetch('/subcategories/' + s.id, { method: 'DELETE' });
+                    await refreshCategoryData();
+                    populateManageSubcats(catId);
+                };
+                delTd.appendChild(delBtn);
+                tr.appendChild(delTd);
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        function showManageSubcats(catId) {
+            manageCatId = catId;
+            populateManageSubcats(catId);
+            manageSubcatsOverlay.style.display = 'flex';
         }
 
         document.getElementById('transactions-table').addEventListener('click', e => {
@@ -1216,6 +1295,7 @@
         subOverlay.addEventListener('click', e => { if (e.target === subOverlay) subOverlay.style.display = 'none'; });
         ruleOverlay.addEventListener('click', e => { if (e.target === ruleOverlay) ruleOverlay.style.display = 'none'; });
         favFilterOverlay.addEventListener('click', e => { if (e.target === favFilterOverlay) favFilterOverlay.style.display = 'none'; });
+        manageSubcatsOverlay.addEventListener('click', e => { if (e.target === manageSubcatsOverlay) manageSubcatsOverlay.style.display = 'none'; });
 
         function showDuplicates(dups, accountId) {
             const list = document.getElementById('duplicate-list');
