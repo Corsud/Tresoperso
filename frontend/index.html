@@ -258,6 +258,7 @@
         let subcategoriesData = [];
         let categoryOptions = [];
         let accountsData = [];
+        let rulesData = [];
         let selectedAccountId = '';
 
         function findCategory(id) {
@@ -858,6 +859,7 @@
             const resp = await fetch('/rules');
             if (!resp.ok) return;
             const data = await resp.json();
+            rulesData = data;
             const list = document.getElementById('rules-list');
             list.innerHTML = '';
             data.forEach(r => {
@@ -1256,14 +1258,22 @@
                 showPopupAt(subOverlay, e.clientX, e.clientY);
             } else if (e.target.classList.contains('tx-rule-btn')) {
                 currentRuleBtn = e.target;
-                const words = (currentRuleBtn.dataset.label || '').split(/[^\wÀ-ÿ]+/).filter(Boolean);
+                const label = currentRuleBtn.dataset.label || '';
+                const words = label.split(/[^\wÀ-ÿ]+/).filter(Boolean);
                 const cont = document.getElementById('rule-label-checkboxes');
                 cont.innerHTML = '';
+                const rule = rulesData.find(r => {
+                    const sameCat = String(r.category_id) === (currentRuleBtn.dataset.category || '');
+                    const sameSub = String(r.subcategory_id || '') === (currentRuleBtn.dataset.subcategory || '');
+                    return sameCat && sameSub && label.toLowerCase().includes((r.pattern || '').toLowerCase());
+                });
+                const patternWords = rule ? (rule.pattern || '').split(/[^\wÀ-ÿ]+/).filter(Boolean) : [];
                 words.forEach(w => {
                     const lbl = document.createElement('label');
                     const cb = document.createElement('input');
                     cb.type = 'checkbox';
                     cb.value = w;
+                    if (patternWords.includes(w)) cb.checked = true;
                     lbl.appendChild(cb);
                     lbl.append(' ' + w + ' ');
                     cont.appendChild(lbl);
@@ -1405,6 +1415,7 @@
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ pattern, category_id, subcategory_id })
                 });
+                await fetchRules();
                 fetchTransactions();
             }
             ruleOverlay.style.display = 'none';
