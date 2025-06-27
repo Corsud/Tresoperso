@@ -1125,16 +1125,28 @@
         const ruleOverlay = document.getElementById('rule-overlay');
         const favFilterOverlay = document.getElementById('fav-filter-overlay');
 
+        function showPopupAt(overlay, x, y) {
+            overlay.style.display = 'block';
+            overlay.style.alignItems = 'flex-start';
+            overlay.style.justifyContent = 'flex-start';
+            const popup = overlay.querySelector('.popup');
+            if (popup) {
+                popup.style.position = 'absolute';
+                popup.style.left = x + 'px';
+                popup.style.top = y + 'px';
+            }
+        }
+
         document.getElementById('transactions-table').addEventListener('click', e => {
             if (e.target.classList.contains('tx-cat-btn')) {
                 currentCatBtn = e.target;
                 document.getElementById('popup-category-select').value = currentCatBtn.dataset.current || '';
-                catOverlay.style.display = 'flex';
+                showPopupAt(catOverlay, e.clientX, e.clientY);
             } else if (e.target.classList.contains('tx-sub-btn')) {
                 currentSubBtn = e.target;
                 populateSubPopup(currentSubBtn.dataset.categoryId);
                 document.getElementById('popup-subcategory-select').value = currentSubBtn.dataset.current || '';
-                subOverlay.style.display = 'flex';
+                showPopupAt(subOverlay, e.clientX, e.clientY);
             } else if (e.target.classList.contains('tx-rule-btn')) {
                 currentRuleBtn = e.target;
                 const words = (currentRuleBtn.dataset.label || '').split(/[^\wÀ-ÿ]+/).filter(Boolean);
