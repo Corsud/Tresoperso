@@ -1,0 +1,140 @@
+{
+  "Auto et Transports": [
+    "Amendes",
+    "Location de voiture",
+    "Lavage",
+    "Carburant",
+    "Assurance",
+    "Parking",
+    "Billets d'avion",
+    "Transports publics",
+    "Réparations",
+    "Taxis, VTC et Covoiturages",
+    "Péages",
+    "Billets de train"
+  ],
+  "Factures et Services": [
+    "Autres abonnements",
+    "Électricité",
+    "Chauffage",
+    "Internet",
+    "Téléphone portable",
+    "Déchets et Recyclage",
+    "Eau"
+  ],
+  "Dépenses professionnelles": [
+    "Comptabilité",
+    "Publicité",
+    "Voyages d'affaires",
+    "Conseil financier",
+    "Freelancing",
+    "Assistance juridique",
+    "Marketing",
+    "Fournitures de bureau",
+    "Services en ligne",
+    "Impressions",
+    "Services professionnels",
+    "Salaire",
+    "Frais d'envois"
+  ],
+  "Espèces et Chèques": [
+    "Dépôts en espèces",
+    "Dépôts de chèques",
+    "Retraits"
+  ],
+  "Frais": [
+    "Frais bancaires",
+    "Frais de retard",
+    "Frais de service"
+  ],
+  "Alimentation et Boissons": [
+    "Bars",
+    "Cafés",
+    "Restaurants",
+    "FastFood",
+    "Courses"
+  ],
+  "Santé": [
+    "Dentiste",
+    "Médecin",
+    "Assurance maladie",
+    "Matériel médical",
+    "Médicaments",
+    "Opticien"
+  ],
+  "Revenus": [
+    "Bonus",
+    "Cadeaux",
+    "Investissements",
+    "Revenus locatifs",
+    "Salaire"
+  ],
+  "Investissements": [
+    "Obligations",
+    "Cryptos",
+    "Immobilier",
+    "Retraite",
+    "Epargne de sécurité",
+    "Services payants",
+    "Actions"
+  ],
+  "Loisirs et Divertissements": [
+    "Art et Musées",
+    "Cadeaux",
+    "Chats / Animaux",
+    "Hobbies",
+    "Hotel / hébergement",
+    "Informatique",
+    "Jardinage",
+    "LIONS CLUB",
+    "Modelisme",
+    "Cinéma et Théâtre",
+    "Plongée",
+    "Sports",
+    "Abonnements",
+    "Vacances"
+  ],
+  "Remboursement emprunt": [
+    "Maison",
+    "Voiture",
+    "consommation"
+  ],
+  "Besoins essentiels": [
+    "Bricollage",
+    "Modifier",
+    "Garde d'enfants",
+    "Vêtements",
+    "Éducation",
+    "Soins personnels",
+    "Cadeaux",
+    "Animaux de compagnie",
+    "Loyer",
+    "Logement étudiant",
+    "Fournitures ménagères",
+    "Tabac",
+    "Frais de scolarité"
+  ],
+  "Remboursements": [
+    "Paiements d'assurances",
+    "Retours produits",
+    "Remboursements d'impôts",
+    "Réclamations et Garanties"
+  ],
+  "Impôts": [
+    "Impôts sur les sociétés",
+    "Impôts sur les plus-values",
+    "Impôts sur le revenu",
+    "Impôts fonciers",
+    "Cotisations sociales",
+    "TVA"
+  ],
+  "Virements": [
+    "Paiement des factures",
+    "Transferts externes",
+    "EG",
+    "Dons",
+    "Transferts internes",
+    "Transferts internationaux"
+  ],
+  "Autre": []
+}
