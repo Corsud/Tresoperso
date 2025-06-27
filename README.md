@@ -54,6 +54,13 @@ python run.py
 Le fichier `tresoperso.db` est placé dans le répertoire courant et peut être
 supprimé en cas de réinitialisation souhaitée.
 
+## Gestion des comptes et import CSV
+
+Depuis l'onglet **Comptes** de l'interface web vous pouvez gérer plusieurs comptes bancaires.
+Chaque import CSV crée automatiquement le compte correspondant s'il n'existe pas encore.
+Si le numéro et le type correspondent à un compte existant, la date d'export est simplement mise à jour au lieu de créer un doublon.
+Utilisez le bouton «Importer CSV» pour sélectionner un fichier et mettre à jour le compte choisi. Un bouton «Supprimer» permet aussi d'effacer un compte.
+
 ## Tests
 
 Avant de lancer la suite de tests, installez les dépendances de développement :
