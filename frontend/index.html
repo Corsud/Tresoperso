@@ -22,6 +22,7 @@
                     <div class="menu-header">Transactions</div>
                     <ul class="submenu">
                         <li><button data-target="transactions-section">Transactions</button></li>
+                        <li><button data-target="accounts-section">Comptes</button></li>
                     </ul>
                 </li>
                 <li><button data-target="dashboard-section">Tableau de bord</button></li>
@@ -48,10 +49,6 @@
                 <canvas id="dashboardChart" width="400" height="200"></canvas>
             </section>
             <section id="transactions-section">
-                <form id="upload-form">
-                    <input type="file" id="csv-file" name="file" accept=".csv" required />
-                    <button type="submit">Importer CSV</button>
-                </form>
 
                 <div class="transactions-header">
                     <h2>Transactions</h2>
@@ -115,6 +112,18 @@
                             <th>A analyser</th>
                         </tr>
                     </thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+
+            <section id="accounts-section" style="display:none;">
+                <h2>Comptes</h2>
+                <form id="upload-form">
+                    <input type="file" id="csv-file" name="file" accept=".csv" required />
+                    <button type="submit">Importer CSV</button>
+                </form>
+                <table id="accounts-table">
+                    <thead><tr><th>Compte</th><th>Actions</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </section>
@@ -465,6 +474,99 @@
             }
         }
 
+        function populateAccountsTable() {
+            const tbody = document.querySelector('#accounts-table tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            accountsData.forEach(a => {
+                const tr = document.createElement('tr');
+                const infoTd = document.createElement('td');
+                const date = a.export_date ? ` - export ${formatDate(a.export_date)}` : '';
+                infoTd.textContent = `${a.account_type} ${a.number}${date}`.trim();
+                tr.appendChild(infoTd);
+
+                const actionTd = document.createElement('td');
+                const upd = document.createElement('button');
+                upd.textContent = 'Mettre à jour';
+                upd.onclick = () => {
+                    selectedAccountId = a.id;
+                    updateAccountDropdown();
+                    displayAccountInfo();
+                    fetchBalanceInfo();
+                    const fi = document.getElementById('csv-file');
+                    if (fi) fi.click();
+                };
+                const del = document.createElement('button');
+                del.textContent = 'Supprimer';
+                del.onclick = async () => {
+                    if (!confirm('Supprimer ce compte ?')) return;
+                    await deleteAccount(a.id);
+                };
+                actionTd.appendChild(upd);
+                actionTd.append(' ', del);
+                tr.appendChild(actionTd);
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function fetchAccounts() {
+            const resp = await fetch('/accounts');
+            if (!resp.ok) return;
+            accountsData = await resp.json();
+            updateAccountDropdown();
+            populateAccountsTable();
+        }
+
+        async function createAccount(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            const resp = await fetch('/import', { method: 'POST', body: formData });
+            const data = await resp.json().catch(() => ({}));
+            if (resp.ok) {
+                if (data.account) {
+                    selectedAccountId = data.account.id;
+                }
+                await fetchAccounts();
+                displayAccountInfo();
+                fetchBalanceInfo();
+                if (data.duplicates && data.duplicates.length) {
+                    showDuplicates(data.duplicates, data.account ? data.account.id : '');
+                } else {
+                    fetchTransactions();
+                    fetchDashboard();
+                    fetchStats();
+                    fetchProjection();
+                    fetchCategoryStats();
+                    fetchSankeyStats();
+                }
+            } else {
+                if (data.errors) {
+                    alert(data.errors.join('\n'));
+                } else {
+                    alert(data.error || 'Erreur import');
+                }
+            }
+        }
+
+        async function deleteAccount(id) {
+            const resp = await fetch(`/accounts/${id}`, { method: 'DELETE' });
+            if (resp.ok) {
+                if (String(selectedAccountId) === String(id)) {
+                    selectedAccountId = '';
+                }
+                await fetchAccounts();
+                displayAccountInfo();
+                fetchBalanceInfo();
+                fetchTransactions();
+                fetchDashboard();
+                fetchStats();
+                fetchProjection();
+                fetchCategoryStats();
+                fetchSankeyStats();
+            }
+        }
+
         async function fetchBalanceInfo() {
             const dateInput = document.getElementById('balance-date');
             const amtInput = document.getElementById('balance-amount');
@@ -660,13 +762,9 @@
                 body: JSON.stringify({ username, password })
             });
             if (resp.ok) {
-                const accResp = await fetch('/accounts');
-                if (accResp.ok) {
-                    accountsData = await accResp.json();
-                }
+                await fetchAccounts();
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
-                updateAccountDropdown();
                 displayAccountInfo();
                 fetchBalanceInfo();
                 fetchTransactions();
@@ -682,41 +780,18 @@
             }
         });
 
+        document.getElementById('csv-file').addEventListener('change', () => {
+            if (document.getElementById('csv-file').files.length) {
+                document.getElementById('upload-form').requestSubmit();
+            }
+        });
+
         document.getElementById('upload-form').addEventListener('submit', async e => {
             e.preventDefault();
             const fileInput = document.getElementById('csv-file');
             if (!fileInput.files.length) return;
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-            const resp = await fetch('/import', { method: 'POST', body: formData });
-            const data = await resp.json().catch(() => ({}));
-            if (resp.ok) {
-                fileInput.value = '';
-                if (data.account) {
-                    const exists = accountsData.some(a => String(a.id) === String(data.account.id));
-                    if (!exists) accountsData.push(data.account);
-                    selectedAccountId = data.account.id;
-                    updateAccountDropdown();
-                    displayAccountInfo();
-                    fetchBalanceInfo();
-                }
-                if (data.duplicates && data.duplicates.length) {
-                    showDuplicates(data.duplicates, data.account ? data.account.id : '');
-                } else {
-                    fetchTransactions();
-                    fetchDashboard();
-                    fetchStats();
-                    fetchProjection();
-                    fetchCategoryStats();
-                    fetchSankeyStats();
-                }
-            } else {
-                if (data.errors) {
-                    alert(data.errors.join('\n'));
-                } else {
-                    alert(data.error || 'Erreur import');
-                }
-            }
+            await createAccount(fileInput.files[0]);
+            fileInput.value = '';
         });
 
         async function fetchCategories() {
@@ -1441,7 +1516,7 @@
             currentFilterBtn = null;
         });
 
-        const sectionIds = ['transactions-section', 'dashboard-section', 'stats-section', 'projection-section', 'settings-section'];
+        const sectionIds = ['transactions-section', 'accounts-section', 'dashboard-section', 'stats-section', 'projection-section', 'settings-section'];
         const sidebarButtons = document.querySelectorAll('#navbar button[data-target]');
         sidebarButtons.forEach(btn => {
             btn.addEventListener('click', () => {
