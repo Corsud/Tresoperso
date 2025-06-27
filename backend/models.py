@@ -190,3 +190,35 @@ def init_db():
         session.commit()
 
     session.close()
+
+
+def create_user(username, password, session=None):
+    """Create a user with a hashed password and return the User instance."""
+    close = False
+    if session is None:
+        session = SessionLocal()
+        close = True
+    user = User(username=username, password=generate_password_hash(password))
+    session.add(user)
+    session.commit()
+    if close:
+        session.close()
+    return user
+
+
+def update_user_password(user_id, password, session=None):
+    """Update an existing user's password using a hashed value."""
+    close = False
+    if session is None:
+        session = SessionLocal()
+        close = True
+    user = session.query(User).get(user_id)
+    if not user:
+        if close:
+            session.close()
+        return None
+    user.password = generate_password_hash(password)
+    session.commit()
+    if close:
+        session.close()
+    return user
