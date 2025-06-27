@@ -1,6 +1,6 @@
 import datetime
 
-from backend.app import parse_csv
+from backend.csv_utils import parse_csv
 
 
 def test_parse_csv_valid():
