@@ -366,6 +366,9 @@ def list_transactions():
     if category:
         query = query.join(Category).filter(Category.name == category)
 
+    if request.args.get('category_none') in ('true', '1', 'yes'):
+        query = query.filter(Transaction.category_id == None)
+
     tx_type = request.args.get('type')
     if tx_type:
         query = query.filter(Transaction.tx_type == tx_type)
