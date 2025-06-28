@@ -595,12 +595,17 @@ def stats_by_category():
 @app.route('/stats/sankey')
 @login_required
 def stats_sankey():
-    """Aggregate amounts from categories to subcategories for Sankey chart."""
+    """Aggregate positive and negative amounts separately for Sankey chart."""
     session = SessionLocal()
     query = session.query(
-        Category.name.label('source'),
-        Subcategory.name.label('target'),
-        func.sum(Transaction.amount).label('total')
+        Category.name.label('category'),
+        Subcategory.name.label('subcategory'),
+        func.sum(
+            case((Transaction.amount > 0, Transaction.amount), else_=0)
+        ).label('positive'),
+        func.sum(
+            case((Transaction.amount < 0, func.abs(Transaction.amount)), else_=0)
+        ).label('negative'),
     ).join(Subcategory, Subcategory.category_id == Category.id)
     query = query.join(Transaction, Transaction.subcategory_id == Subcategory.id)
 
@@ -622,14 +627,22 @@ def stats_sankey():
 
     data = query.group_by(Category.id, Subcategory.id).all()
     session.close()
-    result = [
-        {
-            'source': src,
-            'target': tgt,
-            'value': abs(total) if total is not None else 0,
-        }
-        for src, tgt, total in data
-    ]
+    result = []
+    for cat, sub, pos, neg in data:
+        if pos:
+            result.append({
+                'source': cat,
+                'target': sub,
+                'value': pos,
+                'sign': 1,
+            })
+        if neg:
+            result.append({
+                'source': cat,
+                'target': sub,
+                'value': neg,
+                'sign': -1,
+            })
     return jsonify(result)
 
 

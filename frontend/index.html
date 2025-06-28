@@ -1187,7 +1187,11 @@
                 data: {
                     datasets: [{
                         label: 'Flux',
-                        data: data.map(d => ({ from: d.source, to: d.target, flow: d.value }))
+                        data: data.map(d => ({
+                            from: d.sign > 0 ? d.source : d.target,
+                            to: d.sign > 0 ? d.target : d.source,
+                            flow: d.value
+                        }))
                     }]
                 },
                 options: getChartOptions(hide, false)
