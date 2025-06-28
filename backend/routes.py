@@ -362,9 +362,12 @@ def list_transactions():
         except ValueError:
             pass
 
-    category = request.args.get('category')
-    if category:
-        query = query.join(Category).filter(Category.name == category)
+    category_id = request.args.get('category_id')
+    if category_id:
+        try:
+            query = query.filter(Transaction.category_id == int(category_id))
+        except ValueError:
+            pass
 
     if request.args.get('category_none') in ('true', '1', 'yes'):
         query = query.filter(Transaction.category_id == None)
