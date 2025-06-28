@@ -128,7 +128,13 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
 
 #category-charts {
     display: flex;
+    justify-content: center;
     gap: 20px;
+}
+
+#category-charts canvas {
+    width: 30%;
+    height: auto;
 }
 
 #category-no-data {
@@ -275,5 +281,11 @@ body.hide-amounts .amount-input {
 @media (max-width: 600px) {
     #transactions-table {
         font-size: 0.75rem;
+    }
+    #category-charts {
+        flex-direction: column;
+    }
+    #category-charts canvas {
+        width: 100%;
     }
 }
