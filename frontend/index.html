@@ -68,7 +68,11 @@
                 <table id="transactions-table">
                     <thead>
                         <tr class="filter-row">
-                            <th></th>
+                            <th><select id="filter-favorite">
+                                <option value="">(Tous)</option>
+                                <option value="true">Oui</option>
+                                <option value="false">Non</option>
+                            </select></th>
                             <th></th>
                             <th class="stack">
                                 <input type="date" id="filter-start-date" />
@@ -100,8 +104,16 @@
                             <th><select id="filter-category"><option value="">(Toutes)</option></select></th>
                             <th><select id="filter-subcategory"><option value="">(Toutes)</option></select></th>
                             <th></th>
-                            <th></th>
-                            <th></th>
+                            <th><select id="filter-reconciled">
+                                <option value="">(Tous)</option>
+                                <option value="true">Oui</option>
+                                <option value="false">Non</option>
+                            </select></th>
+                            <th><select id="filter-toanalyze">
+                                <option value="">(Tous)</option>
+                                <option value="true">Oui</option>
+                                <option value="false">Non</option>
+                            </select></th>
                         </tr>
                         <tr>
                             <th>★</th>
@@ -623,6 +635,9 @@
             const amtOrder = document.getElementById('filter-amount-order').value;
             const cat = document.getElementById('filter-category').value;
             const sub = document.getElementById('filter-subcategory').value;
+            const fav = document.getElementById('filter-favorite').value;
+            const rec = document.getElementById('filter-reconciled').value;
+            const ana = document.getElementById('filter-toanalyze').value;
             if (start) params.set('start_date', start);
             if (end) params.set('end_date', end);
             if (txType) params.set('type', txType);
@@ -632,6 +647,9 @@
             if (maxAmt) params.set('max_amount', maxAmt);
             if (cat) params.set('category', cat);
             if (sub) params.set('subcategory', sub);
+            if (fav === 'true' || fav === 'false') params.set('favorite', fav);
+            if (rec === 'true' || rec === 'false') params.set('reconciled', rec);
+            if (ana === 'true' || ana === 'false') params.set('to_analyze', ana);
             if (amtOrder === 'asc' || amtOrder === 'desc') {
                 params.set('sort_by', 'amount');
                 params.set('order', amtOrder);
@@ -1635,7 +1653,8 @@
             'filter-start-date', 'filter-end-date', 'filter-period',
             'filter-type', 'filter-payment',
             'filter-label', 'filter-min-amount', 'filter-max-amount',
-            'filter-category', 'filter-subcategory', 'filter-amount-order'
+            'filter-category', 'filter-subcategory', 'filter-amount-order',
+            'filter-favorite', 'filter-reconciled', 'filter-toanalyze'
         ];
         filterInputs.forEach(id => {
             const el = document.getElementById(id);
