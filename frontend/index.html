@@ -326,11 +326,14 @@
                 'fav-filter-overlay-subcategory'
             ];
 
-            catSelectIds.forEach(id => {
+           catSelectIds.forEach(id => {
                 const sel = document.getElementById(id);
                 if (!sel) return;
-                const noneText = id === 'filter-category' ? '(Toutes)' : '(Aucune)';
-                sel.innerHTML = `<option value="">${noneText}</option>`;
+                if (id === 'filter-category') {
+                    sel.innerHTML = '<option value="">(Toutes)</option><option value="none">(Aucune)</option>';
+                } else {
+                    sel.innerHTML = '<option value="">(Aucune)</option>';
+                }
             });
 
             subSelectIds.forEach(id => {
@@ -661,7 +664,11 @@
             if (label) params.set('label', label);
             if (minAmt) params.set('min_amount', minAmt);
             if (maxAmt) params.set('max_amount', maxAmt);
-            if (cat) params.set('category', cat);
+            if (cat === 'none') {
+                params.set('category_none', 'true');
+            } else if (cat) {
+                params.set('category', cat);
+            }
             if (sub) params.set('subcategory', sub);
             if (fav === 'true' || fav === 'false') params.set('favorite', fav);
             if (rec === 'true' || rec === 'false') params.set('reconciled', rec);
