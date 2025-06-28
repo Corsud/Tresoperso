@@ -390,6 +390,22 @@
             });
         }
 
+        function updateSubcategories(catId, selectId, noneText) {
+            const sel = document.getElementById(selectId);
+            if (!sel) return;
+            sel.innerHTML = `<option value="">${noneText}</option>`;
+            categoryOptions.forEach(cat => {
+                (cat.subcategories || []).forEach(sub => {
+                    if (!catId || String(cat.id) === String(catId)) {
+                        const opt = document.createElement('option');
+                        opt.value = sub.id;
+                        opt.textContent = catId ? sub.name : `${cat.name} - ${sub.name}`;
+                        sel.appendChild(opt);
+                    }
+                });
+            });
+        }
+
         function formatAmount(v) {
             if (localStorage.getItem('hideAmounts') === 'true') {
                 return '•••';
@@ -1400,7 +1416,9 @@
                     lbl.append(' ' + w + ' ');
                     cont.appendChild(lbl);
                 });
-                document.getElementById('rule-overlay-category').value = currentRuleBtn.dataset.category || '';
+                const roc = document.getElementById('rule-overlay-category');
+                roc.value = currentRuleBtn.dataset.category || '';
+                updateSubcategories(roc.value, 'rule-overlay-subcategory', '(Aucune)');
                 document.getElementById('rule-overlay-subcategory').value = currentRuleBtn.dataset.subcategory || '';
                 ruleOverlay.style.display = 'flex';
             } else if (e.target.classList.contains('tx-filter-btn')) {
@@ -1417,7 +1435,9 @@
                     lbl.append(' ' + w + ' ');
                     cont.appendChild(lbl);
                 });
-                document.getElementById('fav-filter-overlay-category').value = currentFilterBtn.dataset.category || '';
+                const foc = document.getElementById('fav-filter-overlay-category');
+                foc.value = currentFilterBtn.dataset.category || '';
+                updateSubcategories(foc.value, 'fav-filter-overlay-subcategory', '(Aucune)');
                 document.getElementById('fav-filter-overlay-subcategory').value = currentFilterBtn.dataset.subcategory || '';
                 favFilterOverlay.style.display = 'flex';
             }
@@ -1590,6 +1610,9 @@
         const themeLink = document.getElementById('theme-link');
         const accountSelect = document.getElementById('account-select');
         const statsPeriodSelect = document.getElementById('stats-period');
+        const filterCategorySelect = document.getElementById('filter-category');
+        const ruleOverlayCategorySelect = document.getElementById('rule-overlay-category');
+        const favFilterOverlayCategorySelect = document.getElementById('fav-filter-overlay-category');
 
         function applyPreferences() {
             const theme = localStorage.getItem('theme') || 'light';
@@ -1627,6 +1650,24 @@
             fetchCategoryStats();
             fetchSankeyStats();
         });
+
+        if (filterCategorySelect) {
+            filterCategorySelect.addEventListener('change', () => {
+                updateSubcategories(filterCategorySelect.value, 'filter-subcategory', '(Toutes)');
+            });
+        }
+
+        if (ruleOverlayCategorySelect) {
+            ruleOverlayCategorySelect.addEventListener('change', () => {
+                updateSubcategories(ruleOverlayCategorySelect.value, 'rule-overlay-subcategory', '(Aucune)');
+            });
+        }
+
+        if (favFilterOverlayCategorySelect) {
+            favFilterOverlayCategorySelect.addEventListener('change', () => {
+                updateSubcategories(favFilterOverlayCategorySelect.value, 'fav-filter-overlay-subcategory', '(Aucune)');
+            });
+        }
 
         accountSelect.addEventListener('change', () => {
             selectedAccountId = accountSelect.value;
