@@ -850,23 +850,31 @@ def projection():
 @login_required
 def category_options():
     session = SessionLocal()
-    cats = session.query(Category).all()
-    subs = session.query(Subcategory).all()
-    session.close()
+    categories = session.query(Category).all()
+
     result = []
-    cat_map = {c.id: c for c in cats}
-    for s in subs:
-        cat = cat_map.get(s.category_id)
-        if not cat:
-            continue
+    for cat in categories:
+        sub_list = [
+            {
+                'id': sub.id,
+                'name': sub.name,
+                'color': sub.color,
+                'favorite': sub.favorite,
+            }
+            for sub in cat.subcategories
+        ]
+
         result.append(
             {
-                'category_id': cat.id,
-                'category_name': cat.name,
-                'subcategory_id': s.id,
-                'subcategory_name': s.name,
+                'id': cat.id,
+                'name': cat.name,
+                'color': cat.color,
+                'favorite': cat.favorite,
+                'subcategories': sub_list,
             }
         )
+
+    session.close()
     return jsonify(result)
 
 
