@@ -412,6 +412,18 @@ def list_transactions():
         except ValueError:
             pass
 
+    favorite = request.args.get('favorite')
+    if favorite in ('true', 'false'):
+        query = query.filter(Transaction.favorite == (favorite == 'true'))
+
+    reconciled = request.args.get('reconciled')
+    if reconciled in ('true', 'false'):
+        query = query.filter(Transaction.reconciled == (reconciled == 'true'))
+
+    to_analyze = request.args.get('to_analyze')
+    if to_analyze in ('true', 'false'):
+        query = query.filter(Transaction.to_analyze == (to_analyze == 'true'))
+
     sort_by = request.args.get('sort_by', 'date')
     sort_column = getattr(Transaction, sort_by, Transaction.date)
     order = request.args.get('order', 'desc')
