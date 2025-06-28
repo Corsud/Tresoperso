@@ -918,9 +918,14 @@
                 const del = document.createElement('button');
                 del.textContent = 'Supprimer';
                 del.onclick = async () => {
-                    await fetch('/categories/' + c.id, { method: 'DELETE' });
-                    await refreshCategoryData();
-                    fetchRules();
+                    const resp = await fetch('/categories/' + c.id, { method: 'DELETE' });
+                    const data = await resp.json().catch(() => ({}));
+                    if (resp.ok) {
+                        await refreshCategoryData();
+                        fetchRules();
+                    } else {
+                        alert(data.error || 'Suppression échouée');
+                    }
                 };
                 delTd.appendChild(del);
                 tr.appendChild(delTd);
