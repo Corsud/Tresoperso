@@ -63,13 +63,16 @@ Utilisez le bouton «Importer CSV» pour sélectionner un fichier et mettre à j
 
 ## Tests
 
-Avant de lancer la suite de tests, installez les dépendances de développement :
+Les dépendances de développement nécessaires à l'exécution de la suite se
+trouvent dans `requirements-dev.txt`. Installez-les impérativement avant de
+lancer les tests :
 
 ```bash
 pip install -r requirements-dev.txt
+# ou ./install-dev-deps.sh
 ```
 
-Les tests s'appuient sur **pytest**. Une fois les dépendances en place, exécutez :
+Les tests s'appuient sur **pytest**. Une fois l'environnement prêt, exécutez :
 
 ```bash
 pytest
