@@ -109,8 +109,9 @@ macOS afin d'obtenir un
 exécutable natif.
 
 Les bibliothèques JavaScript **Chart.js** et **chartjs-chart-sankey** sont
-fournies localement dans `frontend/lib`, ce qui permet d'exécuter l'interface
-sans connexion réseau.
+à présent chargées depuis le CDN jsDelivr (`https://cdn.jsdelivr.net`).
+Une connexion Internet est donc requise pour afficher correctement les
+graphiques de l'interface.
 
 ## Licence
 
