@@ -1449,8 +1449,12 @@
         subOverlay.addEventListener('click', async e => {
             if (e.target === subOverlay) await saveSubcategory();
         });
-        ruleOverlay.addEventListener('click', e => { if (e.target === ruleOverlay) ruleOverlay.style.display = 'none'; });
-        favFilterOverlay.addEventListener('click', e => { if (e.target === favFilterOverlay) favFilterOverlay.style.display = 'none'; });
+        ruleOverlay.addEventListener('click', async e => {
+            if (e.target === ruleOverlay) await saveRule();
+        });
+        favFilterOverlay.addEventListener('click', async e => {
+            if (e.target === favFilterOverlay) await saveFavoriteFilter();
+        });
         manageSubcatsOverlay.addEventListener('click', e => { if (e.target === manageSubcatsOverlay) manageSubcatsOverlay.style.display = 'none'; });
 
         function showDuplicates(dups, accountId) {
@@ -1565,7 +1569,7 @@
             saveSubcategory();
         });
 
-        document.getElementById('rule-overlay-save').addEventListener('click', async () => {
+        async function saveRule() {
             if (!currentRuleBtn) return;
             const words = Array.from(document.querySelectorAll('#rule-label-checkboxes input:checked')).map(cb => cb.value);
             const category_id = document.getElementById('rule-overlay-category').value;
@@ -1582,9 +1586,13 @@
             }
             ruleOverlay.style.display = 'none';
             currentRuleBtn = null;
+        }
+
+        document.getElementById('rule-overlay-save').addEventListener('click', () => {
+            saveRule();
         });
 
-        document.getElementById('fav-filter-overlay-save').addEventListener('click', async () => {
+        async function saveFavoriteFilter() {
             if (!currentFilterBtn) return;
             const words = Array.from(document.querySelectorAll('#fav-filter-label-checkboxes input:checked')).map(cb => cb.value);
             const category_id = document.getElementById('fav-filter-overlay-category').value;
@@ -1600,6 +1608,10 @@
             }
             favFilterOverlay.style.display = 'none';
             currentFilterBtn = null;
+        }
+
+        document.getElementById('fav-filter-overlay-save').addEventListener('click', () => {
+            saveFavoriteFilter();
         });
 
         const sectionIds = ['transactions-section', 'accounts-section', 'dashboard-section', 'stats-section', 'projection-section', 'settings-section'];
