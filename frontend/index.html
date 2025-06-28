@@ -1443,8 +1443,12 @@
             }
         });
 
-        catOverlay.addEventListener('click', e => { if (e.target === catOverlay) catOverlay.style.display = 'none'; });
-        subOverlay.addEventListener('click', e => { if (e.target === subOverlay) subOverlay.style.display = 'none'; });
+        catOverlay.addEventListener('click', async e => {
+            if (e.target === catOverlay) await saveCategory();
+        });
+        subOverlay.addEventListener('click', async e => {
+            if (e.target === subOverlay) await saveSubcategory();
+        });
         ruleOverlay.addEventListener('click', e => { if (e.target === ruleOverlay) ruleOverlay.style.display = 'none'; });
         favFilterOverlay.addEventListener('click', e => { if (e.target === favFilterOverlay) favFilterOverlay.style.display = 'none'; });
         manageSubcatsOverlay.addEventListener('click', e => { if (e.target === manageSubcatsOverlay) manageSubcatsOverlay.style.display = 'none'; });
@@ -1503,11 +1507,15 @@
             }
         });
 
-        document.getElementById('popup-category-save').addEventListener('click', async () => {
+        async function saveCategory() {
             if (!currentCatBtn) return;
             const id = currentCatBtn.dataset.id;
             const val = document.getElementById('popup-category-select').value;
-            const resp = await fetch('/transactions/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ category_id: val }) });
+            const resp = await fetch('/transactions/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category_id: val })
+            });
             if (resp.ok) {
                 const cat = findCategory(val);
                 currentCatBtn.dataset.current = val;
@@ -1522,13 +1530,21 @@
             }
             catOverlay.style.display = 'none';
             currentCatBtn = null;
+        }
+
+        document.getElementById('popup-category-save').addEventListener('click', () => {
+            saveCategory();
         });
 
-        document.getElementById('popup-subcategory-save').addEventListener('click', async () => {
+        async function saveSubcategory() {
             if (!currentSubBtn) return;
             const id = currentSubBtn.dataset.id;
             const val = document.getElementById('popup-subcategory-select').value;
-            const resp = await fetch('/transactions/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ subcategory_id: val }) });
+            const resp = await fetch('/transactions/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subcategory_id: val })
+            });
             if (resp.ok) {
                 const sub = findSubcategory(val);
                 currentSubBtn.dataset.current = val;
@@ -1543,6 +1559,10 @@
             }
             subOverlay.style.display = 'none';
             currentSubBtn = null;
+        }
+
+        document.getElementById('popup-subcategory-save').addEventListener('click', () => {
+            saveSubcategory();
         });
 
         document.getElementById('rule-overlay-save').addEventListener('click', async () => {
