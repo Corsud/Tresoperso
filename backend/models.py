@@ -38,9 +38,17 @@ class Category(Base):
     name = Column(String, unique=True, nullable=False)
     color = Column(String, default='')
     favorite = Column(Boolean, default=False)
-    transactions = relationship('Transaction', back_populates='category')
+    transactions = relationship(
+        'Transaction',
+        back_populates='category',
+        cascade='all, delete-orphan',
+    )
     rules = relationship('Rule', back_populates='category')
-    subcategories = relationship('Subcategory', back_populates='category')
+    subcategories = relationship(
+        'Subcategory',
+        back_populates='category',
+        cascade='all, delete-orphan',
+    )
 
 class Subcategory(Base):
     __tablename__ = 'subcategories'
