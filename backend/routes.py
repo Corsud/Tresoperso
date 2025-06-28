@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from flask_login import login_required
-from sqlalchemy import func, or_, and_
+from sqlalchemy import func, or_, and_, case
 from datetime import datetime, timedelta
 
 from .app import app, load_categories_json, save_categories_json
@@ -554,8 +554,12 @@ def stats_by_category():
     query = session.query(
         Category.name,
         Category.color,
-        func.sum(func.abs(Transaction.amount)).label('positive'),
-        func.sum(func.abs(Transaction.amount * -1)).label('negative')
+        func.sum(
+            case((Transaction.amount > 0, Transaction.amount), else_=0)
+        ).label('positive'),
+        func.sum(
+            case((Transaction.amount < 0, func.abs(Transaction.amount)), else_=0)
+        ).label('negative')
     ).join(Transaction, Transaction.category_id == Category.id)
 
     start_date = request.args.get('start_date')
