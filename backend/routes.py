@@ -993,6 +993,20 @@ def categories(category_id=None):
         session.close()
         return jsonify(result)
 
+    if category.subcategories or category.transactions:
+        session.close()
+        return (
+            jsonify(
+                {
+                    'error': (
+                        'Remove or reassign subcategories and transactions before '
+                        'deleting this category'
+                    )
+                }
+            ),
+            400,
+        )
+
     cat_name = category.name
     session.delete(category)
     session.commit()

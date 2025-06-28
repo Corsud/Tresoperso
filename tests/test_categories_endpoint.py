@@ -42,3 +42,40 @@ def test_put_category_color_updates_subs(client):
     sub = session.query(models.Subcategory).get(client.sub_id)
     session.close()
     assert sub.color == new_color
+
+
+def test_delete_category_with_subcategory_fails(client):
+    login(client)
+    resp = client.delete(f'/categories/{client.cat_id}')
+    assert resp.status_code == 400
+    data = resp.get_json()
+    assert 'error' in data
+    session = models.SessionLocal()
+    cat = session.query(models.Category).get(client.cat_id)
+    session.close()
+    assert cat is not None
+
+
+def test_delete_category_without_subcategories(client):
+    login(client)
+    resp = client.post('/categories', json={'name': 'Temp'})
+    assert resp.status_code == 201
+    cat_id = resp.get_json()['id']
+    resp = client.delete(f'/categories/{cat_id}')
+    assert resp.status_code == 200
+    session = models.SessionLocal()
+    cat = session.query(models.Category).get(cat_id)
+    session.close()
+    assert cat is None
+
+
+def test_delete_category_after_removing_sub(client):
+    login(client)
+    resp = client.delete(f'/subcategories/{client.sub_id}')
+    assert resp.status_code == 200
+    resp = client.delete(f'/categories/{client.cat_id}')
+    assert resp.status_code == 200
+    session = models.SessionLocal()
+    cat = session.query(models.Category).get(client.cat_id)
+    session.close()
+    assert cat is None
