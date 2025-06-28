@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="base.css">
     <link rel="stylesheet" id="theme-link" href="light.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-sankey"></script>
+    <script src="https://cdn.plot.ly/plotly-2.24.2.min.js"></script>
 </head>
 <body>
     <form id="login-form">
@@ -164,7 +164,7 @@
                 <canvas id="expenseChart"></canvas>
                 </div>
                 <div id="category-no-data" style="display:none;">No data</div>
-                <canvas id="sankeyChart" width="600" height="300"></canvas>
+                <div id="sankeyChart" style="width:600px;height:300px;"></div>
             </section>
 
             <section id="projection-section" style="display:none;">
@@ -1094,7 +1094,6 @@
         let projChart;
         let incomeChart;
         let expenseChart;
-        let sankeyChart;
 
         async function fetchStats() {
             const period = document.getElementById('stats-period').value;
@@ -1191,23 +1190,35 @@
             const resp = await fetch(url);
             if (!resp.ok) return;
             const data = await resp.json();
-            const sctx = document.getElementById('sankeyChart').getContext('2d');
-            if (sankeyChart) sankeyChart.destroy();
-            const hide = localStorage.getItem('hideAmounts') === 'true';
-            sankeyChart = new Chart(sctx, {
-                type: 'sankey',
-                data: {
-                    datasets: [{
-                        label: 'Flux',
-                        data: data.map(d => ({
-                            from: d.sign > 0 ? d.source : d.target,
-                            to: d.sign > 0 ? d.target : d.source,
-                            flow: d.value
-                        }))
-                    }]
-                },
-                options: getChartOptions(hide, false)
+            const incomes = {};
+            const expenses = {};
+            data.forEach(d => {
+                if (d.sign > 0) {
+                    incomes[d.source] = (incomes[d.source] || 0) + d.value;
+                } else {
+                    expenses[d.source] = (expenses[d.source] || 0) + d.value;
+                }
             });
+            const incNames = Object.keys(incomes);
+            const expNames = Object.keys(expenses);
+            const nodes = [...incNames, 'Total', ...expNames];
+            const index = Object.fromEntries(nodes.map((n, i) => [n, i]));
+            const links = [];
+            incNames.forEach(n => {
+                links.push({source: index[n], target: index['Total'], value: incomes[n]});
+            });
+            expNames.forEach(n => {
+                links.push({source: index['Total'], target: index[n], value: expenses[n]});
+            });
+            Plotly.newPlot('sankeyChart', [{
+                type: 'sankey',
+                node: {label: nodes},
+                link: {
+                    source: links.map(l => l.source),
+                    target: links.map(l => l.target),
+                    value: links.map(l => l.value)
+                }
+            }], {margin: {t: 20}});
         }
 
         async function fetchDashboard() {
