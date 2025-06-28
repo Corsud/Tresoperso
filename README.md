@@ -111,8 +111,8 @@ et génère le binaire dans `dist/run`. La construction doit être effectuée su
 macOS afin d'obtenir un
 exécutable natif.
 
-Les bibliothèques JavaScript **Chart.js** et **chartjs-chart-sankey** sont
-à présent chargées depuis le CDN jsDelivr (`https://cdn.jsdelivr.net`).
+La bibliothèque JavaScript **Chart.js** est chargée depuis le CDN jsDelivr
+(`https://cdn.jsdelivr.net`) et **Plotly** depuis `https://cdn.plot.ly`.
 Une connexion Internet est donc requise pour afficher correctement les
 graphiques de l'interface.
 
