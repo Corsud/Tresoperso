@@ -279,6 +279,13 @@
                 </table>
             </div>
         </div>
+        <div id="delete-error-overlay" class="overlay">
+            <div class="popup">
+                <h3>Transactions liées</h3>
+                <ul id="delete-error-list"></ul>
+                <button id="delete-error-close">Fermer</button>
+            </div>
+        </div>
     </div>
     <script>
         let categoriesData = [];
@@ -924,7 +931,11 @@
                         await refreshCategoryData();
                         fetchRules();
                     } else {
-                        alert(data.error || 'Suppression échouée');
+                        if (data.transactions && data.transactions.length) {
+                            showDeleteError(data.transactions);
+                        } else {
+                            alert(data.error || 'Suppression échouée');
+                        }
                     }
                 };
                 delTd.appendChild(del);
@@ -1328,6 +1339,9 @@
         const ruleOverlay = document.getElementById('rule-overlay');
         const favFilterOverlay = document.getElementById('fav-filter-overlay');
         const manageSubcatsOverlay = document.getElementById('manage-subcats-overlay');
+        const delErrorOverlay = document.getElementById('delete-error-overlay');
+        const delErrorList = document.getElementById('delete-error-list');
+        const delErrorClose = document.getElementById('delete-error-close');
         let manageCatId = null;
 
         function showPopupAt(overlay, x, y) {
@@ -1483,6 +1497,19 @@
             if (e.target === favFilterOverlay) await saveFavoriteFilter();
         });
         manageSubcatsOverlay.addEventListener('click', e => { if (e.target === manageSubcatsOverlay) manageSubcatsOverlay.style.display = 'none'; });
+
+        function showDeleteError(transactions) {
+            delErrorList.innerHTML = '';
+            transactions.forEach(t => {
+                const li = document.createElement('li');
+                li.textContent = `${formatDate(t.date)} - ${t.label} - ${formatAmount(t.amount)}`;
+                delErrorList.appendChild(li);
+            });
+            delErrorOverlay.style.display = 'flex';
+        }
+
+        delErrorOverlay.addEventListener('click', e => { if (e.target === delErrorOverlay) delErrorOverlay.style.display = 'none'; });
+        if (delErrorClose) delErrorClose.addEventListener('click', () => { delErrorOverlay.style.display = 'none'; });
 
         function showDuplicates(dups, accountId) {
             const list = document.getElementById('duplicate-list');

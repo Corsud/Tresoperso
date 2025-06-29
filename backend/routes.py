@@ -1013,6 +1013,15 @@ def categories(category_id=None):
         return jsonify(result)
 
     if category.subcategories or category.transactions:
+        transactions = [
+            {
+                'id': t.id,
+                'date': t.date.isoformat(),
+                'label': t.label,
+                'amount': t.amount,
+            }
+            for t in category.transactions
+        ]
         session.close()
         return (
             jsonify(
@@ -1020,7 +1029,8 @@ def categories(category_id=None):
                     'error': (
                         'Remove or reassign subcategories and transactions before '
                         'deleting this category'
-                    )
+                    ),
+                    'transactions': transactions,
                 }
             ),
             400,
