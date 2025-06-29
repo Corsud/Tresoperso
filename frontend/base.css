@@ -127,14 +127,17 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
 .settings-col { flex: 1; }
 
 #category-charts {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
+    width: 100%;
+    border-collapse: collapse;
 }
-
+#category-charts, #category-charts td {
+    border: none;
+}
+#category-charts td {
+    width: 50%;
+}
 #category-charts canvas {
-    width: 200px;
-    max-width: 100%;
+    width: 100%;
     height: auto;
 }
 
@@ -284,10 +287,8 @@ body.hide-amounts .amount-input {
     #transactions-table {
         font-size: 0.75rem;
     }
-    #category-charts {
-        flex-direction: column;
-    }
-    #category-charts canvas {
+    #category-charts td {
+        display: block;
         width: 100%;
     }
 }

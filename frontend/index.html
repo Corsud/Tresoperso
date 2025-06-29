@@ -159,10 +159,12 @@
                     <option value="all">Tout</option>
                 </select>
                 <canvas id="statsChart" width="400" height="200"></canvas>
-                <div id="category-charts">
-                <canvas id="incomeChart"></canvas>
-                <canvas id="expenseChart"></canvas>
-                </div>
+                <table id="category-charts">
+                    <tr>
+                        <td><canvas id="incomeChart"></canvas></td>
+                        <td><canvas id="expenseChart"></canvas></td>
+                    </tr>
+                </table>
                 <div id="category-no-data" style="display:none;">No data</div>
                 <div id="sankeyChart" style="width:600px;height:300px;"></div>
             </section>
@@ -1166,7 +1168,7 @@
                 emptyNotice.style.display = 'block';
                 return;
             }
-            chartsDiv.style.display = 'flex';
+            chartsDiv.style.display = 'table';
             emptyNotice.style.display = 'none';
             const ictx = document.getElementById('incomeChart').getContext('2d');
             if (incomeChart) incomeChart.destroy();
