@@ -1,4 +1,5 @@
 import pytest
+import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -50,6 +51,8 @@ def test_delete_category_with_subcategory_fails(client):
     assert resp.status_code == 400
     data = resp.get_json()
     assert 'error' in data
+    assert 'transactions' in data
+    assert data['transactions'] == []
     session = models.SessionLocal()
     cat = session.query(models.Category).get(client.cat_id)
     session.close()
@@ -79,3 +82,22 @@ def test_delete_category_after_removing_sub(client):
     cat = session.query(models.Category).get(client.cat_id)
     session.close()
     assert cat is None
+
+
+def test_delete_category_with_transactions_fails(client):
+    login(client)
+    session = models.SessionLocal()
+    cat = session.query(models.Category).get(client.cat_id)
+    tx = models.Transaction(
+        date=datetime.date(2021, 1, 1),
+        label='tx1',
+        amount=-10,
+        category=cat,
+    )
+    session.add(tx)
+    session.commit()
+    session.close()
+    resp = client.delete(f'/categories/{client.cat_id}')
+    assert resp.status_code == 400
+    data = resp.get_json()
+    assert 'transactions' in data and len(data['transactions']) == 1
