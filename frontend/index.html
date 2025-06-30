@@ -1814,6 +1814,11 @@
             }
         });
 
+        window.addEventListener('resize', () => {
+            if (incomeChart) incomeChart.resize();
+            if (expenseChart) expenseChart.resize();
+        });
+
         applyPreferences();
     </script>
 </body>
