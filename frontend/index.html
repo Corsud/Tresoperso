@@ -166,7 +166,7 @@
                     </tr>
                 </table>
                 <div id="category-no-data" style="display:none;">No data</div>
-                <div id="sankeyChart" style="width:600px;height:300px;"></div>
+                <div id="sankeyChart" style="width:600px;height:300px;margin:1em 0;"></div>
             </section>
 
             <section id="projection-section" style="display:none;">
@@ -1207,35 +1207,42 @@
             const resp = await fetch(url);
             if (!resp.ok) return;
             const data = await resp.json();
-            const incomes = {};
-            const expenses = {};
+
+            const positives = {};
+            const negatives = {};
             data.forEach(d => {
                 if (d.sign > 0) {
-                    incomes[d.source] = (incomes[d.source] || 0) + d.value;
+                    positives[d.source] = (positives[d.source] || 0) + d.value;
                 } else {
-                    expenses[d.source] = (expenses[d.source] || 0) + d.value;
+                    negatives[d.source] = (negatives[d.source] || 0) + d.value;
                 }
             });
-            const incNames = Object.keys(incomes);
-            const expNames = Object.keys(expenses);
-            const nodes = [...incNames, 'Total', ...expNames];
+
+            const posNames = Object.keys(positives);
+            const negNames = Object.keys(negatives);
+            const nodes = [...posNames, 'Total', ...negNames];
+            const nodeX = nodes.map(n => n === 'Total' ? 0.5 : (posNames.includes(n) ? 0 : 1));
             const index = Object.fromEntries(nodes.map((n, i) => [n, i]));
+
             const links = [];
-            incNames.forEach(n => {
-                links.push({source: index[n], target: index['Total'], value: incomes[n]});
+            posNames.forEach(n => {
+                links.push({ source: index[n], target: index['Total'], value: positives[n], color: 'green' });
             });
-            expNames.forEach(n => {
-                links.push({source: index['Total'], target: index[n], value: expenses[n]});
+            negNames.forEach(n => {
+                links.push({ source: index['Total'], target: index[n], value: negatives[n], color: 'red' });
             });
+
             Plotly.newPlot('sankeyChart', [{
                 type: 'sankey',
-                node: {label: nodes},
+                node: { label: nodes, x: nodeX },
                 link: {
                     source: links.map(l => l.source),
                     target: links.map(l => l.target),
-                    value: links.map(l => l.value)
+                    value: links.map(l => l.value),
+                    color: links.map(l => l.color),
+                    hovertemplate: '€%{value:.0f}<extra></extra>'
                 }
-            }], {margin: {t: 20}});
+            }], { margin: { t: 20 }, hovermode: 'x' });
         }
 
         async function fetchDashboard() {
