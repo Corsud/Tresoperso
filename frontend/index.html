@@ -283,6 +283,8 @@
         </div>
         <div id="delete-error-overlay" class="overlay">
             <div class="popup">
+                <h3>Sous-catégories liées</h3>
+                <ul id="delete-error-subcat-list"></ul>
                 <h3>Transactions liées</h3>
                 <ul id="delete-error-list"></ul>
                 <button id="delete-error-close">Fermer</button>
@@ -937,8 +939,9 @@
                         await refreshCategoryData();
                         fetchRules();
                     } else {
-                        if (data.transactions && data.transactions.length) {
-                            showDeleteError(data.transactions);
+                        if ((data.transactions && data.transactions.length) ||
+                            (data.subcategories && data.subcategories.length)) {
+                            showDeleteError(data.transactions || [], data.subcategories || []);
                         } else {
                             alert(data.error || 'Suppression échouée');
                         }
@@ -1353,6 +1356,7 @@
         const favFilterOverlay = document.getElementById('fav-filter-overlay');
         const manageSubcatsOverlay = document.getElementById('manage-subcats-overlay');
         const delErrorOverlay = document.getElementById('delete-error-overlay');
+        const delErrorSubList = document.getElementById('delete-error-subcat-list');
         const delErrorList = document.getElementById('delete-error-list');
         const delErrorClose = document.getElementById('delete-error-close');
         let manageCatId = null;
@@ -1511,9 +1515,15 @@
         });
         manageSubcatsOverlay.addEventListener('click', e => { if (e.target === manageSubcatsOverlay) manageSubcatsOverlay.style.display = 'none'; });
 
-        function showDeleteError(transactions) {
+        function showDeleteError(transactions, subcats) {
+            delErrorSubList.innerHTML = '';
+            (subcats || []).forEach(s => {
+                const li = document.createElement('li');
+                li.textContent = `${s.id} - ${s.name}`;
+                delErrorSubList.appendChild(li);
+            });
             delErrorList.innerHTML = '';
-            transactions.forEach(t => {
+            (transactions || []).forEach(t => {
                 const li = document.createElement('li');
                 li.textContent = `${formatDate(t.date)} - ${t.label} - ${formatAmount(t.amount)}`;
                 delErrorList.appendChild(li);

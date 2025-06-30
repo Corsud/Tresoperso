@@ -53,6 +53,7 @@ def test_delete_category_with_subcategory_fails(client):
     assert 'error' in data
     assert 'transactions' in data
     assert data['transactions'] == []
+    assert 'subcategories' in data and len(data['subcategories']) == 1
     session = models.SessionLocal()
     cat = session.query(models.Category).get(client.cat_id)
     session.close()
@@ -101,3 +102,4 @@ def test_delete_category_with_transactions_fails(client):
     assert resp.status_code == 400
     data = resp.get_json()
     assert 'transactions' in data and len(data['transactions']) == 1
+    assert 'subcategories' in data and len(data['subcategories']) == 1

@@ -1022,6 +1022,13 @@ def categories(category_id=None):
             }
             for t in category.transactions
         ]
+        subs = [
+            {
+                'id': s.id,
+                'name': s.name,
+            }
+            for s in category.subcategories
+        ]
         session.close()
         return (
             jsonify(
@@ -1031,6 +1038,7 @@ def categories(category_id=None):
                         'deleting this category'
                     ),
                     'transactions': transactions,
+                    'subcategories': subs,
                 }
             ),
             400,
