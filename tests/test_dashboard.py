@@ -57,3 +57,11 @@ def test_dashboard_alerts_and_summaries(client):
     assert favs['Shop']['current_total'] == -70
     assert 'Food' in favs
 
+
+def test_dashboard_custom_threshold(client):
+    login(client)
+    resp = client.get('/dashboard?threshold=10')
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert not any('Huge expense' in a for a in data['alerts'])
+

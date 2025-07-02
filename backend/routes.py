@@ -694,6 +694,10 @@ def compute_dashboard_averages(session):
 @login_required
 def dashboard():
     session = SessionLocal()
+    try:
+        threshold = float(request.args.get('threshold', 1.5))
+    except ValueError:
+        threshold = 1.5
     filters = session.query(FavoriteFilter).all()
     conditions = [Transaction.favorite == True]
     for f in filters:
@@ -728,7 +732,7 @@ def dashboard():
     )
     for tx in recent_txs:
         cat_avg = cat_avgs.get(tx.category_id)
-        if cat_avg and abs(tx.amount) > 1.5 * cat_avg:
+        if cat_avg and abs(tx.amount) > threshold * cat_avg:
             name = tx.category.name if tx.category else 'Inconnu'
             alerts.append(
                 f"{tx.label} {tx.date.isoformat()} depasse 150% de {name}"
