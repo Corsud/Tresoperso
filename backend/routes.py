@@ -370,7 +370,7 @@ def list_transactions():
             pass
 
     if request.args.get('category_none') in ('true', '1', 'yes'):
-        query = query.filter(Transaction.category_id == None)
+        query = query.filter(Transaction.category_id.is_(None))
 
     tx_type = request.args.get('type')
     if tx_type:
@@ -666,7 +666,7 @@ def compute_dashboard_averages(session):
             Transaction.category_id,
             func.avg(func.abs(Transaction.amount)),
         )
-        .filter(Transaction.category_id != None)
+        .filter(Transaction.category_id.isnot(None))
         .group_by(Transaction.category_id)
         .all()
     )
