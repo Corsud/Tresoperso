@@ -1261,13 +1261,15 @@
             const container = document.getElementById('dashboard-content');
             container.innerHTML = `<p>Favoris: ${data.favorite_count} | Total 30j: ${formatAmount(data.recent_total)} | Solde: ${formatAmount(data.balance_total)}</p>`;
             if (data.alerts && data.alerts.length) {
-                const ul = document.createElement('ul');
+                const table = document.createElement('table');
+                table.innerHTML = '<thead><tr><th>Date</th><th>Libellé</th><th>Montant</th><th>Catégorie</th><th>Raison</th></tr></thead><tbody></tbody>';
+                const tbody = table.querySelector('tbody');
                 data.alerts.forEach(a => {
-                    const li = document.createElement('li');
-                    li.textContent = a;
-                    ul.appendChild(li);
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${formatDate(a.date)}</td><td>${a.label}</td><td class="amount">${formatAmount(a.amount)}</td><td>${a.category}</td><td>${a.reason}</td>`;
+                    tbody.appendChild(tr);
                 });
-                container.appendChild(ul);
+                container.appendChild(table);
             }
             if (data.favorite_summaries && data.favorite_summaries.length) {
                 const table = document.createElement('table');

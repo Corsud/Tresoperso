@@ -51,7 +51,10 @@ def test_dashboard_alerts_and_summaries(client):
     resp = client.get('/dashboard')
     assert resp.status_code == 200
     data = resp.get_json()
-    assert any('Huge expense' in a for a in data['alerts'])
+    assert any(a['label'] == 'Huge expense' for a in data['alerts'])
+    first = data['alerts'][0]
+    for key in ['date', 'label', 'amount', 'category', 'reason']:
+        assert key in first
     favs = {f['name']: f for f in data['favorite_summaries']}
     assert 'Shop' in favs
     assert favs['Shop']['current_total'] == -70
@@ -63,5 +66,5 @@ def test_dashboard_custom_threshold(client):
     resp = client.get('/dashboard?threshold=10')
     assert resp.status_code == 200
     data = resp.get_json()
-    assert not any('Huge expense' in a for a in data['alerts'])
+    assert not any(a['label'] == 'Huge expense' for a in data['alerts'])
 
