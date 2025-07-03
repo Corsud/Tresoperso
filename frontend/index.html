@@ -167,6 +167,7 @@
                 </table>
                 <div id="category-no-data" style="display:none;">No data</div>
                 <div id="sankeyChart" style="width:90vw;height:300px;margin:1em 0;"></div>
+                <div id="financialSankey"></div>
             </section>
 
             <section id="projection-section" style="display:none;">
@@ -1864,6 +1865,14 @@
         });
 
         applyPreferences();
+    </script>
+    <script src="sankey.js"></script>
+    <script>
+        const exampleData = [
+            {date: '2025-07-01', categorie: 'Alimentation et Boissons', montant: 120, id: 'TX123'},
+            {date: '2025-07-03', categorie: 'Loisirs et Divertissements', montant: 75, id: 'TX124'}
+        ];
+        new FinancialSankey('financialSankey', exampleData);
     </script>
 </body>
 </html>

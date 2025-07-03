@@ -292,3 +292,20 @@ body.hide-amounts .amount-input {
         width: 100%;
     }
 }
+.financial-sankey {
+    margin-top: 1em;
+}
+.sankey-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    align-items: center;
+    margin-bottom: 0.5em;
+}
+#sk-chart {
+    width: 100%;
+    height: 400px;
+}
+#sk-detail table {
+    margin-top: 0.5em;
+}
