@@ -64,6 +64,7 @@
                 end = lastDay;
                 this.elements.start.value = start;
                 this.elements.end.value = end;
+
             }
             this.filtered = this.data.filter(tx => {
                 if(start && tx.date < start) return false;
@@ -120,6 +121,7 @@
             }
 
 
+
             Plotly.react(this.elements.chart, [{
                 type:'sankey',
                 arrangement:'snap',
@@ -130,6 +132,7 @@
                         if(remaining !== 0 && i===labels.length-1) return '#ff9800';
                         return '#2196f3';
                     }) },
+
                 link:{
                     source, target, value: values,
                     customdata: custom,
@@ -149,6 +152,7 @@
                     const cat = major[idx-1].cat;
                     if(cat) this._showTransactions(cat);
                 }
+
             });
 
             this.elements.remain.textContent = `Solde restant: €${remaining.toFixed(2)}`;
