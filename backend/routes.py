@@ -755,7 +755,11 @@ def dashboard():
             )
 
     current_start = datetime.now().date().replace(day=1)
-    summaries = []
+    groups = {}
+
+    def add_item(cat_name, item):
+        group = groups.setdefault(cat_name, {"category": cat_name, "items": []})
+        group["items"].append(item)
 
     for f in filters:
         subconds = []
@@ -787,14 +791,19 @@ def dashboard():
             )
             prev.append(val)
         avg6 = sum(prev) / 6 if prev else 0
-        summaries.append(
-            {
-                'type': 'filter',
-                'name': f.pattern or 'Filtre',
-                'current_total': current,
-                'six_month_avg': avg6,
-            }
-        )
+        item = {
+            'type': 'filter',
+            'name': f.pattern or 'Filtre',
+            'current_total': current,
+            'six_month_avg': avg6,
+        }
+        if f.subcategory:
+            cat_name = f.subcategory.category.name
+        elif f.category:
+            cat_name = f.category.name
+        else:
+            cat_name = 'Autre'
+        add_item(cat_name, item)
 
     for c in session.query(Category).filter_by(favorite=True).all():
         cond = Transaction.category_id == c.id
@@ -819,14 +828,13 @@ def dashboard():
             )
             prev.append(val)
         avg6 = sum(prev) / 6 if prev else 0
-        summaries.append(
-            {
-                'type': 'category',
-                'name': c.name,
-                'current_total': current,
-                'six_month_avg': avg6,
-            }
-        )
+        item = {
+            'type': 'category',
+            'name': c.name,
+            'current_total': current,
+            'six_month_avg': avg6,
+        }
+        add_item(c.name, item)
 
     for s in session.query(Subcategory).filter_by(favorite=True).all():
         cond = Transaction.subcategory_id == s.id
@@ -851,16 +859,16 @@ def dashboard():
             )
             prev.append(val)
         avg6 = sum(prev) / 6 if prev else 0
-        summaries.append(
-            {
-                'type': 'subcategory',
-                'name': s.name,
-                'current_total': current,
-                'six_month_avg': avg6,
-            }
-        )
+        item = {
+            'type': 'subcategory',
+            'name': s.name,
+            'current_total': current,
+            'six_month_avg': avg6,
+        }
+        add_item(s.category.name, item)
 
     session.close()
+    summaries = list(groups.values())
     result = {
         'alerts': alerts,
         'favorite_count': fav_count,
