@@ -2,6 +2,7 @@ from flask import request, jsonify
 from flask_login import login_required
 from sqlalchemy import func, or_, and_, case
 from datetime import datetime, timedelta
+import numpy as np
 
 from .app import app, load_categories_json, save_categories_json
 from .models import (
@@ -720,6 +721,60 @@ def compute_category_monthly_averages(session, months=12):
     return result
 
 
+def compute_category_forecast(session, months=12, forecast=12):
+    """Return per-category forecast for the next ``forecast`` months.
+
+    A simple linear regression is fitted on the totals of the past ``months``
+    months for each category. Months without transactions are considered to
+    have a total of zero.
+    """
+    today = datetime.now().date()
+    current_start = today.replace(day=1)
+    start = _shift_month(current_start, -months)
+
+    rows = (
+        session.query(
+            func.strftime('%Y-%m', Transaction.date).label('month'),
+            Category.name,
+            func.sum(Transaction.amount),
+        )
+        .outerjoin(Category, Transaction.category_id == Category.id)
+        .filter(Transaction.date >= start)
+        .filter(Transaction.date < current_start)
+        .group_by('month', Category.name)
+        .all()
+    )
+
+    hist_months = [_shift_month(start, i).strftime('%Y-%m') for i in range(months)]
+    data = {}
+    for month, cat, total in rows:
+        cat = cat or 'Inconnu'
+        data.setdefault(cat, {})[month] = total or 0
+
+    future_months = [
+        _shift_month(current_start, i).strftime('%Y-%m') for i in range(forecast)
+    ]
+
+    x = np.arange(months)
+    result_rows = []
+    for cat in sorted(data.keys()):
+        y = [data[cat].get(m, 0) for m in hist_months]
+        if y and max(y) == min(y):
+            preds = [float(y[0])] * forecast
+        elif y:
+            slope, intercept = np.polyfit(x, y, 1)
+            preds = [float(intercept + slope * (months + i)) for i in range(forecast)]
+        else:
+            preds = [0.0] * forecast
+        result_rows.append({'category': cat, 'values': preds})
+
+    return {
+        'period': f"{future_months[0]} to {future_months[-1]}",
+        'months': future_months,
+        'rows': result_rows,
+    }
+
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -994,6 +1049,16 @@ def projection_categories_average():
         {'category': name, 'average': avg}
         for name, avg in sorted(averages.items())
     ]
+    return jsonify(result)
+
+
+@app.route('/projection/categories/forecast')
+@login_required
+def projection_categories_forecast():
+    """Return per-category forecast for the next 12 months."""
+    session = SessionLocal()
+    result = compute_category_forecast(session, months=12, forecast=12)
+    session.close()
     return jsonify(result)
 
 
