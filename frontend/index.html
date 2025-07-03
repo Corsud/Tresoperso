@@ -1273,11 +1273,26 @@
             }
             if (data.favorite_summaries && data.favorite_summaries.length) {
                 const table = document.createElement('table');
-                table.innerHTML = '<thead><tr><th>Favori</th><th>Mois en cours</th><th>Moy. 6 mois</th></tr></thead><tbody></tbody>';
+                table.innerHTML = '<thead><tr><th>Catégorie</th><th>Favoris</th></tr></thead><tbody></tbody>';
                 const tbody = table.querySelector('tbody');
-                data.favorite_summaries.forEach(f => {
+                data.favorite_summaries.forEach(group => {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${f.name}</td><td>${formatAmount(f.current_total)}</td><td>${formatAmount(f.six_month_avg)}</td>`;
+                    const tdCat = document.createElement('td');
+                    tdCat.textContent = group.category;
+                    const tdFav = document.createElement('td');
+                    if (group.items && group.items.length) {
+                        const inner = document.createElement('table');
+                        inner.innerHTML = '<thead><tr><th>Favori</th><th>Mois en cours</th><th>Moy. 6 mois</th></tr></thead><tbody></tbody>';
+                        const innerBody = inner.querySelector('tbody');
+                        group.items.forEach(f => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `<td>${f.name}</td><td>${formatAmount(f.current_total)}</td><td>${formatAmount(f.six_month_avg)}</td>`;
+                            innerBody.appendChild(row);
+                        });
+                        tdFav.appendChild(inner);
+                    }
+                    tr.appendChild(tdCat);
+                    tr.appendChild(tdFav);
                     tbody.appendChild(tr);
                 });
                 container.appendChild(table);

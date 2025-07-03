@@ -55,10 +55,15 @@ def test_dashboard_alerts_and_summaries(client):
     first = data['alerts'][0]
     for key in ['date', 'label', 'amount', 'category', 'reason']:
         assert key in first
-    favs = {f['name']: f for f in data['favorite_summaries']}
+    favs = {}
+    cats = {grp['category']: grp for grp in data['favorite_summaries']}
+    for grp in data['favorite_summaries']:
+        for itm in grp['items']:
+            favs[itm['name']] = itm
     assert 'Shop' in favs
     assert favs['Shop']['current_total'] == -70
     assert 'Food' in favs
+    assert 'Food' in cats
 
 
 def test_dashboard_custom_threshold(client):
