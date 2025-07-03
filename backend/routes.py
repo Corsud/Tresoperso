@@ -911,8 +911,8 @@ def projection_categories():
     session = SessionLocal()
     today = datetime.now().date()
     current_start = today.replace(day=1)
-    start = _shift_month(current_start, -11)
-    end = _shift_month(current_start, 1)
+    start = _shift_month(current_start, -12)
+    end = current_start
     rows = (
         session.query(
             func.strftime('%Y-%m', Transaction.date).label('month'),

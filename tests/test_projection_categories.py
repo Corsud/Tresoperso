@@ -45,9 +45,9 @@ def test_projection_categories(client):
     resp = client.get('/projection/categories')
     assert resp.status_code == 200
     data = resp.get_json()
-    assert data['period'] == '2020-08 to 2021-07'
-    assert data['months'][0] == '2020-08'
-    assert data['months'][-1] == '2021-07'
+    assert data['period'] == '2020-07 to 2021-06'
+    assert data['months'][0] == '2020-07'
+    assert data['months'][-1] == '2021-06'
     rows = {r['category']: r['values'] for r in data['rows']}
     assert rows['Food'][0] == 10
     assert rows['Food'][1] == 5
