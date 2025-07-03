@@ -177,6 +177,15 @@
                     <thead></thead>
                     <tbody></tbody>
                 </table>
+                <p id="projection-future-period"></p>
+                <div id="projection-mode">
+                    <label><input type="radio" name="projection-mode" value="average" checked> valeurs moyennes</label>
+                    <label><input type="radio" name="projection-mode" value="forecast"> valeurs selon régression linéaire</label>
+                </div>
+                <table id="projection-future-table">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
                 <table id="projection-table">
                     <thead><tr><th>Mois</th><th>Montant</th></tr></thead>
                     <tbody></tbody>
@@ -618,6 +627,7 @@
                     fetchStats();
                     fetchProjection();
                     fetchProjectionCategories();
+                    fetchProjectionFuture();
                     fetchCategoryStats();
                     fetchSankeyStats();
                 }
@@ -644,6 +654,7 @@
                 fetchStats();
                 fetchProjection();
                 fetchProjectionCategories();
+                fetchProjectionFuture();
                 fetchCategoryStats();
                 fetchSankeyStats();
             }
@@ -872,6 +883,7 @@
                 fetchStats();
                 fetchProjection();
                 fetchProjectionCategories();
+                fetchProjectionFuture();
                 fetchCategoryStats();
                 fetchSankeyStats();
             } else {
@@ -1324,10 +1336,15 @@
         }
 
         function drawProjectionChart() {
-            const rows = document.querySelectorAll('#projection-table tbody tr');
+            const rows1 = document.querySelectorAll('#projection-table tbody tr');
+            const rows2 = document.querySelectorAll('#projection-future-table tbody tr');
             const labels = [];
             const values = [];
-            rows.forEach(r => {
+            rows1.forEach(r => {
+                labels.push(r.children[0].textContent);
+                values.push(parseFloat(r.querySelector('input').value) || 0);
+            });
+            rows2.forEach(r => {
                 labels.push(r.children[0].textContent);
                 values.push(parseFloat(r.querySelector('input').value) || 0);
             });
@@ -1376,6 +1393,7 @@
         }
 
         document.getElementById('projection-table').addEventListener('input', drawProjectionChart);
+        document.getElementById('projection-future-table').addEventListener('input', drawProjectionChart);
 
         async function fetchProjectionCategories() {
             const resp = await fetch('/projection/categories');
@@ -1396,6 +1414,59 @@
             });
             thead.appendChild(headRow);
             data.rows.forEach(r => {
+                const tr = document.createElement('tr');
+                const tdCat = document.createElement('td');
+                tdCat.textContent = r.category;
+                tr.appendChild(tdCat);
+                r.values.forEach(v => {
+                    const td = document.createElement('td');
+                    td.textContent = formatAmount(v);
+                    td.className = 'amount';
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function fetchProjectionFuture() {
+            const mode = document.querySelector('input[name="projection-mode"]:checked')?.value || 'average';
+            if (mode === 'forecast') {
+                const resp = await fetch('/projection/categories/forecast');
+                if (!resp.ok) return;
+                const data = await resp.json();
+                buildFutureTable(data.months, data.rows, data.period);
+            } else {
+                const [avgResp, fResp] = await Promise.all([
+                    fetch('/projection/categories/average'),
+                    fetch('/projection/categories/forecast'),
+                ]);
+                if (!avgResp.ok || !fResp.ok) return;
+                const avgs = await avgResp.json();
+                const fData = await fResp.json();
+                const rows = avgs.map(a => ({
+                    category: a.category,
+                    values: fData.months.map(() => a.average),
+                }));
+                buildFutureTable(fData.months, rows, fData.period);
+            }
+        }
+
+        function buildFutureTable(months, rows, period) {
+            document.getElementById('projection-future-period').textContent = period;
+            const table = document.getElementById('projection-future-table');
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+            const headRow = document.createElement('tr');
+            headRow.innerHTML = '<th>Catégorie</th>';
+            months.forEach(m => {
+                const th = document.createElement('th');
+                th.textContent = m;
+                headRow.appendChild(th);
+            });
+            thead.appendChild(headRow);
+            rows.forEach(r => {
                 const tr = document.createElement('tr');
                 const tdCat = document.createElement('td');
                 tdCat.textContent = r.category;
@@ -1632,6 +1703,7 @@
                 fetchStats();
                 fetchProjection();
                 fetchProjectionCategories();
+                fetchProjectionFuture();
                 fetchCategoryStats();
                 fetchSankeyStats();
                 return;
@@ -1648,6 +1720,7 @@
                 fetchStats();
                 fetchProjection();
                 fetchProjectionCategories();
+                fetchProjectionFuture();
                 fetchCategoryStats();
                 fetchSankeyStats();
             } else {
@@ -1769,7 +1842,9 @@
                 sidebarButtons.forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
                 if (target === 'projection-section') {
+                    fetchProjection();
                     fetchProjectionCategories();
+                    fetchProjectionFuture();
                 }
             });
         });
@@ -1792,6 +1867,7 @@
         const filterCategorySelect = document.getElementById('filter-category');
         const ruleOverlayCategorySelect = document.getElementById('rule-overlay-category');
         const favFilterOverlayCategorySelect = document.getElementById('fav-filter-overlay-category');
+        const projectionModeInputs = document.querySelectorAll('#projection-mode input');
 
         function applyPreferences() {
             const theme = localStorage.getItem('theme') || 'light';
@@ -1821,6 +1897,7 @@
             fetchStats();
             fetchProjection();
             fetchProjectionCategories();
+            fetchProjectionFuture();
             fetchCategoryStats();
             fetchSankeyStats();
         });
@@ -1848,6 +1925,12 @@
                 updateSubcategories(favFilterOverlayCategorySelect.value, 'fav-filter-overlay-subcategory', '(Aucune)');
             });
         }
+
+        projectionModeInputs.forEach(r => {
+            r.addEventListener('change', () => {
+                fetchProjectionFuture();
+            });
+        });
 
         accountSelect.addEventListener('change', () => {
             selectedAccountId = accountSelect.value;
@@ -1902,6 +1985,7 @@
                 fetchStats();
                 fetchProjection();
                 fetchProjectionCategories();
+                fetchProjectionFuture();
                 fetchCategoryStats();
                 fetchSankeyStats();
             }
