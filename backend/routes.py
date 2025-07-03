@@ -690,6 +690,36 @@ def compute_dashboard_averages(session):
     return cat_avgs, income_avg
 
 
+def compute_category_monthly_averages(session, months=12):
+    """Return a mapping of category name to average monthly amount.
+
+    The computation spans the ``months`` prior to the current month and
+    includes months without transactions as zero.
+    """
+    today = datetime.now().date()
+    current_start = today.replace(day=1)
+    start = _shift_month(current_start, -months)
+
+    data = (
+        session.query(
+            Category.name,
+            func.sum(Transaction.amount),
+        )
+        .outerjoin(Category, Transaction.category_id == Category.id)
+        .filter(Transaction.date >= start)
+        .filter(Transaction.date < current_start)
+        .group_by(Category.name)
+        .all()
+    )
+
+    result = {
+        (name or "Inconnu"): (total or 0) / months
+        for name, total in data
+    }
+
+    return result
+
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -950,6 +980,20 @@ def projection_categories():
         'months': months,
         'rows': result_rows,
     }
+    return jsonify(result)
+
+
+@app.route('/projection/categories/average')
+@login_required
+def projection_categories_average():
+    """Return per-category average monthly amount for the last 12 months."""
+    session = SessionLocal()
+    averages = compute_category_monthly_averages(session, months=12)
+    session.close()
+    result = [
+        {'category': name, 'average': avg}
+        for name, avg in sorted(averages.items())
+    ]
     return jsonify(result)
 
 
