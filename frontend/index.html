@@ -172,6 +172,11 @@
 
             <section id="projection-section" style="display:none;">
                 <h2>Projection</h2>
+                <p id="projection-cat-period"></p>
+                <table id="projection-cat-table">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
                 <table id="projection-table">
                     <thead><tr><th>Mois</th><th>Montant</th></tr></thead>
                     <tbody></tbody>
@@ -612,6 +617,7 @@
                     fetchDashboard();
                     fetchStats();
                     fetchProjection();
+                    fetchProjectionCategories();
                     fetchCategoryStats();
                     fetchSankeyStats();
                 }
@@ -637,6 +643,7 @@
                 fetchDashboard();
                 fetchStats();
                 fetchProjection();
+                fetchProjectionCategories();
                 fetchCategoryStats();
                 fetchSankeyStats();
             }
@@ -864,6 +871,7 @@
                 fetchDashboard();
                 fetchStats();
                 fetchProjection();
+                fetchProjectionCategories();
                 fetchCategoryStats();
                 fetchSankeyStats();
             } else {
@@ -1362,12 +1370,45 @@
                 amountCell.appendChild(input);
                 tr.appendChild(amountCell);
 
-                tbody.appendChild(tr);
-            });
+            tbody.appendChild(tr);
+        });
             drawProjectionChart();
         }
 
         document.getElementById('projection-table').addEventListener('input', drawProjectionChart);
+
+        async function fetchProjectionCategories() {
+            const resp = await fetch('/projection/categories');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            document.getElementById('projection-cat-period').textContent = data.period;
+            const table = document.getElementById('projection-cat-table');
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+            const headRow = document.createElement('tr');
+            headRow.innerHTML = '<th>Catégorie</th>';
+            data.months.forEach(m => {
+                const th = document.createElement('th');
+                th.textContent = m;
+                headRow.appendChild(th);
+            });
+            thead.appendChild(headRow);
+            data.rows.forEach(r => {
+                const tr = document.createElement('tr');
+                const tdCat = document.createElement('td');
+                tdCat.textContent = r.category;
+                tr.appendChild(tdCat);
+                r.values.forEach(v => {
+                    const td = document.createElement('td');
+                    td.textContent = formatAmount(v);
+                    td.className = 'amount';
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
 
         let currentCatBtn = null;
         let currentSubBtn = null;
@@ -1590,6 +1631,7 @@
                 fetchDashboard();
                 fetchStats();
                 fetchProjection();
+                fetchProjectionCategories();
                 fetchCategoryStats();
                 fetchSankeyStats();
                 return;
@@ -1605,6 +1647,7 @@
                 fetchDashboard();
                 fetchStats();
                 fetchProjection();
+                fetchProjectionCategories();
                 fetchCategoryStats();
                 fetchSankeyStats();
             } else {
@@ -1725,6 +1768,9 @@
                 });
                 sidebarButtons.forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
+                if (target === 'projection-section') {
+                    fetchProjectionCategories();
+                }
             });
         });
         if (sidebarButtons.length) {
@@ -1774,6 +1820,7 @@
             fetchTransactions();
             fetchStats();
             fetchProjection();
+            fetchProjectionCategories();
             fetchCategoryStats();
             fetchSankeyStats();
         });
@@ -1854,6 +1901,7 @@
                 fetchDashboard();
                 fetchStats();
                 fetchProjection();
+                fetchProjectionCategories();
                 fetchCategoryStats();
                 fetchSankeyStats();
             }

@@ -905,6 +905,54 @@ def projection():
     return jsonify(result)
 
 
+@app.route('/projection/categories')
+@login_required
+def projection_categories():
+    session = SessionLocal()
+    today = datetime.now().date()
+    current_start = today.replace(day=1)
+    start = _shift_month(current_start, -11)
+    end = _shift_month(current_start, 1)
+    rows = (
+        session.query(
+            func.strftime('%Y-%m', Transaction.date).label('month'),
+            Category.name,
+            func.sum(Transaction.amount),
+        )
+        .outerjoin(Category, Transaction.category_id == Category.id)
+        .filter(Transaction.date >= start)
+        .filter(Transaction.date < end)
+        .group_by('month', Category.name)
+        .all()
+    )
+    session.close()
+
+    months = [
+        _shift_month(start, i).strftime('%Y-%m')
+        for i in range(12)
+    ]
+
+    data = {}
+    for month, cat, total in rows:
+        cat = cat or 'Inconnu'
+        data.setdefault(cat, {})[month] = total or 0
+
+    result_rows = [
+        {
+            'category': cat,
+            'values': [data[cat].get(m, 0) for m in months],
+        }
+        for cat in sorted(data.keys())
+    ]
+
+    result = {
+        'period': f"{months[0]} to {months[-1]}",
+        'months': months,
+        'rows': result_rows,
+    }
+    return jsonify(result)
+
+
 @app.route('/category-options')
 @login_required
 def category_options():
