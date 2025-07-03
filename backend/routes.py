@@ -732,14 +732,26 @@ def dashboard():
     )
     for tx in recent_txs:
         cat_avg = cat_avgs.get(tx.category_id)
+        name = tx.category.name if tx.category else "Inconnu"
         if cat_avg and abs(tx.amount) > threshold * cat_avg:
-            name = tx.category.name if tx.category else 'Inconnu'
             alerts.append(
-                f"{tx.label} {tx.date.isoformat()} depasse 150% de {name}"
+                {
+                    "date": tx.date.isoformat(),
+                    "label": tx.label,
+                    "amount": tx.amount,
+                    "category": name,
+                    "reason": "category_threshold",
+                }
             )
         if abs(tx.amount) > income_avg:
             alerts.append(
-                f"{tx.label} {tx.date.isoformat()} depasse la moyenne revenus"
+                {
+                    "date": tx.date.isoformat(),
+                    "label": tx.label,
+                    "amount": tx.amount,
+                    "category": name,
+                    "reason": "income_threshold",
+                }
             )
 
     current_start = datetime.now().date().replace(day=1)
