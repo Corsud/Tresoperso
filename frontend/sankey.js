@@ -62,6 +62,9 @@
                 start = `${y}-${m}-01`;
                 const lastDay = new Date(y, m, 0).toISOString().slice(0,10);
                 end = lastDay;
+                this.elements.start.value = start;
+                this.elements.end.value = end;
+
             }
             this.filtered = this.data.filter(tx => {
                 if(start && tx.date < start) return false;
@@ -93,23 +96,43 @@
             major.sort((a,b)=>b.val-a.val);
             const remaining = totalIncome - totalExpense;
 
-            const labels = ['Revenus', ...major.map(c=>c.cat)];
-            if(remaining !== 0) labels.push('Solde');
+            const labels = ['Revenus', 'Total', ...major.map(c => c.cat)];
+            if (remaining !== 0) labels.push('Solde');
+
             const source = [];
             const target = [];
             const values = [];
-            major.forEach((c,i)=>{ source.push(0); target.push(i+1); values.push(c.val); });
-            if(remaining !== 0){ source.push(0); target.push(labels.length-1); values.push(remaining); }
+            const custom = [];
 
-            const pct = values.map(v=> totalIncome ? (v*100/totalIncome) : 0);
-            const custom = labels.slice(1).map((cat,i)=>({cat, pct:pct[i]}));
-            if(remaining !== 0) custom.push({cat:'Solde', pct:pct[pct.length-1]});
+            // Revenus vers noeud "Total"
+            source.push(0); target.push(1); values.push(totalExpense);
+            custom.push({cat: 'Dépenses', pct: totalIncome ? totalExpense * 100 / totalIncome : 0});
+
+            // Noeud "Total" vers categories
+            major.forEach((c, i) => {
+                source.push(1); target.push(i + 2); values.push(c.val);
+                custom.push({cat: c.cat, pct: totalIncome ? c.val * 100 / totalIncome : 0});
+            });
+
+            // Flux vers solde restant
+            if (remaining !== 0) {
+                source.push(0); target.push(labels.length - 1); values.push(remaining);
+                custom.push({cat: 'Solde', pct: totalIncome ? remaining * 100 / totalIncome : 0});
+            }
+
+
 
             Plotly.react(this.elements.chart, [{
                 type:'sankey',
                 arrangement:'snap',
                 node:{ label:labels, pad:15, thickness:20,
-                    color: labels.map((_,i)=> i===0?'#4caf50':'#2196f3') },
+                    color: labels.map((_,i)=>{
+                        if(i===0) return '#4caf50';
+                        if(i===1) return '#9e9e9e';
+                        if(remaining !== 0 && i===labels.length-1) return '#ff9800';
+                        return '#2196f3';
+                    }) },
+
                 link:{
                     source, target, value: values,
                     customdata: custom,
@@ -124,8 +147,12 @@
             this.elements.chart.on('plotly_click', ev => {
                 if(!ev.points.length) return;
                 const idx = ev.points[0].pointIndex;
-                const cat = major[idx] ? major[idx].cat : null;
-                if(cat) this._showTransactions(cat);
+                // liens 1..major.length correspondent aux categories
+                if(idx >= 1 && idx <= major.length){
+                    const cat = major[idx-1].cat;
+                    if(cat) this._showTransactions(cat);
+                }
+
             });
 
             this.elements.remain.textContent = `Solde restant: €${remaining.toFixed(2)}`;
