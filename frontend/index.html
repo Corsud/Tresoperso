@@ -1505,11 +1505,10 @@
         async function fetchRecurrents() {
             const today = new Date();
             const month = today.toISOString().slice(0,7);
-            const resp = await fetch(`/stats/recurrents?month=${month}`);
-            if (!resp.ok) return;
-            const data = await resp.json();
             const container = document.getElementById('recurrents-calendar');
             if (!container) return;
+
+            // Build the calendar grid first so it is visible even on errors
             container.innerHTML = '';
             const daysInMonth = new Date(today.getFullYear(), today.getMonth()+1, 0).getDate();
             for (let i=1;i<=daysInMonth;i++) {
@@ -1519,6 +1518,12 @@
                 div.dataset.day = i;
                 container.appendChild(div);
             }
+
+            // Fetch recurring transactions and place dots when available
+            const resp = await fetch(`/stats/recurrents?month=${month}`);
+            if (!resp.ok) return;
+            const data = await resp.json();
+
             data.forEach(rec => {
                 const cell = container.querySelector(`div[data-day="${rec.day}"]`);
                 if (!cell) return;

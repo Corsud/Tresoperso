@@ -681,7 +681,8 @@ def stats_recurrents():
 
     groups = {}
     for tx in rows:
-        key = _normalize_label(tx.label)
+        key = re.sub(r"\d+", "", tx.label).strip().lower()
+
         groups.setdefault(key, []).append(tx)
 
     result = []
@@ -713,7 +714,6 @@ def stats_recurrents():
 
     result.sort(key=lambda r: r['day'])
     return jsonify(result)
-
 
 _MONTH_NAMES = [
     'janvier', 'février', 'fevrier', 'mars', 'avril', 'mai', 'juin',
