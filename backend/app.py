@@ -16,6 +16,12 @@ from .models import init_db
 
 app = Flask(__name__, static_folder=str(config.FRONTEND_DIR), static_url_path='')
 app.secret_key = config.SECRET_KEY
+# Secure session cookie settings
+# - SESSION_COOKIE_HTTPONLY prevents JavaScript access to the cookie.
+# - SESSION_COOKIE_SECURE ensures the cookie is only sent over HTTPS.
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = True
+
 CATEGORIES_JSON = config.CATEGORIES_JSON
 
 from . import auth  # noqa: F401
