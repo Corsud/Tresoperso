@@ -682,6 +682,7 @@ def stats_recurrents():
     groups = {}
     for tx in rows:
         key = re.sub(r"\d+", "", tx.label).strip().lower()
+
         groups.setdefault(key, []).append(tx)
 
     result = []
@@ -713,6 +714,23 @@ def stats_recurrents():
 
     result.sort(key=lambda r: r['day'])
     return jsonify(result)
+
+_MONTH_NAMES = [
+    'janvier', 'février', 'fevrier', 'mars', 'avril', 'mai', 'juin',
+    'juillet', 'août', 'aout', 'septembre', 'octobre', 'novembre',
+    'décembre', 'decembre',
+    'jan', 'feb', 'fev', 'mar', 'apr', 'avr', 'may', 'jun', 'jul',
+    'aug', 'aou', 'sep', 'oct', 'nov', 'dec'
+]
+
+
+def _normalize_label(label):
+    """Return a simplified label for recurrence grouping."""
+    s = re.sub(r"\d+", "", label.lower())
+    for name in _MONTH_NAMES:
+        s = s.replace(name, '')
+    s = re.sub(r"\s+", " ", s)
+    return s.strip()
 
 
 def _shift_month(date, offset):

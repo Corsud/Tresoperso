@@ -1523,6 +1523,7 @@
             const resp = await fetch(`/stats/recurrents?month=${month}`);
             if (!resp.ok) return;
             const data = await resp.json();
+
             data.forEach(rec => {
                 const cell = container.querySelector(`div[data-day="${rec.day}"]`);
                 if (!cell) return;
