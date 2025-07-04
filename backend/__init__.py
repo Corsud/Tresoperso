@@ -1,6 +1,6 @@
-from .app import app, run, SessionLocal, load_categories_json, save_categories_json
+from .app import app, run, load_categories_json, save_categories_json
 from .config import CATEGORIES_JSON
-from .models import init_db
+from .models import init_db, SessionLocal
 from .routes import compute_dashboard_averages
 
 __all__ = [

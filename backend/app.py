@@ -7,12 +7,12 @@ from flask import Flask
 
 from . import config
 from .models import init_db
-from . import auth  # noqa: F401
-from . import routes  # noqa: F401
 
 app = Flask(__name__, static_folder=str(config.FRONTEND_DIR), static_url_path='')
 app.secret_key = config.SECRET_KEY
 CATEGORIES_JSON = config.CATEGORIES_JSON
+
+from . import auth  # noqa: F401
 
 
 def load_categories_json():
@@ -42,3 +42,6 @@ def run():
     init_db()
     threading.Timer(1, open_browser).start()
     app.run(host='0.0.0.0')
+
+
+from . import routes  # noqa: F401
