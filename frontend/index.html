@@ -519,7 +519,8 @@
                     start = null;
                     end = null;
             }
-            const fmt = d => d.toISOString().slice(0, 10);
+            // Format dates using local timezone to avoid day shifts
+            const fmt = d => d.toLocaleDateString('fr-CA');
             return {
                 start: start ? fmt(start) : '',
                 end: end ? fmt(end) : ''
