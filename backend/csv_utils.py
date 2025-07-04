@@ -95,7 +95,10 @@ def parse_csv(content):
         date_str = row[0]
         tx_type = row[1]
         payment_method = row[2]
-        label = row[3]
+        label = row[3].strip()
+        if label.startswith(('=', '+', '-', '@')):
+            label = "'" + label
+        
         amount_str = row[4]
 
         if not (date_str and label and amount_str):
