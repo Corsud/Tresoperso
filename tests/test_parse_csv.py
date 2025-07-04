@@ -1,4 +1,5 @@
 import datetime
+import pytest
 
 from backend.csv_utils import parse_csv
 
@@ -87,3 +88,14 @@ def test_parse_csv_trailing_blank_line():
     assert not errors
     assert duplicates == []
     assert len(transactions) == 1
+
+
+@pytest.mark.parametrize("label", ["=1+2", "+test", "-cmd", "@SUM"])
+def test_parse_csv_sanitizes_label(label):
+    csv_data = f"""Compte courant 12345678 2021-01-01
+2021-01-02;Debit;CB;{label};1,00
+"""
+    transactions, duplicates, errors, info = parse_csv(csv_data)
+
+    assert not errors
+    assert transactions[0]["label"] == "'" + label
