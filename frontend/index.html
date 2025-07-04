@@ -45,6 +45,8 @@
             <h1>Tresoperso</h1>
             <section id="dashboard-section" style="display:none;">
                 <h2>Dashboard</h2>
+                <label for="dashboard-threshold">Seuil exceptionnel&nbsp;:</label>
+                <input type="number" id="dashboard-threshold" step="0.1" value="1.5" style="width:4em;" />
                 <div id="dashboard-content">Chargement...</div>
                 <canvas id="dashboardChart" width="400" height="200"></canvas>
             </section>
@@ -1277,7 +1279,11 @@
         }
 
         async function fetchDashboard() {
-            const resp = await fetch('/dashboard');
+            let threshold = 1.5;
+            if (dashboardThresholdInput) {
+                threshold = parseFloat(dashboardThresholdInput.value) || 1.5;
+            }
+            const resp = await fetch(`/dashboard?threshold=${encodeURIComponent(threshold)}`);
             if (!resp.ok) return;
             const data = await resp.json();
             const container = document.getElementById('dashboard-content');
@@ -1869,11 +1875,13 @@
         const ruleOverlayCategorySelect = document.getElementById('rule-overlay-category');
         const favFilterOverlayCategorySelect = document.getElementById('fav-filter-overlay-category');
         const projectionModeInputs = document.querySelectorAll('#projection-mode input');
+        const dashboardThresholdInput = document.getElementById('dashboard-threshold');
 
         function applyPreferences() {
             const theme = localStorage.getItem('theme') || 'light';
             const font = localStorage.getItem('font') || 'roboto';
             const hide = localStorage.getItem('hideAmounts') === 'true';
+            const threshold = localStorage.getItem('dashboardThreshold') || '1.5';
             themeLink.href = theme + '.css';
             document.body.classList.remove('font-roboto', 'font-arial', 'font-geneva');
             document.body.classList.add('font-' + font);
@@ -1881,6 +1889,7 @@
             themeSelect.value = theme;
             fontSelect.value = font;
             hideAmountsBox.checked = hide;
+            if (dashboardThresholdInput) dashboardThresholdInput.value = threshold;
         }
 
         themeSelect.addEventListener('change', () => {
@@ -1902,6 +1911,13 @@
             fetchCategoryStats();
             fetchSankeyStats();
         });
+
+        if (dashboardThresholdInput) {
+            dashboardThresholdInput.addEventListener('change', () => {
+                localStorage.setItem('dashboardThreshold', dashboardThresholdInput.value);
+                fetchDashboard();
+            });
+        }
 
         statsPeriodSelect.addEventListener('change', () => {
             fetchStats();
