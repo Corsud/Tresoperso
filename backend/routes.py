@@ -692,6 +692,10 @@ def stats_recurrents():
         avg = sum(abs(t.amount) for t in txs) / len(txs)
         if not all(0.8 * avg <= abs(t.amount) <= 1.3 * avg for t in txs):
             continue
+        days = [t.date.day for t in txs]
+        if max(days) - min(days) > 7:
+            continue
+
         txs.sort(key=lambda t: t.date)
         cat = txs[0].category
         item = {
@@ -714,6 +718,7 @@ def stats_recurrents():
 
     result.sort(key=lambda r: r['day'])
     return jsonify(result)
+
 
 _MONTH_NAMES = [
     'janvier', 'février', 'fevrier', 'mars', 'avril', 'mai', 'juin',
