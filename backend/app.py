@@ -2,6 +2,12 @@ import os
 import json
 import threading
 import webbrowser
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s'
+)
 
 from flask import Flask
 

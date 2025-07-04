@@ -1,21 +1,17 @@
 from flask import request, jsonify
+import logging
 from flask_login import login_required
 from sqlalchemy import func, or_, and_, case
-from datetime import datetime, timedelta
+import backend
+from datetime import timedelta
 import numpy as np
 import re
 
 from .app import app, load_categories_json, save_categories_json
-from .models import (
-    SessionLocal,
-    Transaction,
-    BankAccount,
-    Category,
-    Subcategory,
-    Rule,
-    FavoriteFilter,
-)
+from . import models
 from .csv_utils import parse_csv, apply_rule_to_transactions
+
+logger = logging.getLogger(__name__)
 
 
 @app.route('/')
@@ -27,16 +23,17 @@ def index():
 @login_required
 def accounts():
     """Return all bank accounts or create a new one."""
-    session = SessionLocal()
+    session = models.SessionLocal()
     if request.method == 'POST':
         data = request.get_json() or {}
-        acc = BankAccount(
+        acc = models.BankAccount(
             name=data.get('name', ''),
             account_type=data.get('account_type'),
             number=data.get('number'),
         )
         session.add(acc)
         session.commit()
+        logger.info("Created account %s (id=%s)", acc.name, acc.id)
         result = {
             'id': acc.id,
             'name': acc.name,
@@ -59,7 +56,7 @@ def accounts():
             'initial_balance': a.initial_balance,
             'balance_date': a.balance_date.isoformat() if a.balance_date else None,
         }
-        for a in session.query(BankAccount).all()
+        for a in session.query(models.BankAccount).all()
     ]
     session.close()
     return jsonify(data)
@@ -69,8 +66,8 @@ def accounts():
 @login_required
 def account_balance(account_id):
     """Retrieve or update an account's initial balance information."""
-    session = SessionLocal()
-    acc = session.query(BankAccount).get(account_id)
+    session = models.SessionLocal()
+    acc = session.query(models.BankAccount).get(account_id)
     if not acc:
         session.close()
         return jsonify({'error': 'Not found'}), 404
@@ -94,12 +91,18 @@ def account_balance(account_id):
         val = data['balance_date']
         if val:
             try:
-                acc.balance_date = datetime.strptime(val, '%Y-%m-%d').date()
+                acc.balance_date = backend.datetime.strptime(val, '%Y-%m-%d').date()
             except ValueError:
                 pass
         else:
             acc.balance_date = None
     session.commit()
+    logger.info(
+        "Updated balance for account %s: initial_balance=%s balance_date=%s",
+        acc.id,
+        acc.initial_balance,
+        acc.balance_date,
+    )
     result = {
         'id': acc.id,
         'initial_balance': acc.initial_balance,
@@ -113,8 +116,8 @@ def account_balance(account_id):
 @login_required
 def account_detail(account_id):
     """Retrieve, update or delete a bank account."""
-    session = SessionLocal()
-    acc = session.query(BankAccount).get(account_id)
+    session = models.SessionLocal()
+    acc = session.query(models.BankAccount).get(account_id)
     if not acc:
         session.close()
         return jsonify({'error': 'Not found'}), 404
@@ -135,6 +138,7 @@ def account_detail(account_id):
     if request.method == 'DELETE':
         session.delete(acc)
         session.commit()
+        logger.info("Deleted account %s (id=%s)", acc.name, acc.id)
         session.close()
         return '', 204
 
@@ -149,12 +153,13 @@ def account_detail(account_id):
         val = data['export_date']
         if val:
             try:
-                acc.export_date = datetime.strptime(val, '%Y-%m-%d').date()
+                acc.export_date = backend.datetime.strptime(val, '%Y-%m-%d').date()
             except ValueError:
                 pass
         else:
             acc.export_date = None
     session.commit()
+    logger.info("Updated account %s (id=%s)", acc.name, acc.id)
     result = {
         'id': acc.id,
         'name': acc.name,
@@ -188,16 +193,16 @@ def import_csv():
     transactions, csv_duplicates, csv_errors, account_info = parse_csv(content)
     errors = list(csv_errors)
 
-    session = SessionLocal()
+    session = models.SessionLocal()
     imported = 0
     duplicates = list(csv_duplicates)
 
-    account = session.query(BankAccount).filter_by(
+    account = session.query(models.BankAccount).filter_by(
         account_type=account_info.get('account_type'),
         number=account_info.get('number'),
     ).first()
     if not account:
-        account = BankAccount(
+        account = models.BankAccount(
             account_type=account_info.get('account_type'),
             number=account_info.get('number'),
             export_date=account_info.get('export_date'),
@@ -214,11 +219,11 @@ def import_csv():
             account.name = account_info['name']
         session.commit()
 
-    rules = session.query(Rule).all()
+    rules = session.query(models.Rule).all()
 
     try:
         for t in transactions:
-            exists = session.query(Transaction).filter_by(
+            exists = session.query(models.Transaction).filter_by(
                 date=t['date'], label=t['label'], amount=t['amount'], bank_account_id=account.id
             ).first()
             if exists:
@@ -240,7 +245,7 @@ def import_csv():
                     subcategory_id = r.subcategory_id
                     break
 
-            session.add(Transaction(
+            session.add(models.Transaction(
                 date=t['date'],
                 tx_type=t['type'],
                 payment_method=t['payment_method'],
@@ -282,7 +287,13 @@ def import_csv():
         ]
     if errors:
         response['errors'] = errors
+        logger.info(
+            "CSV import for account %s had errors: %s", account.id, errors
+        )
         return jsonify(response), 400
+    logger.info(
+        "CSV import for account %s: imported=%s duplicates=%s", account.id, imported, len(duplicates)
+    )
     return jsonify(response)
 
 
@@ -294,21 +305,21 @@ def confirm_import():
     rows = data.get('transactions', [])
     account_id = data.get('account_id')
 
-    session = SessionLocal()
+    session = models.SessionLocal()
     imported = 0
     errors = []
 
-    rules = session.query(Rule).all()
+    rules = session.query(models.Rule).all()
 
     try:
         for t in rows:
             try:
-                date = datetime.strptime(t['date'], '%Y-%m-%d').date()
+                date = backend.datetime.strptime(t['date'], '%Y-%m-%d').date()
             except (KeyError, ValueError):
                 errors.append('Date invalide')
                 continue
 
-            exists = session.query(Transaction).filter_by(
+            exists = session.query(models.Transaction).filter_by(
                 date=date, label=t.get('label'), amount=t.get('amount'), bank_account_id=account_id
             ).first()
             if exists:
@@ -322,7 +333,7 @@ def confirm_import():
                     subcategory_id = r.subcategory_id
                     break
 
-            session.add(Transaction(
+            session.add(models.Transaction(
                 date=date,
                 tx_type=t.get('type', ''),
                 payment_method=t.get('payment_method', ''),
@@ -346,7 +357,13 @@ def confirm_import():
     response = {'imported': imported}
     if errors:
         response['errors'] = errors
+        logger.info(
+            "CSV confirm import for account %s had errors: %s", account_id, errors
+        )
         return jsonify(response), 400
+    logger.info(
+        "CSV confirm import for account %s: imported=%s", account_id, imported
+    )
     return jsonify(response)
 
 
@@ -354,86 +371,86 @@ def confirm_import():
 @login_required
 def list_transactions():
     """Return transactions with optional filtering and sorting."""
-    session = SessionLocal()
-    query = session.query(Transaction)
+    session = models.SessionLocal()
+    query = session.query(models.Transaction)
 
     account_id = request.args.get('account_id')
     if account_id:
         try:
-            query = query.filter(Transaction.bank_account_id == int(account_id))
+            query = query.filter(models.Transaction.bank_account_id == int(account_id))
         except ValueError:
             pass
 
     category_id = request.args.get('category_id')
     if category_id:
         try:
-            query = query.filter(Transaction.category_id == int(category_id))
+            query = query.filter(models.Transaction.category_id == int(category_id))
         except ValueError:
             pass
 
     if request.args.get('category_none') in ('true', '1', 'yes'):
-        query = query.filter(Transaction.category_id.is_(None))
+        query = query.filter(models.Transaction.category_id.is_(None))
 
     tx_type = request.args.get('type')
     if tx_type:
-        query = query.filter(Transaction.tx_type == tx_type)
+        query = query.filter(models.Transaction.tx_type == tx_type)
 
     payment_method = request.args.get('payment_method')
     if payment_method:
-        query = query.filter(Transaction.payment_method == payment_method)
+        query = query.filter(models.Transaction.payment_method == payment_method)
 
     label = request.args.get('label')
     if label:
-        query = query.filter(Transaction.label.contains(label))
+        query = query.filter(models.Transaction.label.contains(label))
 
     subcategory = request.args.get('subcategory')
     if subcategory:
-        query = query.join(Subcategory).filter(Subcategory.name == subcategory)
+        query = query.join(models.Subcategory).filter(models.Subcategory.name == subcategory)
 
     start_date = request.args.get('start_date')
     if start_date:
         try:
-            date = datetime.strptime(start_date, '%Y-%m-%d').date()
-            query = query.filter(Transaction.date >= date)
+            date = backend.datetime.strptime(start_date, '%Y-%m-%d').date()
+            query = query.filter(models.Transaction.date >= date)
         except ValueError:
             pass
 
     end_date = request.args.get('end_date')
     if end_date:
         try:
-            date = datetime.strptime(end_date, '%Y-%m-%d').date()
-            query = query.filter(Transaction.date <= date)
+            date = backend.datetime.strptime(end_date, '%Y-%m-%d').date()
+            query = query.filter(models.Transaction.date <= date)
         except ValueError:
             pass
 
     min_amount = request.args.get('min_amount')
     if min_amount:
         try:
-            query = query.filter(Transaction.amount >= float(min_amount))
+            query = query.filter(models.Transaction.amount >= float(min_amount))
         except ValueError:
             pass
 
     max_amount = request.args.get('max_amount')
     if max_amount:
         try:
-            query = query.filter(Transaction.amount <= float(max_amount))
+            query = query.filter(models.Transaction.amount <= float(max_amount))
         except ValueError:
             pass
 
     favorite = request.args.get('favorite')
     if favorite in ('true', 'false'):
-        query = query.filter(Transaction.favorite == (favorite == 'true'))
+        query = query.filter(models.Transaction.favorite == (favorite == 'true'))
 
     reconciled = request.args.get('reconciled')
     if reconciled in ('true', 'false'):
-        query = query.filter(Transaction.reconciled == (reconciled == 'true'))
+        query = query.filter(models.Transaction.reconciled == (reconciled == 'true'))
 
     to_analyze = request.args.get('to_analyze')
     if to_analyze in ('true', 'false'):
-        query = query.filter(Transaction.to_analyze == (to_analyze == 'true'))
+        query = query.filter(models.Transaction.to_analyze == (to_analyze == 'true'))
 
     sort_by = request.args.get('sort_by', 'date')
-    sort_column = getattr(Transaction, sort_by, Transaction.date)
+    sort_column = getattr(models.Transaction, sort_by, models.Transaction.date)
     order = request.args.get('order', 'desc')
     sort_column = sort_column.desc() if order == 'desc' else sort_column.asc()
     query = query.order_by(sort_column)
@@ -466,8 +483,8 @@ def list_transactions():
 @login_required
 def update_transaction(tx_id):
     """Retrieve or update a single transaction."""
-    session = SessionLocal()
-    tx = session.query(Transaction).get(tx_id)
+    session = models.SessionLocal()
+    tx = session.query(models.Transaction).get(tx_id)
     if not tx:
         session.close()
         return jsonify({'error': 'Not found'}), 404
@@ -521,25 +538,25 @@ def update_transaction(tx_id):
 @app.route('/stats')
 @login_required
 def stats():
-    session = SessionLocal()
+    session = models.SessionLocal()
     query = session.query(
-        func.strftime('%Y-%m', Transaction.date).label('month'),
-        func.sum(Transaction.amount).label('total')
+        func.strftime('%Y-%m', models.Transaction.date).label('month'),
+        func.sum(models.Transaction.amount).label('total')
     )
 
     start_date = request.args.get('start_date')
     if start_date:
         try:
-            date = datetime.strptime(start_date, '%Y-%m-%d').date()
-            query = query.filter(Transaction.date >= date)
+            date = backend.datetime.strptime(start_date, '%Y-%m-%d').date()
+            query = query.filter(models.Transaction.date >= date)
         except ValueError:
             pass
 
     end_date = request.args.get('end_date')
     if end_date:
         try:
-            date = datetime.strptime(end_date, '%Y-%m-%d').date()
-            query = query.filter(Transaction.date <= date)
+            date = backend.datetime.strptime(end_date, '%Y-%m-%d').date()
+            query = query.filter(models.Transaction.date <= date)
         except ValueError:
             pass
 
@@ -558,35 +575,35 @@ def stats():
 @app.route('/stats/categories')
 @login_required
 def stats_by_category():
-    session = SessionLocal()
+    session = models.SessionLocal()
     query = session.query(
-        Category.name,
-        Category.color,
+        models.Category.name,
+        models.Category.color,
         func.sum(
-            case((Transaction.amount > 0, Transaction.amount), else_=0)
+            case((models.Transaction.amount > 0, models.Transaction.amount), else_=0)
         ).label('positive'),
         func.sum(
-            case((Transaction.amount < 0, func.abs(Transaction.amount)), else_=0)
+            case((models.Transaction.amount < 0, func.abs(models.Transaction.amount)), else_=0)
         ).label('negative')
-    ).join(Transaction, Transaction.category_id == Category.id)
+    ).join(models.Transaction, models.Transaction.category_id == models.Category.id)
 
     start_date = request.args.get('start_date')
     if start_date:
         try:
-            date = datetime.strptime(start_date, '%Y-%m-%d').date()
-            query = query.filter(Transaction.date >= date)
+            date = backend.datetime.strptime(start_date, '%Y-%m-%d').date()
+            query = query.filter(models.Transaction.date >= date)
         except ValueError:
             pass
 
     end_date = request.args.get('end_date')
     if end_date:
         try:
-            date = datetime.strptime(end_date, '%Y-%m-%d').date()
-            query = query.filter(Transaction.date <= date)
+            date = backend.datetime.strptime(end_date, '%Y-%m-%d').date()
+            query = query.filter(models.Transaction.date <= date)
         except ValueError:
             pass
 
-    data = query.group_by(Category.id).all()
+    data = query.group_by(models.Category.id).all()
     session.close()
     result = [
         {
@@ -604,36 +621,36 @@ def stats_by_category():
 @login_required
 def stats_sankey():
     """Aggregate positive and negative amounts separately for Sankey chart."""
-    session = SessionLocal()
+    session = models.SessionLocal()
     query = session.query(
-        Category.name.label('category'),
-        Subcategory.name.label('subcategory'),
+        models.Category.name.label('category'),
+        models.Subcategory.name.label('subcategory'),
         func.sum(
-            case((Transaction.amount > 0, Transaction.amount), else_=0)
+            case((models.Transaction.amount > 0, models.Transaction.amount), else_=0)
         ).label('positive'),
         func.sum(
-            case((Transaction.amount < 0, func.abs(Transaction.amount)), else_=0)
+            case((models.Transaction.amount < 0, func.abs(models.Transaction.amount)), else_=0)
         ).label('negative'),
-    ).join(Subcategory, Subcategory.category_id == Category.id)
-    query = query.join(Transaction, Transaction.subcategory_id == Subcategory.id)
+    ).join(models.Subcategory, models.Subcategory.category_id == models.Category.id)
+    query = query.join(models.Transaction, models.Transaction.subcategory_id == models.Subcategory.id)
 
     start_date = request.args.get('start_date')
     if start_date:
         try:
-            date = datetime.strptime(start_date, '%Y-%m-%d').date()
-            query = query.filter(Transaction.date >= date)
+            date = backend.datetime.strptime(start_date, '%Y-%m-%d').date()
+            query = query.filter(models.Transaction.date >= date)
         except ValueError:
             pass
 
     end_date = request.args.get('end_date')
     if end_date:
         try:
-            date = datetime.strptime(end_date, '%Y-%m-%d').date()
-            query = query.filter(Transaction.date <= date)
+            date = backend.datetime.strptime(end_date, '%Y-%m-%d').date()
+            query = query.filter(models.Transaction.date <= date)
         except ValueError:
             pass
 
-    data = query.group_by(Category.id, Subcategory.id).all()
+    data = query.group_by(models.Category.id, models.Subcategory.id).all()
     session.close()
     result = []
     for cat, sub, pos, neg in data:
@@ -661,20 +678,20 @@ def stats_recurrents():
     month = request.args.get('month')
     if month:
         try:
-            current_first = datetime.strptime(month + '-01', '%Y-%m-%d').date()
+            current_first = backend.datetime.strptime(month + '-01', '%Y-%m-%d').date()
         except ValueError:
-            current_first = datetime.now().date().replace(day=1)
+            current_first = backend.datetime.now().date().replace(day=1)
     else:
-        current_first = datetime.now().date().replace(day=1)
+        current_first = backend.datetime.now().date().replace(day=1)
 
     start = _shift_month(current_first, -5)
     end = _shift_month(current_first, 1) - timedelta(days=1)
 
-    session = SessionLocal()
+    session = models.SessionLocal()
     rows = (
-        session.query(Transaction)
-        .filter(Transaction.date >= start)
-        .filter(Transaction.date <= end)
+        session.query(models.Transaction)
+        .filter(models.Transaction.date >= start)
+        .filter(models.Transaction.date <= end)
         .all()
     )
     session.close()
@@ -749,25 +766,25 @@ def compute_dashboard_averages(session):
     """Return per-category averages and income average of the last 3 months."""
     cat_avgs = dict(
         session.query(
-            Transaction.category_id,
-            func.avg(func.abs(Transaction.amount)),
+            models.Transaction.category_id,
+            func.avg(func.abs(models.Transaction.amount)),
         )
-        .filter(Transaction.category_id.isnot(None))
-        .group_by(Transaction.category_id)
+        .filter(models.Transaction.category_id.isnot(None))
+        .group_by(models.Transaction.category_id)
         .all()
     )
 
-    today = datetime.now().date()
+    today = backend.datetime.now().date()
     curr_first = today.replace(day=1)
     months = []
     for i in range(1, 4):
         start = _shift_month(curr_first, -i)
         end = _shift_month(curr_first, -(i - 1)) - timedelta(days=1)
         total = (
-            session.query(func.sum(Transaction.amount))
-            .filter(Transaction.amount > 0)
-            .filter(Transaction.date >= start)
-            .filter(Transaction.date <= end)
+            session.query(func.sum(models.Transaction.amount))
+            .filter(models.Transaction.amount > 0)
+            .filter(models.Transaction.date >= start)
+            .filter(models.Transaction.date <= end)
             .scalar()
             or 0
         )
@@ -782,19 +799,19 @@ def compute_category_monthly_averages(session, months=12):
     The computation spans the ``months`` prior to the current month and
     includes months without transactions as zero.
     """
-    today = datetime.now().date()
+    today = backend.datetime.now().date()
     current_start = today.replace(day=1)
     start = _shift_month(current_start, -months)
 
     data = (
         session.query(
-            Category.name,
-            func.sum(Transaction.amount),
+            models.Category.name,
+            func.sum(models.Transaction.amount),
         )
-        .outerjoin(Category, Transaction.category_id == Category.id)
-        .filter(Transaction.date >= start)
-        .filter(Transaction.date < current_start)
-        .group_by(Category.name)
+        .outerjoin(models.Category, models.Transaction.category_id == models.Category.id)
+        .filter(models.Transaction.date >= start)
+        .filter(models.Transaction.date < current_start)
+        .group_by(models.Category.name)
         .all()
     )
 
@@ -813,20 +830,20 @@ def compute_category_forecast(session, months=12, forecast=12):
     months for each category. Months without transactions are considered to
     have a total of zero.
     """
-    today = datetime.now().date()
+    today = backend.datetime.now().date()
     current_start = today.replace(day=1)
     start = _shift_month(current_start, -months)
 
     rows = (
         session.query(
-            func.strftime('%Y-%m', Transaction.date).label('month'),
-            Category.name,
-            func.sum(Transaction.amount),
+            func.strftime('%Y-%m', models.Transaction.date).label('month'),
+            models.Category.name,
+            func.sum(models.Transaction.amount),
         )
-        .outerjoin(Category, Transaction.category_id == Category.id)
-        .filter(Transaction.date >= start)
-        .filter(Transaction.date < current_start)
-        .group_by('month', Category.name)
+        .outerjoin(models.Category, models.Transaction.category_id == models.Category.id)
+        .filter(models.Transaction.date >= start)
+        .filter(models.Transaction.date < current_start)
+        .group_by('month', models.Category.name)
         .all()
     )
 
@@ -863,41 +880,41 @@ def compute_category_forecast(session, months=12, forecast=12):
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    session = SessionLocal()
+    session = models.SessionLocal()
     try:
         threshold = float(request.args.get('threshold', 1.5))
     except ValueError:
         threshold = 1.5
-    filters = session.query(FavoriteFilter).all()
-    conditions = [Transaction.favorite]
+    filters = session.query(models.FavoriteFilter).all()
+    conditions = [models.Transaction.favorite]
     for f in filters:
         subconds = []
         if f.pattern:
-            subconds.append(func.lower(Transaction.label).contains(f.pattern.lower()))
+            subconds.append(func.lower(models.Transaction.label).contains(f.pattern.lower()))
         if f.category_id:
-            subconds.append(Transaction.category_id == f.category_id)
+            subconds.append(models.Transaction.category_id == f.category_id)
         if f.subcategory_id:
-            subconds.append(Transaction.subcategory_id == f.subcategory_id)
+            subconds.append(models.Transaction.subcategory_id == f.subcategory_id)
         if subconds:
             conditions.append(and_(*subconds))
-    fav_count = session.query(func.count(Transaction.id)).filter(or_(*conditions)).scalar() or 0
-    cutoff = datetime.now().date() - timedelta(days=30)
+    fav_count = session.query(func.count(models.Transaction.id)).filter(or_(*conditions)).scalar() or 0
+    cutoff = backend.datetime.now().date() - timedelta(days=30)
     recent_total = (
-        session.query(func.sum(Transaction.amount))
-        .filter(Transaction.date >= cutoff)
+        session.query(func.sum(models.Transaction.amount))
+        .filter(models.Transaction.date >= cutoff)
         .scalar()
         or 0
     )
-    total = sum(a.initial_balance or 0 for a in session.query(BankAccount).all())
-    total += session.query(func.sum(Transaction.amount)).scalar() or 0
+    total = sum(a.initial_balance or 0 for a in session.query(models.BankAccount).all())
+    total += session.query(func.sum(models.Transaction.amount)).scalar() or 0
 
     cat_avgs, income_avg = compute_dashboard_averages(session)
 
     alerts = []
     recent_txs = (
-        session.query(Transaction)
-        .outerjoin(Category)
-        .filter(Transaction.date >= cutoff)
+        session.query(models.Transaction)
+        .outerjoin(models.Category)
+        .filter(models.Transaction.date >= cutoff)
         .all()
     )
     for tx in recent_txs:
@@ -924,7 +941,7 @@ def dashboard():
                 }
             )
 
-    current_start = datetime.now().date().replace(day=1)
+    current_start = backend.datetime.now().date().replace(day=1)
     groups = {}
 
     def add_item(cat_name, item):
@@ -934,16 +951,16 @@ def dashboard():
     for f in filters:
         subconds = []
         if f.pattern:
-            subconds.append(func.lower(Transaction.label).contains(f.pattern.lower()))
+            subconds.append(func.lower(models.Transaction.label).contains(f.pattern.lower()))
         if f.category_id:
-            subconds.append(Transaction.category_id == f.category_id)
+            subconds.append(models.Transaction.category_id == f.category_id)
         if f.subcategory_id:
-            subconds.append(Transaction.subcategory_id == f.subcategory_id)
+            subconds.append(models.Transaction.subcategory_id == f.subcategory_id)
         cond = and_(*subconds) if subconds else True
         current = (
-            session.query(func.sum(Transaction.amount))
+            session.query(func.sum(models.Transaction.amount))
             .filter(cond)
-            .filter(Transaction.date >= current_start)
+            .filter(models.Transaction.date >= current_start)
             .scalar()
             or 0
         )
@@ -952,10 +969,10 @@ def dashboard():
             start = _shift_month(current_start, -i)
             end = _shift_month(current_start, -(i - 1)) - timedelta(days=1)
             val = (
-                session.query(func.sum(Transaction.amount))
+                session.query(func.sum(models.Transaction.amount))
                 .filter(cond)
-                .filter(Transaction.date >= start)
-                .filter(Transaction.date <= end)
+                .filter(models.Transaction.date >= start)
+                .filter(models.Transaction.date <= end)
                 .scalar()
                 or 0
             )
@@ -975,12 +992,12 @@ def dashboard():
             cat_name = 'Autre'
         add_item(cat_name, item)
 
-    for c in session.query(Category).filter_by(favorite=True).all():
-        cond = Transaction.category_id == c.id
+    for c in session.query(models.Category).filter_by(favorite=True).all():
+        cond = models.Transaction.category_id == c.id
         current = (
-            session.query(func.sum(Transaction.amount))
+            session.query(func.sum(models.Transaction.amount))
             .filter(cond)
-            .filter(Transaction.date >= current_start)
+            .filter(models.Transaction.date >= current_start)
             .scalar()
             or 0
         )
@@ -989,10 +1006,10 @@ def dashboard():
             start = _shift_month(current_start, -i)
             end = _shift_month(current_start, -(i - 1)) - timedelta(days=1)
             val = (
-                session.query(func.sum(Transaction.amount))
+                session.query(func.sum(models.Transaction.amount))
                 .filter(cond)
-                .filter(Transaction.date >= start)
-                .filter(Transaction.date <= end)
+                .filter(models.Transaction.date >= start)
+                .filter(models.Transaction.date <= end)
                 .scalar()
                 or 0
             )
@@ -1006,12 +1023,12 @@ def dashboard():
         }
         add_item(c.name, item)
 
-    for s in session.query(Subcategory).filter_by(favorite=True).all():
-        cond = Transaction.subcategory_id == s.id
+    for s in session.query(models.Subcategory).filter_by(favorite=True).all():
+        cond = models.Transaction.subcategory_id == s.id
         current = (
-            session.query(func.sum(Transaction.amount))
+            session.query(func.sum(models.Transaction.amount))
             .filter(cond)
-            .filter(Transaction.date >= current_start)
+            .filter(models.Transaction.date >= current_start)
             .scalar()
             or 0
         )
@@ -1020,10 +1037,10 @@ def dashboard():
             start = _shift_month(current_start, -i)
             end = _shift_month(current_start, -(i - 1)) - timedelta(days=1)
             val = (
-                session.query(func.sum(Transaction.amount))
+                session.query(func.sum(models.Transaction.amount))
                 .filter(cond)
-                .filter(Transaction.date >= start)
-                .filter(Transaction.date <= end)
+                .filter(models.Transaction.date >= start)
+                .filter(models.Transaction.date <= end)
                 .scalar()
                 or 0
             )
@@ -1052,14 +1069,14 @@ def dashboard():
 @app.route('/projection')
 @login_required
 def projection():
-    session = SessionLocal()
-    six_months_ago = datetime.now().date() - timedelta(days=180)
+    session = models.SessionLocal()
+    six_months_ago = backend.datetime.now().date() - timedelta(days=180)
     data = (
         session.query(
-            func.strftime('%Y-%m', Transaction.date).label('month'),
-            func.sum(Transaction.amount)
+            func.strftime('%Y-%m', models.Transaction.date).label('month'),
+            func.sum(models.Transaction.amount)
         )
-        .filter(Transaction.date >= six_months_ago)
+        .filter(models.Transaction.date >= six_months_ago)
         .group_by('month')
         .order_by('month')
         .all()
@@ -1078,21 +1095,21 @@ def projection():
 @app.route('/projection/categories')
 @login_required
 def projection_categories():
-    session = SessionLocal()
-    today = datetime.now().date()
+    session = models.SessionLocal()
+    today = backend.datetime.now().date()
     current_start = today.replace(day=1)
     start = _shift_month(current_start, -12)
     end = current_start
     rows = (
         session.query(
-            func.strftime('%Y-%m', Transaction.date).label('month'),
-            Category.name,
-            func.sum(Transaction.amount),
+            func.strftime('%Y-%m', models.Transaction.date).label('month'),
+            models.Category.name,
+            func.sum(models.Transaction.amount),
         )
-        .outerjoin(Category, Transaction.category_id == Category.id)
-        .filter(Transaction.date >= start)
-        .filter(Transaction.date < end)
-        .group_by('month', Category.name)
+        .outerjoin(models.Category, models.Transaction.category_id == models.Category.id)
+        .filter(models.Transaction.date >= start)
+        .filter(models.Transaction.date < end)
+        .group_by('month', models.Category.name)
         .all()
     )
     session.close()
@@ -1127,7 +1144,7 @@ def projection_categories():
 @login_required
 def projection_categories_average():
     """Return per-category average monthly amount for the last 12 months."""
-    session = SessionLocal()
+    session = models.SessionLocal()
     averages = compute_category_monthly_averages(session, months=12)
     session.close()
     result = [
@@ -1141,7 +1158,7 @@ def projection_categories_average():
 @login_required
 def projection_categories_forecast():
     """Return per-category forecast for the next 12 months."""
-    session = SessionLocal()
+    session = models.SessionLocal()
     result = compute_category_forecast(session, months=12, forecast=12)
     session.close()
     return jsonify(result)
@@ -1150,8 +1167,8 @@ def projection_categories_forecast():
 @app.route('/category-options')
 @login_required
 def category_options():
-    session = SessionLocal()
-    categories = session.query(Category).all()
+    session = models.SessionLocal()
+    categories = session.query(models.Category).all()
 
     result = []
     for cat in categories:
@@ -1183,7 +1200,7 @@ def category_options():
 @app.route('/categories/<int:category_id>', methods=['GET', 'PUT', 'DELETE'])
 @login_required
 def categories(category_id=None):
-    session = SessionLocal()
+    session = models.SessionLocal()
     if request.method == 'GET':
         if category_id is None:
             data = [
@@ -1202,11 +1219,11 @@ def categories(category_id=None):
                         for s in c.subcategories
                     ],
                 }
-                for c in session.query(Category).all()
+                for c in session.query(models.Category).all()
             ]
             session.close()
             return jsonify(data)
-        category = session.query(Category).get(category_id)
+        category = session.query(models.Category).get(category_id)
         if not category:
             session.close()
             return jsonify({'error': 'Not found'}), 404
@@ -1236,9 +1253,10 @@ def categories(category_id=None):
         if not name:
             session.close()
             return jsonify({'error': 'Missing name'}), 400
-        category = Category(name=name, color=color, favorite=favorite)
+        category = models.Category(name=name, color=color, favorite=favorite)
         session.add(category)
         session.commit()
+        logger.info("Created category %s (id=%s)", name, category.id)
         data_json = load_categories_json()
         if name not in data_json:
             data_json[name] = []
@@ -1248,7 +1266,7 @@ def categories(category_id=None):
         return jsonify(result), 201
 
     # PUT or DELETE
-    category = session.query(Category).get(category_id)
+    category = session.query(models.Category).get(category_id)
     if not category:
         session.close()
         return jsonify({'error': 'Not found'}), 404
@@ -1267,6 +1285,7 @@ def categories(category_id=None):
             for sub in category.subcategories:
                 sub.color = color
         session.commit()
+        logger.info("Updated category %s (id=%s)", category.name, category.id)
 
         if name is not None and name != old_name:
             data_json = load_categories_json()
@@ -1313,6 +1332,7 @@ def categories(category_id=None):
     cat_name = category.name
     session.delete(category)
     session.commit()
+    logger.info("Deleted category %s (id=%s)", cat_name, category.id)
 
     data_json = load_categories_json()
     if cat_name in data_json:
@@ -1327,7 +1347,7 @@ def categories(category_id=None):
 @app.route('/subcategories/<int:sub_id>', methods=['GET', 'PUT', 'DELETE'])
 @login_required
 def subcategories(sub_id=None):
-    session = SessionLocal()
+    session = models.SessionLocal()
     if request.method == 'GET':
         if sub_id is None:
             data = [
@@ -1339,11 +1359,11 @@ def subcategories(sub_id=None):
                     'category_id': s.category_id,
                     'category': s.category.name if s.category else None,
                 }
-                for s in session.query(Subcategory).all()
+                for s in session.query(models.Subcategory).all()
             ]
             session.close()
             return jsonify(data)
-        sub = session.query(Subcategory).get(sub_id)
+        sub = session.query(models.Subcategory).get(sub_id)
         if not sub:
             session.close()
             return jsonify({'error': 'Not found'}), 404
@@ -1369,14 +1389,20 @@ def subcategories(sub_id=None):
             return jsonify({'error': 'Missing fields'}), 400
 
         if not color:
-            cat = session.query(Category).get(int(category_id))
+            cat = session.query(models.Category).get(int(category_id))
             color = cat.color if cat else ''
 
-        sub = Subcategory(name=name, category_id=int(category_id), color=color, favorite=favorite)
+        sub = models.Subcategory(name=name, category_id=int(category_id), color=color, favorite=favorite)
 
         session.add(sub)
         session.commit()
-        cat = session.query(Category).get(int(category_id)) if not locals().get('cat') else cat
+        logger.info(
+            "Created subcategory %s (id=%s) under category %s",
+            name,
+            sub.id,
+            category_id,
+        )
+        cat = session.query(models.Category).get(int(category_id)) if not locals().get('cat') else cat
         data_json = load_categories_json()
         if cat and cat.name:
             lst = data_json.setdefault(cat.name, [])
@@ -1393,7 +1419,7 @@ def subcategories(sub_id=None):
         session.close()
         return jsonify(result), 201
 
-    sub = session.query(Subcategory).get(sub_id)
+    sub = session.query(models.Subcategory).get(sub_id)
     if not sub:
         session.close()
         return jsonify({'error': 'Not found'}), 404
@@ -1418,15 +1444,16 @@ def subcategories(sub_id=None):
             new_color = None
 
         if new_color is None or new_color == '':
-            cat = session.query(Category).get(sub.category_id)
+            cat = session.query(models.Category).get(sub.category_id)
             new_color = cat.color if cat else ''
 
         if new_color is not None:
             sub.color = new_color
         session.commit()
+        logger.info("Updated subcategory %s (id=%s)", sub.name, sub.id)
 
         new_name = sub.name
-        new_cat = session.query(Category).get(sub.category_id)
+        new_cat = session.query(models.Category).get(sub.category_id)
         new_cat_name = new_cat.name if new_cat else None
 
         data_json = load_categories_json()
@@ -1458,6 +1485,7 @@ def subcategories(sub_id=None):
 
     session.delete(sub)
     session.commit()
+    logger.info("Deleted subcategory %s (id=%s)", sub.name, sub.id)
     session.close()
     return jsonify({'message': 'deleted'})
 
@@ -1466,7 +1494,7 @@ def subcategories(sub_id=None):
 @app.route('/rules/<int:rule_id>', methods=['GET', 'PUT', 'DELETE'])
 @login_required
 def rules(rule_id=None):
-    session = SessionLocal()
+    session = models.SessionLocal()
     if request.method == 'GET':
         if rule_id is None:
             data = [
@@ -1478,11 +1506,11 @@ def rules(rule_id=None):
                     'category': r.category.name if r.category else None,
                     'subcategory': r.subcategory.name if r.subcategory else None,
                 }
-                for r in session.query(Rule).all()
+                for r in session.query(models.Rule).all()
             ]
             session.close()
             return jsonify(data)
-        rule = session.query(Rule).get(rule_id)
+        rule = session.query(models.Rule).get(rule_id)
         if not rule:
             session.close()
             return jsonify({'error': 'Not found'}), 404
@@ -1505,13 +1533,20 @@ def rules(rule_id=None):
         if not pattern:
             session.close()
             return jsonify({'error': 'Missing fields'}), 400
-        rule = Rule(
+        rule = models.Rule(
             pattern=pattern,
             category_id=int(category_id) if category_id else None,
             subcategory_id=int(subcategory_id) if subcategory_id else None,
         )
         session.add(rule)
         session.commit()
+        logger.info(
+            "Created rule %s (id=%s) for category %s subcategory %s",
+            pattern,
+            rule.id,
+            category_id,
+            subcategory_id,
+        )
         updated = apply_rule_to_transactions(session, rule)
         result = {
             'id': rule.id,
@@ -1525,7 +1560,7 @@ def rules(rule_id=None):
         session.close()
         return jsonify(result), 201
 
-    rule = session.query(Rule).get(rule_id)
+    rule = session.query(models.Rule).get(rule_id)
     if not rule:
         session.close()
         return jsonify({'error': 'Not found'}), 404
@@ -1542,6 +1577,7 @@ def rules(rule_id=None):
             rule.subcategory_id = int(sid) if sid else None
 
         session.commit()
+        logger.info("Updated rule %s (id=%s)", rule.pattern, rule.id)
         updated = apply_rule_to_transactions(session, rule)
         result = {
             'id': rule.id,
@@ -1557,6 +1593,7 @@ def rules(rule_id=None):
 
     session.delete(rule)
     session.commit()
+    logger.info("Deleted rule %s (id=%s)", rule.pattern, rule.id)
     session.close()
     return jsonify({'message': 'deleted'})
 
@@ -1565,7 +1602,7 @@ def rules(rule_id=None):
 @app.route('/favorite_filters/<int:filter_id>', methods=['GET', 'PUT', 'DELETE'])
 @login_required
 def favorite_filters(filter_id=None):
-    session = SessionLocal()
+    session = models.SessionLocal()
     if request.method == 'GET':
         if filter_id is None:
             data = [
@@ -1577,11 +1614,11 @@ def favorite_filters(filter_id=None):
                     'category': f.category.name if f.category else None,
                     'subcategory': f.subcategory.name if f.subcategory else None,
                 }
-                for f in session.query(FavoriteFilter).all()
+                for f in session.query(models.FavoriteFilter).all()
             ]
             session.close()
             return jsonify(data)
-        fil = session.query(FavoriteFilter).get(filter_id)
+        fil = session.query(models.FavoriteFilter).get(filter_id)
         if not fil:
             session.close()
             return jsonify({'error': 'Not found'}), 404
@@ -1604,13 +1641,18 @@ def favorite_filters(filter_id=None):
         if not pattern and not category_id and not subcategory_id:
             session.close()
             return jsonify({'error': 'Missing fields'}), 400
-        fil = FavoriteFilter(
+        fil = models.FavoriteFilter(
             pattern=pattern,
             category_id=int(category_id) if category_id else None,
             subcategory_id=int(subcategory_id) if subcategory_id else None,
         )
         session.add(fil)
         session.commit()
+        logger.info(
+            "Created favorite filter %s (id=%s)",
+            pattern,
+            fil.id,
+        )
         result = {
             'id': fil.id,
             'pattern': fil.pattern,
@@ -1622,7 +1664,7 @@ def favorite_filters(filter_id=None):
         session.close()
         return jsonify(result), 201
 
-    fil = session.query(FavoriteFilter).get(filter_id)
+    fil = session.query(models.FavoriteFilter).get(filter_id)
     if not fil:
         session.close()
         return jsonify({'error': 'Not found'}), 404
@@ -1638,6 +1680,7 @@ def favorite_filters(filter_id=None):
             sid = data['subcategory_id']
             fil.subcategory_id = int(sid) if sid else None
         session.commit()
+        logger.info("Updated favorite filter %s (id=%s)", fil.pattern, fil.id)
         result = {
             'id': fil.id,
             'pattern': fil.pattern,
@@ -1651,6 +1694,7 @@ def favorite_filters(filter_id=None):
 
     session.delete(fil)
     session.commit()
+    logger.info("Deleted favorite filter %s (id=%s)", fil.pattern, fil.id)
     session.close()
     return jsonify({'message': 'deleted'})
 
@@ -1659,8 +1703,8 @@ def favorite_filters(filter_id=None):
 @login_required
 def reset():
     """Delete all transactions from the database."""
-    session = SessionLocal()
-    session.query(Transaction).delete()
+    session = models.SessionLocal()
+    session.query(models.Transaction).delete()
     session.commit()
     session.close()
     return jsonify({'message': 'reset'})
