@@ -86,14 +86,16 @@ def account_balance(account_id):
         try:
             acc.initial_balance = float(data['initial_balance'])
         except (TypeError, ValueError):
-            pass
+            session.close()
+            return jsonify({'error': 'invalid balance'}), 400
     if 'balance_date' in data:
         val = data['balance_date']
         if val:
             try:
                 acc.balance_date = backend.datetime.strptime(val, '%Y-%m-%d').date()
             except ValueError:
-                pass
+                session.close()
+                return jsonify({'error': 'invalid balance'}), 400
         else:
             acc.balance_date = None
     session.commit()
