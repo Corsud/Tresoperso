@@ -177,7 +177,7 @@ def init_db():
         session.commit()
 
     # Synchronize categories and subcategories from categories.json
-    path = os.path.join(os.path.dirname(__file__), 'categories.json')
+    path = config.CATEGORIES_JSON
     if os.path.exists(path):
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
