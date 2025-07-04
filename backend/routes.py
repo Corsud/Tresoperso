@@ -3,6 +3,7 @@ from flask_login import login_required
 from sqlalchemy import func, or_, and_, case
 from datetime import datetime, timedelta
 import numpy as np
+import re
 
 from .app import app, load_categories_json, save_categories_json
 from .models import (
@@ -650,6 +651,70 @@ def stats_sankey():
                 'value': neg,
                 'sign': -1,
             })
+    return jsonify(result)
+
+
+@app.route('/stats/recurrents')
+@login_required
+def stats_recurrents():
+    """Return recurring transactions for the last six months."""
+    month = request.args.get('month')
+    if month:
+        try:
+            current_first = datetime.strptime(month + '-01', '%Y-%m-%d').date()
+        except ValueError:
+            current_first = datetime.now().date().replace(day=1)
+    else:
+        current_first = datetime.now().date().replace(day=1)
+
+    start = _shift_month(current_first, -5)
+    end = _shift_month(current_first, 1) - timedelta(days=1)
+
+    session = SessionLocal()
+    rows = (
+        session.query(Transaction)
+        .filter(Transaction.date >= start)
+        .filter(Transaction.date <= end)
+        .all()
+    )
+    session.close()
+
+    groups = {}
+    for tx in rows:
+        key = re.sub(r"\d+", "", tx.label).strip().lower()
+        groups.setdefault(key, []).append(tx)
+
+    result = []
+    for txs in groups.values():
+        if len(txs) < 2:
+            continue
+        avg = sum(abs(t.amount) for t in txs) / len(txs)
+        if not all(0.8 * avg <= abs(t.amount) <= 1.3 * avg for t in txs):
+            continue
+        days = [t.date.day for t in txs]
+        if max(days) - min(days) > 7:
+            continue
+        txs.sort(key=lambda t: t.date)
+        cat = txs[0].category
+        item = {
+            'day': txs[0].date.day,
+            'category': {
+                'id': cat.id if cat else None,
+                'name': cat.name if cat else None,
+                'color': cat.color if cat else ''
+            },
+            'transactions': [
+                {
+                    'date': t.date.isoformat(),
+                    'label': t.label,
+                    'amount': t.amount,
+                }
+                for t in txs
+            ]
+        }
+        result.append(item)
+
+    result.sort(key=lambda r: r['day'])
     return jsonify(result)
 
 
