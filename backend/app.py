@@ -5,8 +5,10 @@ import webbrowser
 
 from flask import Flask
 
-from .models import init_db, SessionLocal
 from . import config
+from .models import init_db
+from . import auth  # noqa: F401
+from . import routes  # noqa: F401
 
 app = Flask(__name__, static_folder=str(config.FRONTEND_DIR), static_url_path='')
 app.secret_key = config.SECRET_KEY
@@ -30,9 +32,6 @@ def save_categories_json(data):
     except Exception:
         pass
 
-# import modules that register routes
-from . import auth  # noqa: F401
-from . import routes  # noqa: F401
 
 
 def open_browser():
