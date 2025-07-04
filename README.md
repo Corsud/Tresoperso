@@ -31,6 +31,7 @@ pip install -r requirements-dev.txt
 python run.py
 ```
 
+Ces commandes ont besoin d'un accès Internet pour télécharger les dépendances. Utilisez un environnement préparé en cas d'absence de réseau.
 Par défaut, l'application s'ouvrira automatiquement dans votre navigateur à l'adresse http://localhost:5000/.
 Si ce n'est pas le cas, ouvrez manuellement cette URL.
 Le serveur Flask écoute sur l'adresse `0.0.0.0`, ce qui permet d'exposer
@@ -45,6 +46,7 @@ pour disposer d'un environnement complet :
 ```bash
 pip install -r requirements-dev.txt
 ```
+Ces paquets sont récupérés en ligne, prévoyez donc un accès réseau ou un environnement déjà préparé.
 
 ## Base de données
 
@@ -71,14 +73,13 @@ Utilisez le bouton «Importer CSV» pour sélectionner un fichier et mettre à j
 
 ## Tests
 
-Les dépendances de développement nécessaires à l'exécution de la suite se
-trouvent dans `requirements-dev.txt`. Installez-les impérativement avant de
-lancer les tests :
-
+Les dépendances de développement nécessaires à l'exécution de la suite se trouvent dans `requirements-dev.txt`.
+**Important : installez-les avant toute exécution de tests.** Utilisez :
 ```bash
 pip install -r requirements-dev.txt
 # ou ./install-dev-deps.sh
 ```
+Ces commandes téléchargent les paquets depuis Internet : prévoyez un accès réseau ou un environnement préparé.
 
 Les tests s'appuient sur **pytest**. Une fois l'environnement prêt, exécutez :
 
