@@ -511,9 +511,21 @@ def update_transaction(tx_id):
 
     data = request.get_json() or {}
     if 'category_id' in data:
-        tx.category_id = data['category_id'] or None
+        cat_id = data['category_id'] or None
+        if cat_id is not None:
+            exists = session.query(models.Category).get(cat_id)
+            if not exists:
+                session.close()
+                return jsonify({'error': 'invalid category'}), 400
+        tx.category_id = cat_id
     if 'subcategory_id' in data:
-        tx.subcategory_id = data['subcategory_id'] or None
+        sub_id = data['subcategory_id'] or None
+        if sub_id is not None:
+            exists = session.query(models.Subcategory).get(sub_id)
+            if not exists:
+                session.close()
+                return jsonify({'error': 'invalid category'}), 400
+        tx.subcategory_id = sub_id
     if 'favorite' in data:
         tx.favorite = bool(data['favorite'])
     if 'reconciled' in data:
@@ -696,7 +708,6 @@ def stats_recurrents():
         .filter(models.Transaction.date <= end)
         .all()
     )
-    session.close()
 
     groups = {}
     for tx in rows:
@@ -736,6 +747,7 @@ def stats_recurrents():
         result.append(item)
 
     result.sort(key=lambda r: r['day'])
+    session.close()
     return jsonify(result)
 
 
