@@ -1,4 +1,5 @@
 import os
+import logging
 from pathlib import Path
 
 # Load environment variables from a .env file if present
@@ -21,7 +22,13 @@ def load_dotenv(path=ENV_PATH):
 load_dotenv()
 
 FRONTEND_DIR = ROOT_DIR / 'frontend'
-SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret')
+
+_SECRET_KEY = os.environ.get('SECRET_KEY')
+if not _SECRET_KEY:
+    _SECRET_KEY = os.urandom(32).hex()
+    logging.warning('SECRET_KEY environment variable not set; using a generated key')
+
+SECRET_KEY = _SECRET_KEY
 DATABASE_URI = os.environ.get('DATABASE_URI', 'sqlite:///tresoperso.db')
 CATEGORIES_JSON = os.environ.get('CATEGORIES_JSON', str(BASE_DIR / 'categories.json'))
 
