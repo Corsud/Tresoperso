@@ -10,6 +10,12 @@ Tresoperso est une application de gestion de trésorerie personnelle. Elle perme
 - Affichage des transactions dans un tableau filtrable
 - Graphiques d'analyse (donut, Sankey)
 - Projection de trésorerie basée sur l'historique
+- Visualisation des transactions récurrentes
+
+La page **Récurrentes** affiche les opérations récurrentes détectées sur les six
+derniers mois. Deux transactions ou plus sont groupées lorsqu'elles partagent le
+même libellé (hors chiffres) et que leurs montants sont compris entre 80&nbsp;% et
+130&nbsp;% de la moyenne du groupe.
 
 ## Lancement rapide
 

@@ -283,6 +283,27 @@ body.hide-amounts .amount-input {
     visibility: hidden;
 }
 
+#recurrents-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    max-width: 350px;
+}
+#recurrents-calendar .day {
+    border: 1px solid var(--border-color);
+    min-height: 40px;
+    position: relative;
+    padding: 2px;
+}
+.rec-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+}
+
 @media (max-width: 600px) {
     #transactions-table {
         font-size: 0.75rem;
