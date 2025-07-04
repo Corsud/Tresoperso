@@ -55,3 +55,20 @@ def test_recurrents_endpoint(client):
     assert len(rec['transactions']) == 3
     for t in rec['transactions']:
         assert all(k in t for k in ['date', 'label', 'amount'])
+
+
+def test_recurrents_month_names(client):
+    session = models.SessionLocal()
+    cat = session.query(models.Category).first()
+    session.add_all([
+        models.Transaction(date=datetime.date(2021, 3, 6), label='Loan janvier', amount=-1000, category=cat),
+        models.Transaction(date=datetime.date(2021, 4, 6), label='Loan fevrier', amount=-1000, category=cat),
+    ])
+    session.commit()
+    session.close()
+
+    login(client)
+    resp = client.get('/stats/recurrents?month=2021-05')
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert any(rec['day'] == 6 and len(rec['transactions']) == 2 for rec in data)
