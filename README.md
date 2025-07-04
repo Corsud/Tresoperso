@@ -18,6 +18,7 @@ même libellé (hors chiffres) et que leurs montants sont compris entre 80&nbsp;
 130&nbsp;% de la moyenne du groupe. Les dates au sein d'un groupe ne doivent pas
 varier de plus de sept&nbsp;jours d'un mois à l'autre.
 
+
 ## Lancement rapide
 
 Un serveur Flask minimal est fourni pour servir l'application Web locale. Assurez-vous d'avoir **Python&nbsp;3** installé.

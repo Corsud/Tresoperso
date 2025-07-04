@@ -29,6 +29,7 @@ def client(monkeypatch):
         models.Transaction(date=datetime.date(2021,2,5), label='Abo 03', amount=-48, category=cat),
         models.Transaction(date=datetime.date(2021,1,1), label='Club 01', amount=-20, category=cat),
         models.Transaction(date=datetime.date(2021,2,25), label='Club 02', amount=-21, category=cat),
+
         models.Transaction(date=datetime.date(2021,1,20), label='Unique 01', amount=-5, category=cat),
     ])
     session.commit()
@@ -63,3 +64,4 @@ def test_recurrents_date_variation(client):
     data = resp.get_json()
     labels = [t['label'] for rec in data for t in rec['transactions']]
     assert 'Club 01' not in labels
+
