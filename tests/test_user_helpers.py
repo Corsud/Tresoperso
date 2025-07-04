@@ -1,4 +1,3 @@
-import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from werkzeug.security import check_password_hash
@@ -15,7 +14,7 @@ def setup_db():
 
 def test_create_user_hashes_password():
     setup_db()
-    user = models.create_user('bob', 'secret')
+    models.create_user('bob', 'secret')
     session = models.SessionLocal()
     stored = session.query(models.User).filter_by(username='bob').first()
     session.close()

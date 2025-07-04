@@ -869,7 +869,7 @@ def dashboard():
     except ValueError:
         threshold = 1.5
     filters = session.query(FavoriteFilter).all()
-    conditions = [Transaction.favorite == True]
+    conditions = [Transaction.favorite]
     for f in filters:
         subconds = []
         if f.pattern:
