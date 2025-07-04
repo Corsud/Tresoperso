@@ -202,13 +202,21 @@ def init_db():
 
 def create_user(username, password, session=None):
     """Create a user with a hashed password and return the User instance."""
+    # Passwords are hashed using PBKDF2-SHA256 with a 16 byte salt
     close = False
     if session is None:
         session = SessionLocal()
         close = True
-    user = User(username=username, password=generate_password_hash(password))
+    user = User(
+        username=username,
+        password=generate_password_hash(
+            password, method="pbkdf2:sha256", salt_length=16
+        ),
+    )
     session.add(user)
     session.commit()
+    # Reload to avoid detached attributes when session closes
+    session.refresh(user)
     if close:
         session.close()
     return user
@@ -216,6 +224,7 @@ def create_user(username, password, session=None):
 
 def update_user_password(user_id, password, session=None):
     """Update an existing user's password using a hashed value."""
+    # Use the same PBKDF2-SHA256 algorithm and salt length for consistency
     close = False
     if session is None:
         session = SessionLocal()
@@ -225,7 +234,9 @@ def update_user_password(user_id, password, session=None):
         if close:
             session.close()
         return None
-    user.password = generate_password_hash(password)
+    user.password = generate_password_hash(
+        password, method="pbkdf2:sha256", salt_length=16
+    )
     session.commit()
     if close:
         session.close()
