@@ -758,6 +758,7 @@
                 favBtn.addEventListener('click', async () => {
                     await fetch('/transactions/' + t.id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({favorite: !t.favorite})});
                     fetchTransactions();
+                    fetchDashboard();
                 });
                 favCell.appendChild(favBtn);
                 tr.appendChild(favCell);
