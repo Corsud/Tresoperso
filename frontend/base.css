@@ -287,7 +287,8 @@ body.hide-amounts .amount-input {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 4px;
-    max-width: 350px;
+    width: 80%;
+    max-width: none;
 }
 #recurrents-calendar .day {
     border: 1px solid var(--border-color);
@@ -310,6 +311,9 @@ body.hide-amounts .amount-input {
     }
     #category-charts td {
         display: block;
+        width: 100%;
+    }
+    #recurrents-calendar {
         width: 100%;
     }
 }
