@@ -175,7 +175,24 @@
 
             <section id="recurrents-section" style="display:none;">
                 <h2>Transactions récurrentes</h2>
-                <div id="recurrents-calendar"></div>
+                <div id="recurrents-header">
+                    <span id="recurrents-total-in"></span>
+                    <span id="recurrents-total-out"></span>
+                    <span id="recurrents-balance"></span>
+                    <span id="recurrents-total"></span>
+                </div>
+                <div id="recurrents-controls">
+                    <button id="recurrents-btn-calendar" class="selected">Calendrier</button>
+                    <button id="recurrents-btn-list">Liste/anneau</button>
+                </div>
+                <div id="recurrents-calendar-view">
+                    <div id="recurrents-calendar"></div>
+                    <div id="recurrents-sidebar"></div>
+                </div>
+                <div id="recurrents-list-view" style="display:none;">
+                    <canvas id="recurrents-donut"></canvas>
+                    <ul id="recurrents-items"></ul>
+                </div>
             </section>
 
             <section id="projection-section" style="display:none;">
@@ -332,6 +349,8 @@
         let accountsData = [];
         let rulesData = [];
         let selectedAccountId = '';
+        let recurrentsData = [];
+        let recurrentsChart = null;
 
         function findCategory(id) {
             return categoriesData.find(c => String(c.id) === String(id));
@@ -1508,7 +1527,7 @@
             const container = document.getElementById('recurrents-calendar');
             if (!container) return;
 
-            // Build the calendar grid first so it is visible even on errors
+            // Build calendar grid
             container.innerHTML = '';
             const daysInMonth = new Date(today.getFullYear(), today.getMonth()+1, 0).getDate();
             for (let i=1;i<=daysInMonth;i++) {
@@ -1519,21 +1538,30 @@
                 container.appendChild(div);
             }
 
-            // Fetch recurring transactions and place dots when available
+            // Fetch recurring transactions
             const resp = await fetch(`/stats/recurrents?month=${month}`);
             if (!resp.ok) return;
-            const data = await resp.json();
+            recurrentsData = await resp.json();
 
-            data.forEach(rec => {
+            // Place dots and populate sidebar
+            const sidebar = document.getElementById('recurrents-sidebar');
+            if (sidebar) sidebar.innerHTML = '';
+            recurrentsData.forEach(rec => {
                 const cell = container.querySelector(`div[data-day="${rec.day}"]`);
                 if (!cell) return;
+                const avg = rec.transactions.reduce((s,t) => s + t.amount, 0) / rec.transactions.length;
                 const dot = document.createElement('span');
                 dot.className = 'rec-dot';
                 dot.style.background = rec.category.color || 'gray';
-                dot.title = rec.category.name || '';
+                dot.title = `${rec.category.name || ''} ${formatAmount(avg)}`;
                 dot.addEventListener('click', () => showRecurrent(rec));
+                dot.addEventListener('mouseover', () => showSidebarDay(rec.day));
                 cell.appendChild(dot);
             });
+
+            populateRecurrentsList();
+            drawRecurrentsChart();
+            updateRecurrentsTotals();
         }
 
         function showRecurrent(rec) {
@@ -1549,6 +1577,109 @@
                 list.appendChild(li);
             });
             overlay.style.display = 'flex';
+        }
+
+        function showSidebarDay(day) {
+            const sidebar = document.getElementById('recurrents-sidebar');
+            if (!sidebar) return;
+            sidebar.innerHTML = '';
+            recurrentsData.filter(r => r.day === day).forEach(rec => {
+                const div = document.createElement('div');
+                const avg = rec.transactions.reduce((s,t) => s + t.amount, 0) / rec.transactions.length;
+                div.textContent = `${rec.category.name || ''} ${formatAmount(avg)}`;
+                div.className = 'sidebar-item';
+                div.addEventListener('click', () => showRecurrent(rec));
+                sidebar.appendChild(div);
+            });
+        }
+
+        function updateRecurrentsTotals() {
+            const totIn = document.getElementById('recurrents-total-in');
+            const totOut = document.getElementById('recurrents-total-out');
+            const balance = document.getElementById('recurrents-balance');
+            const total = document.getElementById('recurrents-total');
+            let pos = 0, neg = 0;
+            recurrentsData.forEach(r => {
+                const avg = r.transactions.reduce((s,t) => s + t.amount, 0) / r.transactions.length;
+                if (avg >= 0) pos += avg; else neg += Math.abs(avg);
+            });
+            const hide = localStorage.getItem('hideAmounts') === 'true';
+            if (totIn) totIn.textContent = `Entrées: ${hide ? '•••' : formatAmount(pos)}`;
+            if (totOut) totOut.textContent = `Sorties: ${hide ? '•••' : formatAmount(neg)}`;
+            if (balance) balance.textContent = `Solde: ${hide ? '•••' : formatAmount(pos-neg)}`;
+            if (total) total.textContent = `Total récurrent: ${hide ? '•••' : formatAmount(pos+neg)}`;
+        }
+
+        function populateRecurrentsList() {
+            const list = document.getElementById('recurrents-items');
+            if (!list) return;
+            list.innerHTML = '';
+            recurrentsData.forEach(rec => {
+                const li = document.createElement('li');
+                li.className = 'rec-item';
+                const dot = document.createElement('span');
+                dot.className = 'rec-pastille';
+                dot.style.background = rec.category.color || 'gray';
+                li.appendChild(dot);
+                const lbl = document.createElement('span');
+                lbl.textContent = rec.transactions[0].label;
+                li.appendChild(lbl);
+                const avg = rec.transactions.reduce((s,t)=>s+t.amount,0)/rec.transactions.length;
+                const amt = document.createElement('span');
+                amt.className = 'amount';
+                amt.textContent = formatAmount(avg);
+                li.appendChild(amt);
+                const freq = document.createElement('span');
+                freq.className = 'frequency';
+                freq.textContent = guessFrequency(rec.transactions);
+                li.appendChild(freq);
+                li.addEventListener('click', () => showRecurrent(rec));
+                list.appendChild(li);
+            });
+        }
+
+        function guessFrequency(txs) {
+            if (txs.length < 2) return `dernier: ${formatDate(txs[txs.length-1].date)}`;
+            const diffs = [];
+            for (let i=1;i<txs.length;i++) {
+                const d1 = new Date(txs[i-1].date);
+                const d2 = new Date(txs[i].date);
+                diffs.push((d2-d1)/(1000*3600*24));
+            }
+            const avg = diffs.reduce((a,b)=>a+b,0)/diffs.length;
+            if (avg>27 && avg<33) return 'mensuel';
+            if (avg>13 && avg<17) return 'bimensuel';
+            if (avg>6 && avg<8) return 'hebdo';
+            return `~${Math.round(avg)} j`;
+        }
+
+        function drawRecurrentsChart() {
+            const ctxEl = document.getElementById('recurrents-donut');
+            if (!ctxEl) return;
+            const ctx = ctxEl.getContext('2d');
+            const catTotals = {};
+            recurrentsData.forEach(r => {
+                const avg = r.transactions.reduce((s,t)=>s+t.amount,0)/r.transactions.length;
+                if (avg < 0) {
+                    const name = r.category.name || 'Inconnu';
+                    catTotals[name] = (catTotals[name]||0) + Math.abs(avg);
+                }
+            });
+            const labels = Object.keys(catTotals);
+            const data = Object.values(catTotals);
+            const colors = labels.map(l => (findCategoryNameColor(l)));
+            const hide = localStorage.getItem('hideAmounts') === 'true';
+            if (recurrentsChart) recurrentsChart.destroy();
+            recurrentsChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels, datasets: [{ data, backgroundColor: colors }] },
+                options: getChartOptions(hide, false)
+            });
+        }
+
+        function findCategoryNameColor(name) {
+            const c = categoriesData.find(cat => cat.name === name);
+            return c ? c.color || 'gray' : 'gray';
         }
 
         let currentCatBtn = null;
@@ -1567,6 +1698,10 @@
         const delErrorClose = document.getElementById('delete-error-close');
         const recurrentsOverlay = document.getElementById('recurrents-overlay');
         const recurrentsClose = document.getElementById('recurrents-close');
+        const recurrentsBtnCalendar = document.getElementById('recurrents-btn-calendar');
+        const recurrentsBtnList = document.getElementById('recurrents-btn-list');
+        const recurrentsCalendarView = document.getElementById('recurrents-calendar-view');
+        const recurrentsListView = document.getElementById('recurrents-list-view');
         let manageCatId = null;
 
         function showPopupAt(overlay, x, y) {
@@ -1743,6 +1878,21 @@
         if (delErrorClose) delErrorClose.addEventListener('click', () => { delErrorOverlay.style.display = 'none'; });
         if (recurrentsClose) recurrentsClose.addEventListener('click', () => { recurrentsOverlay.style.display = 'none'; });
         recurrentsOverlay.addEventListener('click', e => { if (e.target === recurrentsOverlay) recurrentsOverlay.style.display = 'none'; });
+        if (recurrentsBtnCalendar && recurrentsBtnList) {
+            recurrentsBtnCalendar.addEventListener('click', () => {
+                recurrentsBtnCalendar.classList.add('selected');
+                recurrentsBtnList.classList.remove('selected');
+                if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'flex';
+                if (recurrentsListView) recurrentsListView.style.display = 'none';
+            });
+            recurrentsBtnList.addEventListener('click', () => {
+                recurrentsBtnList.classList.add('selected');
+                recurrentsBtnCalendar.classList.remove('selected');
+                if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'none';
+                if (recurrentsListView) recurrentsListView.style.display = 'flex';
+                if (recurrentsChart) recurrentsChart.resize();
+            });
+        }
 
         function showDuplicates(dups, accountId) {
             const list = document.getElementById('duplicate-list');

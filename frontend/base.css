@@ -290,6 +290,27 @@ body.hide-amounts .amount-input {
     width: 80%;
     max-width: none;
 }
+#recurrents-calendar-view {
+    display: flex;
+    gap: 10px;
+}
+#recurrents-calendar-view #recurrents-calendar { flex-basis: 60%; }
+#recurrents-sidebar { flex-basis: 40%; }
+#recurrents-list-view {
+    display: flex;
+    gap: 10px;
+}
+#recurrents-list-view canvas { flex-basis: 40%; max-width: 40%; }
+#recurrents-list-view ul { flex-basis: 60%; list-style: none; padding: 0; margin: 0; }
+.rec-pastille {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 4px;
+}
+.rec-item { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.sidebar-item { cursor: pointer; margin-bottom: 4px; }
 #recurrents-calendar .day {
     border: 1px solid var(--border-color);
     min-height: 40px;
@@ -315,6 +336,17 @@ body.hide-amounts .amount-input {
     }
     #recurrents-calendar {
         width: 100%;
+    }
+    #recurrents-calendar-view,
+    #recurrents-list-view {
+        flex-direction: column;
+    }
+    #recurrents-calendar-view #recurrents-calendar,
+    #recurrents-sidebar,
+    #recurrents-list-view canvas,
+    #recurrents-list-view ul {
+        flex-basis: 100%;
+        max-width: none;
     }
 }
 .financial-sankey {
