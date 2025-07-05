@@ -54,6 +54,9 @@ def test_recurrents_endpoint(client):
     assert rec['day'] == 5
     assert rec['category']['name'] == 'Sub'
     assert len(rec['transactions']) == 3
+    assert rec['average_amount'] == pytest.approx(-50)
+    assert rec['last_date'] == '2021-02-05'
+    assert rec['frequency'] == 'monthly'
     for t in rec['transactions']:
         assert all(k in t for k in ['date', 'label', 'amount'])
 
@@ -64,4 +67,5 @@ def test_recurrents_date_variation(client):
     data = resp.get_json()
     labels = [t['label'] for rec in data for t in rec['transactions']]
     assert 'Club 01' not in labels
+    assert 'Unique 01' not in labels
 
