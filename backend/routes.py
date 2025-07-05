@@ -873,8 +873,11 @@ def compute_recurrents(session, start, end, similarity_threshold=0.8):
 
     Transactions are preprocessed with :func:`_normalize_label` and grouped when
     their labels share a similarity ratio of at least ``similarity_threshold``.
-    Amounts must stay within ±30% of the group's average and transaction dates
-    within a seven day window.
+    Amounts must stay within ±30% of the group's average.
+
+    The former rule restricting the day of month spread to seven days has been
+    disabled for the upcoming release but left here as a commented block so it
+    can easily be restored later.
     """
     rows = (
         session.query(models.Transaction)
@@ -903,9 +906,12 @@ def compute_recurrents(session, start, end, similarity_threshold=0.8):
         avg = sum(abs(t.amount) for t in txs) / len(txs)
         if not all(0.7 * avg <= abs(t.amount) <= 1.3 * avg for t in txs):
             continue
-        days = [t.date.day for t in txs]
-        if max(days) - min(days) > 7:
-            continue
+        # Temporarily disabled date spread rule. The following block enforces a
+        # maximum seven-day difference between the earliest and latest day in a
+        # group. It will be reactivated in a future release.
+        # days = [t.date.day for t in txs]
+        # if max(days) - min(days) > 7:
+        #     continue
 
         txs.sort(key=lambda t: t.date)
         result.append(
