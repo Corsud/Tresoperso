@@ -193,7 +193,7 @@
                     <canvas id="recurrents-donut"></canvas>
                     <ul id="recurrents-items"></ul>
                 </div>
-                <div id="recurrents-no-data" style="display:none;">Aucune transaction récurrente trouvée.</div>
+                <div id="recurrents-no-data" style="display:none;">Aucune transaction récurrente trouvée selon les critères de similarité ou de montant.</div>
             </section>
 
             <section id="projection-section" style="display:none;">
@@ -1549,7 +1549,7 @@
             if (!Array.isArray(data) || data.length === 0) {
                 recurrentsData = [];
                 if (noDataMsg) {
-                    noDataMsg.textContent = data.message || 'Aucune transaction récurrente trouvée.';
+                    noDataMsg.textContent = data.message || 'Aucune transaction récurrente trouvée selon les critères de similarité ou de montant.';
                     noDataMsg.style.display = 'block';
                 }
                 if (calView) calView.style.display = 'none';
