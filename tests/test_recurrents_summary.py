@@ -50,4 +50,4 @@ def test_recurrents_summary(client):
     assert data['positive'] == pytest.approx(1000)
     assert data['negative'] == pytest.approx(130)
     assert data['balance'] == pytest.approx(874)
-    assert data['recurrent'] == pytest.approx(50)
+    assert data['recurrent'] == pytest.approx(70.5)

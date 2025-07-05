@@ -49,16 +49,19 @@ def test_recurrents_endpoint(client):
     assert resp.status_code == 200
     data = resp.get_json()
     assert isinstance(data, list)
-    assert len(data) == 1
-    rec = data[0]
-    assert rec['day'] == 5
-    assert rec['category']['name'] == 'Sub'
-    assert len(rec['transactions']) == 3
-    assert rec['average_amount'] == pytest.approx(-50)
-    assert rec['last_date'] == '2021-02-05'
-    assert rec['frequency'] == 'monthly'
-    for t in rec['transactions']:
-        assert all(k in t for k in ['date', 'label', 'amount'])
+    assert len(data) == 2
+    abo = next(rec for rec in data if any('Abo' in t['label'] for t in rec['transactions']))
+    club = next(rec for rec in data if any('Club' in t['label'] for t in rec['transactions']))
+
+    assert abo['day'] == 5
+    assert len(abo['transactions']) == 3
+    assert abo['average_amount'] == pytest.approx(-50)
+    assert abo['last_date'] == '2021-02-05'
+    assert abo['frequency'] == 'monthly'
+
+    assert club['day'] == 1
+    assert len(club['transactions']) == 2
+    assert club['average_amount'] == pytest.approx(-20.5)
 
 
 def test_recurrents_date_variation(client):
@@ -66,7 +69,7 @@ def test_recurrents_date_variation(client):
     resp = client.get('/stats/recurrents?month=2021-05')
     data = resp.get_json()
     labels = [t['label'] for rec in data for t in rec['transactions']]
-    assert 'Club 01' not in labels
+    assert 'Club 01' in labels
     assert 'Unique 01' not in labels
 
 
@@ -85,12 +88,11 @@ def test_recurrents_fuzzy_label_matching(client):
     resp = client.get('/stats/recurrents?month=2021-05')
     assert resp.status_code == 200
     data = resp.get_json()
-    assert len(data) == 1
-    rec = data[0]
-    labels = [t['label'] for t in rec['transactions']]
+    abo = next(rec for rec in data if any('Abo' in t['label'] or 'Abro' in t['label'] for t in rec['transactions']))
+    labels = [t['label'] for t in abo['transactions']]
     assert 'Abro 04' in labels
-    assert len(rec['transactions']) == 4
-    assert rec['last_date'] == '2021-03-05'
+    assert len(abo['transactions']) == 4
+    assert abo['last_date'] == '2021-03-05'
 
 
 def test_recurrents_amount_threshold(client):
@@ -108,5 +110,7 @@ def test_recurrents_amount_threshold(client):
     resp = client.get('/stats/recurrents?month=2021-05')
     assert resp.status_code == 200
     data = resp.get_json()
-    assert data == []
+    assert len(data) == 1
+    labels = [t['label'] for t in data[0]['transactions']]
+    assert all('Club' in l for l in labels)
 

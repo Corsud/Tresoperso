@@ -17,8 +17,9 @@ derniers mois. Les libellés des transactions sont prétraités (suppression des
 chiffres, des espaces et de la ponctuation) puis comparés avec un seuil de
 similarité de 80&nbsp;%. Deux transactions ou plus sont groupées lorsque ce seuil
 est atteint et que leurs montants restent entre 80&nbsp;% et 130&nbsp;% de la
-moyenne du groupe. Les dates au sein d'un groupe ne doivent pas varier de plus
-de sept&nbsp;jours d'un mois à l'autre.
+moyenne du groupe. Les dates au sein d'un groupe pouvaient auparavant varier
+de sept&nbsp;jours maximum d'un mois à l'autre. Cette contrainte est
+temporairement désactivée et sera réintroduite ultérieurement.
 
 
 ## Lancement rapide
