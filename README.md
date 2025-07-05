@@ -71,6 +71,13 @@ Chaque import CSV crée automatiquement le compte correspondant s'il n'existe pa
 Si le numéro et le type correspondent à un compte existant, la date d'export est simplement mise à jour au lieu de créer un doublon.
 Utilisez le bouton «Importer CSV» pour sélectionner un fichier et mettre à jour le compte choisi. Un bouton «Supprimer» permet aussi d'effacer un compte.
 
+## API
+
+Le backend expose plusieurs routes JSON consommées par l'interface web. La route
+`/stats/recurrents/summary` fournit par exemple le total des montants positifs,
+négatifs, le solde global (y compris les soldes initiaux des comptes) et le
+montant cumulé des dépenses récurrentes détectées pour le mois demandé.
+
 ## Tests
 
 Les dépendances de développement nécessaires à l'exécution de la suite se trouvent dans `requirements-dev.txt`.
