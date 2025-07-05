@@ -703,42 +703,14 @@ def stats_recurrents():
     end = _shift_month(current_first, 1) - timedelta(days=1)
 
     session = models.SessionLocal()
-    rows = (
-        session.query(models.Transaction)
-        .filter(models.Transaction.date >= start)
-        .filter(models.Transaction.date <= end)
-        .all()
-    )
-
-    groups = {}
-    for tx in rows:
-        label = _normalize_label(tx.label)
-        found = None
-        for key in groups:
-            if SequenceMatcher(None, label, key).ratio() >= 0.8:
-                found = key
-                break
-        if not found:
-            found = label
-            groups[found] = []
-        groups[found].append(tx)
-
+    recs = compute_recurrents(session, start, end)
     result = []
-    for txs in groups.values():
-        if len(txs) < 2:
-            continue
-        avg = sum(abs(t.amount) for t in txs) / len(txs)
-        if not all(0.7 * avg <= abs(t.amount) <= 1.3 * avg for t in txs):
-            continue
-        days = [t.date.day for t in txs]
-        if max(days) - min(days) > 7:
-            continue
-
-        txs.sort(key=lambda t: t.date)
-        cat = txs[0].category
-        avg_amount = sum(t.amount for t in txs) / len(txs)
-        last_date = txs[-1].date
-
+    for rec in recs:
+        txs = rec['transactions']
+        cat = rec['category']
+        avg_amount = rec['average_amount']
+        last_date = rec['last_date']
+        
         if len(txs) > 1:
             diffs = [
                 (txs[i].date - txs[i - 1].date).days for i in range(1, len(txs))
@@ -765,7 +737,7 @@ def stats_recurrents():
             return 'unknown'
 
         item = {
-            'day': txs[0].date.day,
+            'day': rec['day'],
             'category': {
                 'id': cat.id if cat else None,
                 'name': cat.name if cat else None,
@@ -787,6 +759,33 @@ def stats_recurrents():
 
     result.sort(key=lambda r: r['day'])
     session.close()
+    return jsonify(result)
+
+
+@app.route('/stats/recurrents/categories')
+@login_required
+def stats_recurrents_categories():
+    """Return negative recurrent totals aggregated by category."""
+    month = request.args.get('month')
+    if month:
+        try:
+            current_first = backend.datetime.strptime(month + '-01', '%Y-%m-%d').date()
+        except ValueError:
+            current_first = backend.datetime.now().date().replace(day=1)
+    else:
+        current_first = backend.datetime.now().date().replace(day=1)
+
+    start = _shift_month(current_first, -5)
+    end = _shift_month(current_first, 1) - timedelta(days=1)
+
+    session = models.SessionLocal()
+    recs = compute_recurrents(session, start, end)
+    totals = aggregate_recurrents_by_category(recs)
+    session.close()
+    result = [
+        {'category': name, 'total': total}
+        for name, total in sorted(totals.items())
+    ]
     return jsonify(result)
 
 
@@ -834,40 +833,10 @@ def stats_recurrents_summary():
     )
 
     rec_start = _shift_month(current_first, -5)
-    rec_rows = (
-        session.query(models.Transaction)
-        .filter(models.Transaction.date >= rec_start)
-        .filter(models.Transaction.date <= end)
-        .all()
+    recs = compute_recurrents(session, rec_start, end)
+    recurrent_total = sum(
+        abs(r['average_amount']) for r in recs if r['average_amount'] < 0
     )
-
-    groups = {}
-    for tx in rec_rows:
-        label = _normalize_label(tx.label)
-        found = None
-        for key in groups:
-            if SequenceMatcher(None, label, key).ratio() >= 0.8:
-                found = key
-                break
-        if not found:
-            found = label
-            groups[found] = []
-        groups[found].append(tx)
-
-    recurrent_total = 0
-    for txs in groups.values():
-        if len(txs) < 2:
-            continue
-        avg = sum(abs(t.amount) for t in txs) / len(txs)
-        if not all(0.7 * avg <= abs(t.amount) <= 1.3 * avg for t in txs):
-            continue
-        days = [t.date.day for t in txs]
-        if max(days) - min(days) > 7:
-            continue
-
-        avg_amount = sum(t.amount for t in txs) / len(txs)
-        if avg_amount < 0:
-            recurrent_total += abs(avg_amount)
 
     session.close()
     return jsonify({
@@ -901,6 +870,65 @@ def _shift_month(date, offset):
     y = date.year + (date.month - 1 + offset) // 12
     m = (date.month - 1 + offset) % 12 + 1
     return date.replace(year=y, month=m, day=1)
+
+
+def compute_recurrents(session, start, end):
+    """Return recurring transactions grouped by label between ``start`` and ``end``."""
+    rows = (
+        session.query(models.Transaction)
+        .filter(models.Transaction.date >= start)
+        .filter(models.Transaction.date <= end)
+        .all()
+    )
+
+    groups = {}
+    for tx in rows:
+        label = _normalize_label(tx.label)
+        found = None
+        for key in groups:
+            if SequenceMatcher(None, label, key).ratio() >= 0.8:
+                found = key
+                break
+        if not found:
+            found = label
+            groups[found] = []
+        groups[found].append(tx)
+
+    result = []
+    for txs in groups.values():
+        if len(txs) < 2:
+            continue
+        avg = sum(abs(t.amount) for t in txs) / len(txs)
+        if not all(0.7 * avg <= abs(t.amount) <= 1.3 * avg for t in txs):
+            continue
+        days = [t.date.day for t in txs]
+        if max(days) - min(days) > 7:
+            continue
+
+        txs.sort(key=lambda t: t.date)
+        result.append(
+            {
+                'day': txs[0].date.day,
+                'category': txs[0].category,
+                'average_amount': sum(t.amount for t in txs) / len(txs),
+                'last_date': txs[-1].date,
+                'transactions': txs,
+            }
+        )
+
+    result.sort(key=lambda r: r['day'])
+    return result
+
+
+def aggregate_recurrents_by_category(recs):
+    """Return negative recurrent totals aggregated by category name."""
+    totals = {}
+    for rec in recs:
+        avg = rec['average_amount']
+        if avg < 0:
+            name = rec['category'].name if rec['category'] else 'Inconnu'
+            totals[name] = totals.get(name, 0) + abs(avg)
+    return totals
 
 
 def compute_dashboard_averages(session):
