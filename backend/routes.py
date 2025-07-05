@@ -704,6 +704,10 @@ def stats_recurrents():
 
     session = models.SessionLocal()
     recs = compute_recurrents(session, start, end)
+    if not recs:
+        session.close()
+        return jsonify({'message': 'Aucune transaction récurrente trouvée selon les critères de similarité ou de montant.'})
+
     result = []
     for rec in recs:
         txs = rec['transactions']
@@ -868,16 +872,25 @@ def _shift_month(date, offset):
     return date.replace(year=y, month=m, day=1)
 
 
-def compute_recurrents(session, start, end, similarity_threshold=0.8):
+def compute_recurrents(
+    session, start, end, *, similarity_threshold=0.8, amount_tolerance=0.3
+):
     """Return recurring transactions grouped between ``start`` and ``end``.
+
+    Parameters are exposed here for clarity and easy tweaking:
+
+    ``similarity_threshold``
+        Minimum ratio for fuzzy label matching.
+    ``amount_tolerance``
+        Allowed variation (e.g. ``0.3`` means ±30%) around the group's average
+        amount.
 
     Transactions are preprocessed with :func:`_normalize_label` and grouped when
     their labels share a similarity ratio of at least ``similarity_threshold``.
-    Amounts must stay within ±30% of the group's average.
+    Amounts must stay within ``amount_tolerance`` of the group's average.
 
-    The former rule restricting the day of month spread to seven days has been
-    disabled for the upcoming release but left here as a commented block so it
-    can easily be restored later.
+    The old rule limiting day-of-month spread has been removed in favour of a
+    more permissive detection.
     """
     rows = (
         session.query(models.Transaction)
@@ -900,11 +913,20 @@ def compute_recurrents(session, start, end, similarity_threshold=0.8):
         groups[found].append(tx)
 
     result = []
-    for txs in groups.values():
+    for label, txs in groups.items():
         if len(txs) < 2:
+            logger.debug("Group '%s' rejected: only %d transaction(s)", label, len(txs))
             continue
         avg = sum(abs(t.amount) for t in txs) / len(txs)
-        if not all(0.7 * avg <= abs(t.amount) <= 1.3 * avg for t in txs):
+        if not all(
+            (1 - amount_tolerance) * avg <= abs(t.amount) <= (1 + amount_tolerance) * avg
+            for t in txs
+        ):
+            logger.debug(
+                "Group '%s' rejected: amount variance outside %.0f%% tolerance",
+                label,
+                amount_tolerance * 100,
+            )
             continue
         # Temporarily disabled date spread rule. The following block enforces a
         # maximum seven-day difference between the earliest and latest day in a

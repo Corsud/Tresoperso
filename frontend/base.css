@@ -147,6 +147,12 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
     margin-top: 10px;
 }
 
+#recurrents-no-data {
+    text-align: center;
+    font-style: italic;
+    margin-top: 10px;
+}
+
 #categories-table td {
     text-align: left;
 }

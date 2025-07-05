@@ -193,6 +193,7 @@
                     <canvas id="recurrents-donut"></canvas>
                     <ul id="recurrents-items"></ul>
                 </div>
+                <div id="recurrents-no-data" style="display:none;">Aucune transaction récurrente trouvée.</div>
             </section>
 
             <section id="projection-section" style="display:none;">
@@ -1541,7 +1542,24 @@
             // Fetch recurring transactions
             const resp = await fetch(`/stats/recurrents?month=${month}`);
             if (!resp.ok) return;
-            recurrentsData = await resp.json();
+            const data = await resp.json();
+            const noDataMsg = document.getElementById('recurrents-no-data');
+            const calView = document.getElementById('recurrents-calendar-view');
+            const listView = document.getElementById('recurrents-list-view');
+            if (!Array.isArray(data) || data.length === 0) {
+                recurrentsData = [];
+                if (noDataMsg) {
+                    noDataMsg.textContent = data.message || 'Aucune transaction récurrente trouvée.';
+                    noDataMsg.style.display = 'block';
+                }
+                if (calView) calView.style.display = 'none';
+                if (listView) listView.style.display = 'none';
+                return;
+            }
+            recurrentsData = data;
+            if (noDataMsg) noDataMsg.style.display = 'none';
+            if (calView) calView.style.display = 'flex';
+            if (listView) listView.style.display = 'none';
 
             // Place dots and populate sidebar
             const sidebar = document.getElementById('recurrents-sidebar');
@@ -1880,12 +1898,14 @@
         recurrentsOverlay.addEventListener('click', e => { if (e.target === recurrentsOverlay) recurrentsOverlay.style.display = 'none'; });
         if (recurrentsBtnCalendar && recurrentsBtnList) {
             recurrentsBtnCalendar.addEventListener('click', () => {
+                if (recurrentsData.length === 0) return;
                 recurrentsBtnCalendar.classList.add('selected');
                 recurrentsBtnList.classList.remove('selected');
                 if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'flex';
                 if (recurrentsListView) recurrentsListView.style.display = 'none';
             });
             recurrentsBtnList.addEventListener('click', () => {
+                if (recurrentsData.length === 0) return;
                 recurrentsBtnList.classList.add('selected');
                 recurrentsBtnCalendar.classList.remove('selected');
                 if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'none';
