@@ -847,22 +847,18 @@ def stats_recurrents_summary():
     })
 
 
-_MONTH_NAMES = [
-    'janvier', 'février', 'fevrier', 'mars', 'avril', 'mai', 'juin',
-    'juillet', 'août', 'aout', 'septembre', 'octobre', 'novembre',
-    'décembre', 'decembre',
-    'jan', 'feb', 'fev', 'mar', 'apr', 'avr', 'may', 'jun', 'jul',
-    'aug', 'aou', 'sep', 'oct', 'nov', 'dec'
-]
-
-
 def _normalize_label(label):
-    """Return a simplified label for recurrence grouping."""
+    """Return a simplified label for recurrence grouping.
+
+    The preprocessing removes any digit characters, lowercases the text and
+    strips all spaces and punctuation so that labels differing only by numbers
+    or formatting still match.
+    """
+
     s = re.sub(r"\d+", "", label.lower())
-    for name in _MONTH_NAMES:
-        s = s.replace(name, '')
-    s = re.sub(r"\s+", " ", s)
-    return s.strip()
+    # Remove spaces and non alphanumeric characters
+    s = re.sub(r"[^a-zA-Z]+", "", s)
+    return s
 
 
 def _shift_month(date, offset):
@@ -872,8 +868,14 @@ def _shift_month(date, offset):
     return date.replace(year=y, month=m, day=1)
 
 
-def compute_recurrents(session, start, end):
-    """Return recurring transactions grouped by label between ``start`` and ``end``."""
+def compute_recurrents(session, start, end, similarity_threshold=0.8):
+    """Return recurring transactions grouped between ``start`` and ``end``.
+
+    Transactions are preprocessed with :func:`_normalize_label` and grouped when
+    their labels share a similarity ratio of at least ``similarity_threshold``.
+    Amounts must stay within ±30% of the group's average and transaction dates
+    within a seven day window.
+    """
     rows = (
         session.query(models.Transaction)
         .filter(models.Transaction.date >= start)
@@ -886,7 +888,7 @@ def compute_recurrents(session, start, end):
         label = _normalize_label(tx.label)
         found = None
         for key in groups:
-            if SequenceMatcher(None, label, key).ratio() >= 0.8:
+            if SequenceMatcher(None, label, key).ratio() >= similarity_threshold:
                 found = key
                 break
         if not found:
@@ -917,6 +919,12 @@ def compute_recurrents(session, start, end):
         )
 
     result.sort(key=lambda r: r['day'])
+
+    if not result:
+        logger.info(
+            "No recurring transactions found between %s and %s", start, end
+        )
+
     return result
 
 

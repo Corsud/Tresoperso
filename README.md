@@ -13,10 +13,12 @@ Tresoperso est une application de gestion de trésorerie personnelle. Elle perme
 - Visualisation des transactions récurrentes
 
 La page **Récurrentes** affiche les opérations récurrentes détectées sur les six
-derniers mois. Deux transactions ou plus sont groupées lorsqu'elles partagent le
-même libellé (hors chiffres) et que leurs montants sont compris entre 80&nbsp;% et
-130&nbsp;% de la moyenne du groupe. Les dates au sein d'un groupe ne doivent pas
-varier de plus de sept&nbsp;jours d'un mois à l'autre.
+derniers mois. Les libellés des transactions sont prétraités (suppression des
+chiffres, des espaces et de la ponctuation) puis comparés avec un seuil de
+similarité de 80&nbsp;%. Deux transactions ou plus sont groupées lorsque ce seuil
+est atteint et que leurs montants restent entre 80&nbsp;% et 130&nbsp;% de la
+moyenne du groupe. Les dates au sein d'un groupe ne doivent pas varier de plus
+de sept&nbsp;jours d'un mois à l'autre.
 
 
 ## Lancement rapide
