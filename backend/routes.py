@@ -14,6 +14,10 @@ from .csv_utils import parse_csv, apply_rule_to_transactions
 
 logger = logging.getLogger(__name__)
 
+# Default thresholds for recurring transaction detection
+SIMILARITY_THRESHOLD = 0.8  # Minimum fuzzy label similarity
+AMOUNT_TOLERANCE = 0.3      # Allowed deviation (\u00b130%) around the average
+
 
 @app.route('/')
 def index():
@@ -873,24 +877,22 @@ def _shift_month(date, offset):
 
 
 def compute_recurrents(
-    session, start, end, *, similarity_threshold=0.8, amount_tolerance=0.3
+    session,
+    start,
+    end,
+    *,
+    similarity_threshold=SIMILARITY_THRESHOLD,
+    amount_tolerance=AMOUNT_TOLERANCE,
 ):
     """Return recurring transactions grouped between ``start`` and ``end``.
 
-    Parameters are exposed here for clarity and easy tweaking:
-
-    ``similarity_threshold``
-        Minimum ratio for fuzzy label matching.
-    ``amount_tolerance``
-        Allowed variation (e.g. ``0.3`` means ±30%) around the group's average
-        amount.
-
-    Transactions are preprocessed with :func:`_normalize_label` and grouped when
-    their labels share a similarity ratio of at least ``similarity_threshold``.
-    Amounts must stay within ``amount_tolerance`` of the group's average.
-
-    The old rule limiting day-of-month spread has been removed in favour of a
-    more permissive detection.
+    ``similarity_threshold`` and ``amount_tolerance`` are exposed as keyword
+    arguments so that the detection parameters can easily be tuned. Labels are
+    normalized via :func:`_normalize_label` and grouped using fuzzy matching
+    when the similarity ratio reaches ``similarity_threshold``. Groups with
+    amounts that deviate by more than ``amount_tolerance`` of the group's
+    average are discarded.  The former rule restricting the day-of-month spread
+    was removed to allow for more flexible detection.
     """
     rows = (
         session.query(models.Transaction)
@@ -914,26 +916,23 @@ def compute_recurrents(
 
     result = []
     for label, txs in groups.items():
+        reasons = []
         if len(txs) < 2:
-            logger.debug("Group '%s' rejected: only %d transaction(s)", label, len(txs))
-            continue
+            reasons.append("moins de 2 transactions")
         avg = sum(abs(t.amount) for t in txs) / len(txs)
         if not all(
             (1 - amount_tolerance) * avg <= abs(t.amount) <= (1 + amount_tolerance) * avg
             for t in txs
         ):
-            logger.debug(
-                "Group '%s' rejected: amount variance outside %.0f%% tolerance",
-                label,
-                amount_tolerance * 100,
+            reasons.append(
+                f"montants hors ±{int(amount_tolerance * 100)}%"
             )
+        if reasons:
+            logger.debug("Group '%s' rejected: %s", label, ", ".join(reasons))
             continue
-        # Temporarily disabled date spread rule. The following block enforces a
-        # maximum seven-day difference between the earliest and latest day in a
-        # group. It will be reactivated in a future release.
-        # days = [t.date.day for t in txs]
-        # if max(days) - min(days) > 7:
-        #     continue
+        # Previous versions limited the difference in ``date.day`` values
+        # between months.  This constraint has been removed for a more
+        # permissive detection of recurring transactions.
 
         txs.sort(key=lambda t: t.date)
         result.append(

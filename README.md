@@ -17,9 +17,9 @@ derniers mois. Les libellés des transactions sont prétraités (suppression des
 chiffres, des espaces et de la ponctuation) puis comparés avec un seuil de
 similarité de 80&nbsp;%. Deux transactions ou plus sont groupées lorsque ce seuil
 est atteint et que leurs montants restent entre 80&nbsp;% et 130&nbsp;% de la
-moyenne du groupe. Les dates au sein d'un groupe pouvaient auparavant varier
-de sept&nbsp;jours maximum d'un mois à l'autre. Cette contrainte est
-temporairement désactivée et sera réintroduite ultérieurement.
+moyenne du groupe. La détection est désormais plus souple&nbsp;: la contrainte
+sur l'écart en jours entre deux occurrences a été supprimée afin de prendre en
+compte les prélèvements dont la date varie légèrement d'un mois à l'autre.
 
 
 ## Lancement rapide
