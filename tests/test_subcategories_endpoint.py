@@ -7,14 +7,16 @@ import backend as app_module
 
 
 @pytest.fixture
-def client():
+def client(monkeypatch, tmp_path):
     engine = create_engine('sqlite:///:memory:')
     models.engine = engine
     models.SessionLocal = sessionmaker(bind=engine)
     app_module.SessionLocal = models.SessionLocal
+    monkeypatch.setattr(models.config, "CATEGORIES_JSON", str(tmp_path / "cats.json"))
+    (tmp_path / "cats.json").write_text("{}", encoding="utf-8")
     models.init_db()
     session = models.SessionLocal()
-    cat = models.Category(name='Parent', color='blue')
+    cat = models.Category(name='RuleParent', color='blue')
     session.add(cat)
     session.commit()
     cat_id = cat.id
@@ -31,7 +33,7 @@ def login(client):
 
 def test_post_subcategory_inherits_color(client):
     login(client)
-    resp = client.post('/subcategories', json={'name': 'Child', 'category_id': client.cat_id})
+    resp = client.post('/subcategories', json={'name': 'RuleChild', 'category_id': client.cat_id})
     assert resp.status_code == 201
     data = resp.get_json()
     assert data['color'] == 'blue'

@@ -71,5 +71,26 @@ def test_dashboard_custom_threshold(client):
     resp = client.get('/dashboard?threshold=10')
     assert resp.status_code == 200
     data = resp.get_json()
-    assert not any(a['label'] == 'Huge expense' for a in data['alerts'])
+    alerts = [a for a in data['alerts'] if a['label'] == 'Huge expense']
+    assert alerts and alerts[0]['reason'] == 'income_threshold'
+
+
+def test_dashboard_schema(client):
+    login(client)
+    resp = client.get('/dashboard')
+    assert resp.status_code == 200
+    data = resp.get_json()
+    for key in ['favorite_count', 'recent_total', 'balance_total', 'alerts', 'favorite_summaries']:
+        assert key in data
+    if data['alerts']:
+        alert = data['alerts'][0]
+        for key in ['date', 'label', 'amount', 'category', 'reason']:
+            assert key in alert
+    if data['favorite_summaries']:
+        grp = data['favorite_summaries'][0]
+        assert 'category' in grp and 'items' in grp
+        if grp['items']:
+            item = grp['items'][0]
+            for key in ['type', 'name', 'current_total', 'six_month_avg']:
+                assert key in item
 

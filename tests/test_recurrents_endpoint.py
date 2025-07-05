@@ -69,3 +69,44 @@ def test_recurrents_date_variation(client):
     assert 'Club 01' not in labels
     assert 'Unique 01' not in labels
 
+
+def test_recurrents_fuzzy_label_matching(client):
+    login(client)
+    session = models.SessionLocal()
+    cat = session.query(models.Category).first()
+    session.add(
+        models.Transaction(
+            date=datetime.date(2021, 3, 5), label='Abro 04', amount=-51, category=cat
+        )
+    )
+    session.commit()
+    session.close()
+
+    resp = client.get('/stats/recurrents?month=2021-05')
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert len(data) == 1
+    rec = data[0]
+    labels = [t['label'] for t in rec['transactions']]
+    assert 'Abro 04' in labels
+    assert len(rec['transactions']) == 4
+    assert rec['last_date'] == '2021-03-05'
+
+
+def test_recurrents_amount_threshold(client):
+    login(client)
+    session = models.SessionLocal()
+    cat = session.query(models.Category).first()
+    session.add(
+        models.Transaction(
+            date=datetime.date(2021, 3, 5), label='Abo 04', amount=-100, category=cat
+        )
+    )
+    session.commit()
+    session.close()
+
+    resp = client.get('/stats/recurrents?month=2021-05')
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data == []
+
