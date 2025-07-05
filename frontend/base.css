@@ -294,14 +294,26 @@ body.hide-amounts .amount-input {
     display: flex;
     gap: 10px;
 }
-#recurrents-calendar-view #recurrents-calendar { flex-basis: 60%; }
-#recurrents-sidebar { flex-basis: 40%; }
+#recurrents-calendar-view #recurrents-calendar {
+    flex: 1 1 60%;
+}
+#recurrents-sidebar {
+    flex: 1 1 40%;
+}
 #recurrents-list-view {
     display: flex;
     gap: 10px;
 }
-#recurrents-list-view canvas { flex-basis: 40%; max-width: 40%; }
-#recurrents-list-view ul { flex-basis: 60%; list-style: none; padding: 0; margin: 0; }
+#recurrents-list-view canvas {
+    flex: 1 1 40%;
+    max-width: 40%;
+}
+#recurrents-list-view ul {
+    flex: 1 1 60%;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
 .rec-pastille {
     display: inline-block;
     width: 10px;
@@ -309,8 +321,29 @@ body.hide-amounts .amount-input {
     border-radius: 50%;
     margin-right: 4px;
 }
-.rec-item { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
-.sidebar-item { cursor: pointer; margin-bottom: 4px; }
+.rec-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 4px;
+    border-bottom: 1px solid var(--border-color);
+}
+.sidebar-item {
+    cursor: pointer;
+    margin-bottom: 4px;
+}
+#recurrents-header {
+    display: flex;
+    gap: 0.5em;
+    margin-bottom: 0.5em;
+    font-weight: bold;
+}
+#recurrents-header span {
+    background: var(--selected-color);
+    color: var(--bg-color);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
 #recurrents-calendar .day {
     border: 1px solid var(--border-color);
     min-height: 40px;
@@ -325,6 +358,10 @@ body.hide-amounts .amount-input {
     bottom: 2px;
     right: 2px;
 }
+.rec-dot:nth-of-type(2) { bottom: 12px; }
+.rec-dot:nth-of-type(3) { bottom: 22px; }
+.rec-dot:nth-of-type(4) { bottom: 32px; }
+.rec-dot:nth-of-type(5) { bottom: 42px; }
 
 @media (max-width: 600px) {
     #transactions-table {
