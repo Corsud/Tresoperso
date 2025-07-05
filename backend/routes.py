@@ -6,6 +6,7 @@ import backend
 from datetime import timedelta
 import numpy as np
 import re
+from difflib import SequenceMatcher
 
 from .app import app, load_categories_json, save_categories_json
 from . import models
@@ -711,16 +712,23 @@ def stats_recurrents():
 
     groups = {}
     for tx in rows:
-        key = re.sub(r"\d+", "", tx.label).strip().lower()
-
-        groups.setdefault(key, []).append(tx)
+        label = _normalize_label(tx.label)
+        found = None
+        for key in groups:
+            if SequenceMatcher(None, label, key).ratio() >= 0.8:
+                found = key
+                break
+        if not found:
+            found = label
+            groups[found] = []
+        groups[found].append(tx)
 
     result = []
     for txs in groups.values():
         if len(txs) < 2:
             continue
         avg = sum(abs(t.amount) for t in txs) / len(txs)
-        if not all(0.8 * avg <= abs(t.amount) <= 1.3 * avg for t in txs):
+        if not all(0.7 * avg <= abs(t.amount) <= 1.3 * avg for t in txs):
             continue
         days = [t.date.day for t in txs]
         if max(days) - min(days) > 7:
@@ -728,6 +736,34 @@ def stats_recurrents():
 
         txs.sort(key=lambda t: t.date)
         cat = txs[0].category
+        avg_amount = sum(t.amount for t in txs) / len(txs)
+        last_date = txs[-1].date
+
+        if len(txs) > 1:
+            diffs = [
+                (txs[i].date - txs[i - 1].date).days for i in range(1, len(txs))
+            ]
+            avg_diff = sum(diffs) / len(diffs)
+        else:
+            avg_diff = 0
+
+        def _freq(days):
+            if days < 10:
+                return 'weekly'
+            if days < 20:
+                return 'biweekly'
+            if days < 40:
+                return 'monthly'
+            if days < 70:
+                return 'bimonthly'
+            if days < 100:
+                return 'quarterly'
+            if days < 200:
+                return 'semiannual'
+            if days < 400:
+                return 'annual'
+            return 'unknown'
+
         item = {
             'day': txs[0].date.day,
             'category': {
@@ -735,6 +771,9 @@ def stats_recurrents():
                 'name': cat.name if cat else None,
                 'color': cat.color if cat else ''
             },
+            'average_amount': avg_amount,
+            'last_date': last_date.isoformat(),
+            'frequency': _freq(avg_diff) if avg_diff else None,
             'transactions': [
                 {
                     'date': t.date.isoformat(),
