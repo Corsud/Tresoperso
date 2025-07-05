@@ -51,3 +51,14 @@ def test_stats_categories_mixed(client):
     assert cats['Food']['negative'] == 50
     assert cats['Mixed']['positive'] == 20
     assert cats['Mixed']['negative'] == 5
+
+
+def test_stats_categories_schema(client):
+    login(client)
+    resp = client.get('/stats/categories')
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert isinstance(data, list)
+    first = data[0]
+    for key in ['name', 'color', 'positive', 'negative']:
+        assert key in first

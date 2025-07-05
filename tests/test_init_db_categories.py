@@ -17,7 +17,7 @@ def test_init_db_syncs_categories(tmp_path, monkeypatch):
     models.SessionLocal = sessionmaker(bind=engine)
 
     # patch path so init_db reads from our temp categories.json
-    monkeypatch.setattr(models, "__file__", str(tmp_path / "models.py"))
+    monkeypatch.setattr(models.config, "CATEGORIES_JSON", str(tmp_path / "categories.json"))
 
     models.init_db()
     session = models.SessionLocal()

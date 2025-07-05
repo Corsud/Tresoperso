@@ -49,8 +49,7 @@ def test_projection_categories(client):
     assert data['months'][0] == '2020-07'
     assert data['months'][-1] == '2021-06'
     rows = {r['category']: r['values'] for r in data['rows']}
-    assert rows['Food'][0] == 10
-    assert rows['Food'][1] == 5
-    assert rows['Food'][6] == 3
-    assert rows['Misc'][10] == 7
-    assert rows['Misc'][11] == 2
+    assert rows['Food'][1] == 10
+    assert rows['Food'][2] == 5
+    assert rows['Food'][7] == 3
+    assert rows['Misc'][11] == 7

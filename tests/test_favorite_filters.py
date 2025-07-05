@@ -7,12 +7,19 @@ from backend import models
 import backend as app_module
 
 
+class FixedDate(datetime.datetime):
+    @classmethod
+    def now(cls, tz=None):
+        return cls(2021, 5, 15)
+
+
 @pytest.fixture
-def client():
+def client(monkeypatch):
     engine = create_engine('sqlite:///:memory:')
     models.engine = engine
     models.SessionLocal = sessionmaker(bind=engine)
     app_module.SessionLocal = models.SessionLocal
+    monkeypatch.setattr(app_module, 'datetime', FixedDate)
     models.init_db()
     session = models.SessionLocal()
     cat = models.Category(name='Cat')

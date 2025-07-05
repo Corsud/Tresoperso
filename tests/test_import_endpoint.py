@@ -10,7 +10,7 @@ import backend as app_module
 def client():
     engine = create_engine('sqlite:///:memory:')
     models.engine = engine
-    models.SessionLocal = sessionmaker(bind=engine)
+    models.SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
     app_module.SessionLocal = models.SessionLocal
     models.init_db()
     with app_module.app.test_client() as client:

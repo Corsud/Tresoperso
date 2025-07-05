@@ -9,12 +9,19 @@ import backend as app_module
 from tests.test_period_utils import get_period_dates
 
 
+class FixedDate(datetime.datetime):
+    @classmethod
+    def now(cls, tz=None):
+        return cls(2021, 1, 15)
+
+
 @pytest.fixture
-def client():
+def client(monkeypatch):
     engine = create_engine('sqlite:///:memory:')
     models.engine = engine
     models.SessionLocal = sessionmaker(bind=engine)
     app_module.SessionLocal = models.SessionLocal
+    monkeypatch.setattr(app_module, 'datetime', FixedDate)
     models.init_db()
     session = models.SessionLocal()
     session.add_all([
