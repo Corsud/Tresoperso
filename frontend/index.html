@@ -1561,7 +1561,7 @@
 
             populateRecurrentsList();
             drawRecurrentsChart();
-            updateRecurrentsTotals();
+            await updateRecurrentsTotals();
         }
 
         function showRecurrent(rec) {
@@ -1593,21 +1593,21 @@
             });
         }
 
-        function updateRecurrentsTotals() {
+        async function updateRecurrentsTotals() {
             const totIn = document.getElementById('recurrents-total-in');
             const totOut = document.getElementById('recurrents-total-out');
             const balance = document.getElementById('recurrents-balance');
             const total = document.getElementById('recurrents-total');
-            let pos = 0, neg = 0;
-            recurrentsData.forEach(r => {
-                const avg = r.transactions.reduce((s,t) => s + t.amount, 0) / r.transactions.length;
-                if (avg >= 0) pos += avg; else neg += Math.abs(avg);
-            });
+            const today = new Date();
+            const month = today.toISOString().slice(0,7);
+            const resp = await fetch(`/stats/recurrents/summary?month=${month}`);
+            if (!resp.ok) return;
+            const data = await resp.json();
             const hide = localStorage.getItem('hideAmounts') === 'true';
-            if (totIn) totIn.textContent = `Entrées: ${hide ? '•••' : formatAmount(pos)}`;
-            if (totOut) totOut.textContent = `Sorties: ${hide ? '•••' : formatAmount(neg)}`;
-            if (balance) balance.textContent = `Solde: ${hide ? '•••' : formatAmount(pos-neg)}`;
-            if (total) total.textContent = `Total récurrent: ${hide ? '•••' : formatAmount(pos+neg)}`;
+            if (totIn) totIn.textContent = `Entrées: ${hide ? '•••' : formatAmount(data.positive)}`;
+            if (totOut) totOut.textContent = `Sorties: ${hide ? '•••' : formatAmount(data.negative)}`;
+            if (balance) balance.textContent = `Solde: ${hide ? '•••' : formatAmount(data.balance)}`;
+            if (total) total.textContent = `Total récurrent: ${hide ? '•••' : formatAmount(data.recurrent)}`;
         }
 
         function populateRecurrentsList() {
