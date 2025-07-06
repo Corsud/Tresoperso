@@ -59,6 +59,7 @@
                         <label for="account-select">Compte :</label>
                         <select id="account-select">
                             <option value="">(Tous)</option>
+                            <option value="none">(Aucun)</option>
                         </select>
                         <span id="account-info"></span>
                     </div>
@@ -594,7 +595,7 @@
 
         function updateAccountDropdown() {
             const select = document.getElementById('account-select');
-            select.innerHTML = '<option value="">(Tous)</option>';
+            select.innerHTML = '<option value="">(Tous)</option><option value="none">(Aucun)</option>';
             accountsData.forEach(a => {
                 const opt = document.createElement('option');
                 opt.value = a.id;
@@ -610,6 +611,8 @@
             if (acc) {
                 const date = acc.export_date ? ` - export ${formatDate(acc.export_date)}` : '';
                 info.textContent = `${acc.account_type} ${acc.number}${date}`.trim();
+            } else if (selectedAccountId === 'none') {
+                info.textContent = 'Pas de référence de compte';
             } else {
                 info.textContent = '';
             }
@@ -649,6 +652,31 @@
 
                 tbody.appendChild(tr);
             });
+
+            const noneTr = document.createElement('tr');
+            const noneInfo = document.createElement('td');
+            noneInfo.textContent = 'Pas de référence de compte';
+            noneTr.appendChild(noneInfo);
+
+            const noneAction = document.createElement('td');
+            const noneUpd = document.createElement('button');
+            noneUpd.textContent = 'Mettre à jour';
+            noneUpd.onclick = () => {
+                selectedAccountId = 'none';
+                updateAccountDropdown();
+                displayAccountInfo();
+                fetchBalanceInfo();
+            };
+            const noneDel = document.createElement('button');
+            noneDel.textContent = 'Supprimer';
+            noneDel.onclick = async () => {
+                if (!confirm('Supprimer ces transactions ?')) return;
+                await deleteUnassignedTransactions();
+            };
+            noneAction.appendChild(noneUpd);
+            noneAction.append(' ', noneDel);
+            noneTr.appendChild(noneAction);
+            tbody.appendChild(noneTr);
             adjustLabelColumns();
         }
 
@@ -728,10 +756,30 @@
             }
         }
 
+        async function deleteUnassignedTransactions() {
+            const resp = await fetch('/transactions/unassigned', { method: 'DELETE' });
+            if (resp.ok) {
+                if (selectedAccountId === 'none') {
+                    selectedAccountId = 'none';
+                }
+                await fetchAccounts();
+                displayAccountInfo();
+                fetchBalanceInfo();
+                fetchTransactions();
+                fetchDashboard();
+                fetchStats();
+                fetchProjection();
+                fetchProjectionCategories();
+                fetchProjectionFuture();
+                fetchCategoryStats();
+                fetchSankeyStats();
+            }
+        }
+
         async function fetchBalanceInfo() {
             const dateInput = document.getElementById('balance-date');
             const amtInput = document.getElementById('balance-amount');
-            if (!selectedAccountId) {
+            if (!selectedAccountId || selectedAccountId === 'none') {
                 dateInput.value = '';
                 amtInput.value = '';
                 return;
@@ -745,7 +793,11 @@
 
         async function fetchTransactions() {
             const params = new URLSearchParams();
-            if (selectedAccountId) params.set('account_id', selectedAccountId);
+            if (selectedAccountId && selectedAccountId !== 'none') {
+                params.set('account_id', selectedAccountId);
+            } else if (selectedAccountId === 'none') {
+                params.set('account_none', 'true');
+            }
             let start = document.getElementById('filter-start-date').value;
             let end = document.getElementById('filter-end-date').value;
             const period = document.getElementById('filter-period').value;

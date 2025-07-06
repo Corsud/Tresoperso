@@ -74,3 +74,27 @@ def test_filter_to_analyze(client):
     assert len(data) == 1
     assert data[0]['to_analyze'] is False
 
+
+def test_filter_account_none(client):
+    login(client)
+    session = models.SessionLocal()
+    acc = models.BankAccount(account_type='Compte', number='999')
+    session.add(acc)
+    session.flush()
+    acc_id = acc.id
+    session.add(models.Transaction(date=datetime.date(2021,1,3), label='T3', amount=5, bank_account_id=acc_id))
+    session.commit()
+    session.close()
+
+    resp = client.get('/transactions?account_none=true')
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert len(data) == 2
+    assert all(t['account_id'] is None for t in data)
+
+    resp = client.get(f'/transactions?account_id={acc_id}')
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert len(data) == 1
+    assert data[0]['account_id'] == acc_id
+
