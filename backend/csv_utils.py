@@ -11,7 +11,7 @@ def parse_csv(content):
     reader = csv.reader(content.splitlines(), delimiter=';')
     rows = list(reader)
     if not rows:
-        return [], [], ['Fichier vide'], {}
+        return [], [], ['Fichier totalement vide'], {}
 
     # Detect a BNP export with a header line after an empty row
     header_mode = False
@@ -89,7 +89,9 @@ def parse_csv(content):
         if not any(cell.strip() for cell in row):
             continue
         if len(row) < 5:
-            errors.append(f'Ligne {line_no}: colonnes manquantes')
+            errors.append(
+                f"Ligne {line_no}: colonnes manquantes (ligne comportant moins de cinq colonnes ou des colonnes essentielles manquantes)"
+            )
             continue
 
         date_str = row[0]
@@ -102,7 +104,9 @@ def parse_csv(content):
         amount_str = row[4]
 
         if not (date_str and label and amount_str):
-            errors.append(f'Ligne {line_no}: colonnes manquantes')
+            errors.append(
+                f"Ligne {line_no}: colonnes manquantes (ligne comportant moins de cinq colonnes ou des colonnes essentielles manquantes)"
+            )
             continue
 
         try:
@@ -111,7 +115,9 @@ def parse_csv(content):
             except ValueError:
                 date = datetime.strptime(date_str.strip(), '%d/%m/%Y').date()
         except ValueError:
-            errors.append(f'Ligne {line_no}: date invalide')
+            errors.append(
+                f"Ligne {line_no}: date impossible à convertir (formats acceptés : YYYY-MM-DD ou DD/MM/YYYY)"
+            )
             continue
 
         try:
@@ -129,7 +135,9 @@ def parse_csv(content):
             if negative:
                 amount = -amount
         except ValueError:
-            errors.append(f'Ligne {line_no}: montant invalide')
+            errors.append(
+                f"Ligne {line_no}: montant non numérique (gestion du signe - en fin ou de parenthèses)"
+            )
             continue
 
         key = (date, label.strip(), amount)
