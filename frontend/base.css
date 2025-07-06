@@ -322,7 +322,7 @@ body.hide-amounts .amount-input {
 #recurrents-table th,
 #recurrents-table td {
     border: 1px solid var(--border-color);
-    padding: 2px 4px;
+    padding: 3px 4px;
 }
 #recurrents-table td:nth-child(2) {
     font-size: 0.85rem;
@@ -330,9 +330,10 @@ body.hide-amounts .amount-input {
 #recurrents-table td:nth-child(3) {
     text-align: right;
     white-space: nowrap;
-    min-width: 7em;
+    min-width: 7.5em;
 }
 #recurrents-table td:nth-child(4) {
+    text-align: right;
     white-space: nowrap;
     min-width: 5em;
 }
@@ -374,12 +375,12 @@ body.hide-amounts .amount-input {
     border-radius: 50%;
     position: absolute;
     bottom: 4px;
-    right: 4px;
+    left: 4px;
 }
-.rec-dot:nth-of-type(2) { bottom: 24px; }
-.rec-dot:nth-of-type(3) { bottom: 44px; }
-.rec-dot:nth-of-type(4) { bottom: 64px; }
-.rec-dot:nth-of-type(5) { bottom: 84px; }
+.rec-dot:nth-of-type(2) { left: 24px; }
+.rec-dot:nth-of-type(3) { left: 44px; }
+.rec-dot:nth-of-type(4) { left: 64px; }
+.rec-dot:nth-of-type(5) { left: 84px; }
 
 @media (max-width: 600px) {
     #transactions-table {
