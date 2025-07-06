@@ -191,7 +191,12 @@
                 </div>
                 <div id="recurrents-list-view" style="display:none;">
                     <canvas id="recurrents-donut"></canvas>
-                    <ul id="recurrents-items"></ul>
+                    <table id="recurrents-table">
+                        <thead>
+                            <tr><th></th><th>Libellé</th><th>Montant</th><th>Fréquence</th></tr>
+                        </thead>
+                        <tbody id="recurrents-items"></tbody>
+                    </table>
                 </div>
                 <div id="recurrents-no-data" style="display:none;">Aucune transaction récurrente trouvée selon les critères de similarité ou de montant.</div>
             </section>
@@ -1550,6 +1555,7 @@
                 div.className = 'day';
                 div.textContent = i;
                 div.dataset.day = i;
+                div.addEventListener('mouseenter', () => showSidebarDay(i));
                 container.appendChild(div);
             }
 
@@ -1587,7 +1593,6 @@
                 dot.style.background = rec.category.color || 'gray';
                 dot.title = `${rec.category.name || ''} ${formatAmount(avg)}`;
                 dot.addEventListener('click', () => showRecurrent(rec));
-                dot.addEventListener('mouseover', () => showSidebarDay(rec.day));
                 cell.appendChild(dot);
             });
 
@@ -1643,30 +1648,33 @@
         }
 
         function populateRecurrentsList() {
-            const list = document.getElementById('recurrents-items');
-            if (!list) return;
-            list.innerHTML = '';
+            const tbody = document.getElementById('recurrents-items');
+            if (!tbody) return;
+            tbody.innerHTML = '';
             recurrentsData.forEach(rec => {
-                const li = document.createElement('li');
-                li.className = 'rec-item';
+                const tr = document.createElement('tr');
+                tr.className = 'rec-item';
+                const dotTd = document.createElement('td');
                 const dot = document.createElement('span');
                 dot.className = 'rec-pastille';
                 dot.style.background = rec.category.color || 'gray';
-                li.appendChild(dot);
-                const lbl = document.createElement('span');
-                lbl.textContent = rec.transactions[0].label;
-                li.appendChild(lbl);
+                dotTd.appendChild(dot);
+                tr.appendChild(dotTd);
+                const lblTd = document.createElement('td');
+                lblTd.className = 'label';
+                lblTd.textContent = rec.transactions[0].label;
+                tr.appendChild(lblTd);
                 const avg = rec.transactions.reduce((s,t)=>s+t.amount,0)/rec.transactions.length;
-                const amt = document.createElement('span');
-                amt.className = 'amount';
-                amt.textContent = formatAmount(avg);
-                li.appendChild(amt);
-                const freq = document.createElement('span');
-                freq.className = 'frequency';
-                freq.textContent = guessFrequency(rec.transactions);
-                li.appendChild(freq);
-                li.addEventListener('click', () => showRecurrent(rec));
-                list.appendChild(li);
+                const amtTd = document.createElement('td');
+                amtTd.className = 'amount';
+                amtTd.textContent = formatAmount(avg);
+                tr.appendChild(amtTd);
+                const freqTd = document.createElement('td');
+                freqTd.className = 'frequency';
+                freqTd.textContent = guessFrequency(rec.transactions);
+                tr.appendChild(freqTd);
+                tr.addEventListener('click', () => showRecurrent(rec));
+                tbody.appendChild(tr);
             });
         }
 

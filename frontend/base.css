@@ -311,14 +311,31 @@ body.hide-amounts .amount-input {
     gap: 10px;
 }
 #recurrents-list-view canvas {
-    flex: 1 1 40%;
-    max-width: 40%;
+    flex: 1 1 38%;
+    max-width: 38%;
 }
-#recurrents-list-view ul {
+#recurrents-list-view table {
     flex: 1 1 60%;
-    list-style: none;
-    padding: 0;
-    margin: 0;
+    border-collapse: collapse;
+    width: 100%;
+}
+#recurrents-table th,
+#recurrents-table td {
+    border: 1px solid var(--border-color);
+    padding: 4px 4px;
+}
+#recurrents-table td:nth-child(2) {
+    font-size: 0.85rem;
+}
+#recurrents-table td:nth-child(3) {
+    text-align: right;
+    white-space: nowrap;
+    min-width: 8em;
+}
+#recurrents-table td:nth-child(4) {
+    text-align: right;
+    white-space: nowrap;
+    min-width: 5em;
 }
 .rec-pastille {
     display: inline-block;
@@ -328,11 +345,7 @@ body.hide-amounts .amount-input {
     margin-right: 4px;
 }
 .rec-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 2px 4px;
-    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
 }
 .sidebar-item {
     cursor: pointer;
@@ -357,17 +370,17 @@ body.hide-amounts .amount-input {
     padding: 2px;
 }
 .rec-dot {
-    width: 8px;
-    height: 8px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     position: absolute;
-    bottom: 2px;
-    right: 2px;
+    bottom: 4px;
+    left: 4px;
 }
-.rec-dot:nth-of-type(2) { bottom: 12px; }
-.rec-dot:nth-of-type(3) { bottom: 22px; }
-.rec-dot:nth-of-type(4) { bottom: 32px; }
-.rec-dot:nth-of-type(5) { bottom: 42px; }
+.rec-dot:nth-of-type(2) { left: 24px; }
+.rec-dot:nth-of-type(3) { left: 44px; }
+.rec-dot:nth-of-type(4) { left: 64px; }
+.rec-dot:nth-of-type(5) { left: 84px; }
 
 @media (max-width: 600px) {
     #transactions-table {
@@ -387,7 +400,7 @@ body.hide-amounts .amount-input {
     #recurrents-calendar-view #recurrents-calendar,
     #recurrents-sidebar,
     #recurrents-list-view canvas,
-    #recurrents-list-view ul {
+    #recurrents-list-view table {
         flex-basis: 100%;
         max-width: none;
     }
