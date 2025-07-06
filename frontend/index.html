@@ -353,6 +353,20 @@
         let recurrentsData = [];
         let recurrentsChart = null;
 
+        function showLoginForm() {
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
+        }
+
+        function handleUnauthorized(resp) {
+            if (resp.status === 401) {
+                alert('Session expirée, veuillez vous reconnecter.');
+                showLoginForm();
+                return true;
+            }
+            return false;
+        }
+
         function findCategory(id) {
             return categoriesData.find(c => String(c.id) === String(id));
         }
@@ -363,7 +377,7 @@
 
         async function fetchCategoryOptions() {
             const resp = await fetch('/category-options');
-            if (!resp.ok) return;
+            if (handleUnauthorized(resp) || !resp.ok) return;
             categoryOptions = await resp.json();
             populateCategorySelects();
         }
@@ -637,7 +651,7 @@
 
         async function fetchAccounts() {
             const resp = await fetch('/accounts');
-            if (!resp.ok) return;
+            if (handleUnauthorized(resp) || !resp.ok) return;
             accountsData = await resp.json();
             updateAccountDropdown();
             populateAccountsTable();
@@ -705,7 +719,7 @@
                 return;
             }
             const resp = await fetch(`/accounts/${selectedAccountId}/balance`);
-            if (!resp.ok) return;
+            if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
             dateInput.value = data.balance_date || '';
             amtInput.value = data.initial_balance != null ? data.initial_balance : '';
@@ -755,7 +769,7 @@
             }
             const url = '/transactions' + (params.toString() ? `?${params.toString()}` : '');
             const resp = await fetch(url);
-            if (!resp.ok) return;
+            if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
             displayAccountInfo();
             const typeSel = document.getElementById('filter-type');
@@ -944,7 +958,7 @@
 
         async function fetchCategories() {
             const resp = await fetch('/categories');
-            if (!resp.ok) return;
+            if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
             categoriesData = data;
             const tbody = document.querySelector('#categories-table tbody');
@@ -1035,7 +1049,7 @@
 
         async function fetchSubcategories() {
             const resp = await fetch('/subcategories');
-            if (!resp.ok) return;
+            if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
             subcategoriesData = data;
             const list = document.getElementById('subcategories-list');
@@ -1090,7 +1104,7 @@
 
         async function fetchRules() {
             const resp = await fetch('/rules');
-            if (!resp.ok) return;
+            if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
             rulesData = data;
             const list = document.getElementById('rules-list');
@@ -1187,7 +1201,7 @@
             if (end) params.set('end_date', end);
             const url = '/stats' + (params.toString() ? `?${params.toString()}` : '');
             const resp = await fetch(url);
-            if (!resp.ok) return;
+            if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
             const ctx = document.getElementById('statsChart').getContext('2d');
             if (statsChart) statsChart.destroy();
@@ -1214,7 +1228,7 @@
             if (end) params.set('end_date', end);
             const url = '/stats/categories' + (params.toString() ? `?${params.toString()}` : '');
             const resp = await fetch(url);
-            if (!resp.ok) return;
+            if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
             const incLabels = [], incData = [], incColors = [];
             const expLabels = [], expData = [], expColors = [];
@@ -1272,7 +1286,7 @@
             if (end) params.set('end_date', end);
             const url = '/stats/sankey' + (params.toString() ? `?${params.toString()}` : '');
             const resp = await fetch(url);
-            if (!resp.ok) return;
+            if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
 
             const positives = {};
@@ -1318,7 +1332,7 @@
                 threshold = parseFloat(dashboardThresholdInput.value) || 1.5;
             }
             const resp = await fetch(`/dashboard?threshold=${encodeURIComponent(threshold)}`);
-            if (!resp.ok) return;
+            if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
             const container = document.getElementById('dashboard-content');
             container.innerHTML = `<p>Favoris: ${data.favorite_count} | Total 30j: ${formatAmount(data.recent_total)} | Solde: ${formatAmount(data.balance_total)}</p>`;
@@ -1409,7 +1423,7 @@
 
         async function fetchProjection() {
             const resp = await fetch('/projection');
-            if (!resp.ok) return;
+            if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
             const tbody = document.querySelector('#projection-table tbody');
             tbody.innerHTML = '';
@@ -1438,7 +1452,7 @@
 
         async function fetchProjectionCategories() {
             const resp = await fetch('/projection/categories');
-            if (!resp.ok) return;
+            if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
             document.getElementById('projection-cat-period').textContent = data.period;
             const table = document.getElementById('projection-cat-table');
@@ -1473,7 +1487,7 @@
             const mode = document.querySelector('input[name="projection-mode"]:checked')?.value || 'average';
             if (mode === 'forecast') {
                 const resp = await fetch('/projection/categories/forecast');
-                if (!resp.ok) return;
+                if (handleUnauthorized(resp) || !resp.ok) return;
                 const data = await resp.json();
                 buildFutureTable(data.months, data.rows, data.period);
             } else {
@@ -1481,7 +1495,7 @@
                     fetch('/projection/categories/average'),
                     fetch('/projection/categories/forecast'),
                 ]);
-                if (!avgResp.ok || !fResp.ok) return;
+                if (handleUnauthorized(avgResp) || handleUnauthorized(fResp) || !avgResp.ok || !fResp.ok) return;
                 const avgs = await avgResp.json();
                 const fData = await fResp.json();
                 const rows = avgs.map(a => ({
@@ -1541,7 +1555,7 @@
 
             // Fetch recurring transactions
             const resp = await fetch(`/stats/recurrents?month=${month}`);
-            if (!resp.ok) return;
+            if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
             const noDataMsg = document.getElementById('recurrents-no-data');
             const calView = document.getElementById('recurrents-calendar-view');
@@ -1619,7 +1633,7 @@
             const today = new Date();
             const month = today.toISOString().slice(0,7);
             const resp = await fetch(`/stats/recurrents/summary?month=${month}`);
-            if (!resp.ok) return;
+            if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
             const hide = localStorage.getItem('hideAmounts') === 'true';
             if (totIn) totIn.textContent = `Entrées: ${hide ? '•••' : formatAmount(data.positive)}`;

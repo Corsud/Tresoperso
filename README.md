@@ -69,8 +69,10 @@ Les catégories et sous-catégories sont également synchronisées depuis le fic
 python run.py
 ```
 
-Le fichier `tresoperso.db` est placé dans le répertoire courant et peut être
-supprimé en cas de réinitialisation souhaitée.
+Par défaut, la base SQLite est stockée dans `tresoperso.db` à la racine du
+projet. L'application y accède via un chemin absolu afin que le même fichier
+soit utilisé même si `run.py` est lancé depuis un autre répertoire. Ce fichier
+peut être supprimé pour réinitialiser l'état du programme.
 
 ## Gestion des comptes et import CSV
 
