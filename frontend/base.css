@@ -274,6 +274,17 @@ input[type="button"] {
     color: #fc9107;
 }
 
+.tx-cat-btn,
+.tx-sub-btn {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 0;
+    cursor: pointer;
+}
+
 /* Ensure menu buttons have no visible border */
 #navbar button[data-target],
 .menu-header {

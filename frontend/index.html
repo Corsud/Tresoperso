@@ -483,7 +483,7 @@
                     if (!catId || String(cat.id) === String(catId)) {
                         const opt = document.createElement('option');
                         opt.value = sub.id;
-                        opt.textContent = `${cat.name} - ${sub.name}`;
+                        opt.textContent = sub.name;
                         sel.appendChild(opt);
                     }
                 });
@@ -1885,6 +1885,14 @@
             }
         }
 
+        function openSelect(id) {
+            const sel = document.getElementById(id);
+            if (sel) {
+                sel.focus();
+                sel.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+            }
+        }
+
         function populateManageSubcats(catId) {
             const tbody = document.querySelector('#manage-subcats-table tbody');
             if (!tbody) return;
@@ -1959,11 +1967,13 @@
                 currentCatBtn = e.target;
                 document.getElementById('popup-category-select').value = currentCatBtn.dataset.current || '';
                 showPopupAt(catOverlay, e.clientX, e.clientY);
+                openSelect('popup-category-select');
             } else if (e.target.classList.contains('tx-sub-btn')) {
                 currentSubBtn = e.target;
                 populateSubPopup(currentSubBtn.dataset.categoryId);
                 document.getElementById('popup-subcategory-select').value = currentSubBtn.dataset.current || '';
                 showPopupAt(subOverlay, e.clientX, e.clientY);
+                openSelect('popup-subcategory-select');
             } else if (e.target.classList.contains('tx-rule-btn')) {
                 currentRuleBtn = e.target;
                 const label = currentRuleBtn.dataset.label || '';
@@ -2172,7 +2182,7 @@
                 const sub = findSubcategory(val);
                 currentSubBtn.dataset.current = val;
                 if (sub) {
-                    currentSubBtn.textContent = `${sub.category} - ${sub.name}`;
+                    currentSubBtn.textContent = sub.name;
                     currentSubBtn.style.color = sub.color || '';
                 } else {
                     currentSubBtn.textContent = '(Aucune)';
