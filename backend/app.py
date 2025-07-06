@@ -20,10 +20,10 @@ app.secret_key = config.SECRET_KEY
 # - SESSION_COOKIE_HTTPONLY prevents JavaScript access to the cookie.
 # - SESSION_COOKIE_SECURE ensures the cookie is only sent over HTTPS.
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-use_secure_cookies = os.environ.get('USE_SECURE_COOKIES', '1')
-app.config['SESSION_COOKIE_SECURE'] = str(use_secure_cookies).lower() not in (
-    '0', 'false', 'no'
-)
+# Disable the "secure" attribute on the session cookie directly.
+# Previously this behavior depended on the USE_SECURE_COOKIES environment
+# variable, which could be inconvenient in a plain HTTP environment.
+app.config['SESSION_COOKIE_SECURE'] = False
 
 CATEGORIES_JSON = config.CATEGORIES_JSON
 
