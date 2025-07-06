@@ -200,14 +200,18 @@
                     </table>
                 </div>
                 <div id="recurrents-no-data" style="display:none;">Aucune transaction récurrente trouvée selon les critères de similarité ou de montant.</div>
-                <table id="income-category-table" style="display:none;">
-                    <thead><tr><th>Catégorie</th><th>Total</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-                <table id="expense-category-table" style="display:none;">
-                    <thead><tr><th>Catégorie</th><th>Total</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+                <div id="income-category-view" style="display:none;">
+                    <table id="income-category-table" class="thin-grid">
+                        <thead><tr><th>Catégorie</th><th>Total</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div id="expense-category-view" style="display:none;">
+                    <table id="expense-category-table" class="thin-grid">
+                        <thead><tr><th>Catégorie</th><th>Total</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </section>
 
             <section id="projection-section" style="display:none;">
@@ -1667,7 +1671,7 @@
             if (btnRec) btnRec.textContent = `Récurrents\n${hide ? '•••' : formatAmount(data.recurrent)}`;
         }
 
-        async function fetchMonthlyCategoryStats(month) {
+        async function fetchMonthlyCategories(month) {
             const [y, m] = month.split('-').map(Number);
             const end = new Date(y, m, 0).toISOString().slice(0, 10);
             const params = new URLSearchParams({ start_date: month + '-01', end_date: end });
@@ -1686,10 +1690,10 @@
             if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'none';
             if (recurrentsListView) recurrentsListView.style.display = 'none';
             if (recurrentsNoData) recurrentsNoData.style.display = 'none';
-            if (expenseCatTable) expenseCatTable.style.display = 'none';
-            if (incomeCatTable) incomeCatTable.style.display = 'table';
+            if (expenseCatView) expenseCatView.style.display = 'none';
+            if (incomeCatView) incomeCatView.style.display = 'block';
             const month = recurrentMonthInput?.value || new Date().toISOString().slice(0,7);
-            const rows = await fetchMonthlyCategoryStats(month);
+            const rows = await fetchMonthlyCategories(month);
             const tbody = incomeCatTable?.querySelector('tbody');
             if (!tbody) return;
             tbody.innerHTML = '';
@@ -1711,10 +1715,10 @@
             if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'none';
             if (recurrentsListView) recurrentsListView.style.display = 'none';
             if (recurrentsNoData) recurrentsNoData.style.display = 'none';
-            if (incomeCatTable) incomeCatTable.style.display = 'none';
-            if (expenseCatTable) expenseCatTable.style.display = 'table';
+            if (incomeCatView) incomeCatView.style.display = 'none';
+            if (expenseCatView) expenseCatView.style.display = 'block';
             const month = recurrentMonthInput?.value || new Date().toISOString().slice(0,7);
-            const rows = await fetchMonthlyCategoryStats(month);
+            const rows = await fetchMonthlyCategories(month);
             const tbody = expenseCatTable?.querySelector('tbody');
             if (!tbody) return;
             tbody.innerHTML = '';
@@ -1731,8 +1735,8 @@
             btnIncome?.classList.remove('selected');
             btnExpense?.classList.remove('selected');
             btnBalance?.classList.remove('selected');
-            if (incomeCatTable) incomeCatTable.style.display = 'none';
-            if (expenseCatTable) expenseCatTable.style.display = 'none';
+            if (incomeCatView) incomeCatView.style.display = 'none';
+            if (expenseCatView) expenseCatView.style.display = 'none';
             if (recurrentsControls) recurrentsControls.style.display = 'block';
             if (recurrentsData.length === 0) {
                 if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'none';
@@ -1755,8 +1759,8 @@
             btnExpense?.classList.remove('selected');
             btnRecurrents?.classList.remove('selected');
             if (recurrentsControls) recurrentsControls.style.display = 'none';
-            if (incomeCatTable) incomeCatTable.style.display = 'none';
-            if (expenseCatTable) expenseCatTable.style.display = 'none';
+            if (incomeCatView) incomeCatView.style.display = 'none';
+            if (expenseCatView) expenseCatView.style.display = 'none';
             if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'none';
             if (recurrentsListView) recurrentsListView.style.display = 'none';
             if (recurrentsNoData) recurrentsNoData.style.display = 'none';
@@ -1857,6 +1861,8 @@
         const recurrentsBtnList = document.getElementById('recurrents-btn-list');
         const recurrentsCalendarView = document.getElementById('recurrents-calendar-view');
         const recurrentsListView = document.getElementById('recurrents-list-view');
+        const incomeCatView = document.getElementById('income-category-view');
+        const expenseCatView = document.getElementById('expense-category-view');
         const incomeCatTable = document.getElementById('income-category-table');
         const expenseCatTable = document.getElementById('expense-category-table');
         const recurrentsControls = document.getElementById('recurrents-controls');
