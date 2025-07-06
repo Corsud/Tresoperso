@@ -380,12 +380,15 @@ def list_transactions():
     session = models.SessionLocal()
     query = session.query(models.Transaction)
 
-    account_id = request.args.get('account_id')
-    if account_id:
-        try:
-            query = query.filter(models.Transaction.bank_account_id == int(account_id))
-        except ValueError:
-            pass
+    if request.args.get('account_none') in ('true', '1', 'yes'):
+        query = query.filter(models.Transaction.bank_account_id.is_(None))
+    else:
+        account_id = request.args.get('account_id')
+        if account_id:
+            try:
+                query = query.filter(models.Transaction.bank_account_id == int(account_id))
+            except ValueError:
+                pass
 
     category_id = request.args.get('category_id')
     if category_id:
@@ -551,6 +554,20 @@ def update_transaction(tx_id):
     }
     session.close()
     return jsonify(result)
+
+
+@app.route('/transactions/unassigned', methods=['DELETE'])
+@login_required
+def delete_unassigned_transactions():
+    """Delete all transactions without an associated bank account."""
+    session = models.SessionLocal()
+    count = session.query(models.Transaction).filter(
+        models.Transaction.bank_account_id.is_(None)
+    ).delete(synchronize_session=False)
+    session.commit()
+    session.close()
+    logger.info("Deleted %s unassigned transactions", count)
+    return jsonify({'deleted': count})
 
 
 @app.route('/stats')
