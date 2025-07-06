@@ -18,6 +18,7 @@ def client(monkeypatch):
     models.SessionLocal = sessionmaker(bind=engine)
     app_module.SessionLocal = models.SessionLocal
     monkeypatch.setattr(app_module, 'datetime', FixedDate)
+    monkeypatch.setattr(app_module.routes, 'datetime', FixedDate)
     models.init_db()
     session = models.SessionLocal()
     cat = models.Category(name='Sub', color='red')

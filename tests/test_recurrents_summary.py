@@ -6,6 +6,11 @@ from sqlalchemy.orm import sessionmaker
 from backend import models
 import backend as app_module
 
+class FixedDate(datetime.datetime):
+    @classmethod
+    def now(cls, tz=None):
+        return cls(2021, 5, 15)
+
 
 @pytest.fixture
 def client(monkeypatch):
@@ -13,7 +18,8 @@ def client(monkeypatch):
     models.engine = engine
     models.SessionLocal = sessionmaker(bind=engine)
     app_module.SessionLocal = models.SessionLocal
-    monkeypatch.setattr(app_module, 'datetime', datetime.datetime)
+    monkeypatch.setattr(app_module, 'datetime', FixedDate)
+    monkeypatch.setattr(app_module.routes, 'datetime', FixedDate)
     models.init_db()
     session = models.SessionLocal()
     acc = models.BankAccount(name='Main', initial_balance=200)

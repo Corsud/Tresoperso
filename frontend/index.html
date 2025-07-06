@@ -1668,7 +1668,7 @@
             if (btnIn) btnIn.textContent = `Entrées\n${hide ? '•••' : formatAmount(data.positive)}`;
             if (btnOut) btnOut.textContent = `Sorties\n${hide ? '•••' : formatAmount(data.negative)}`;
             if (btnBal) btnBal.textContent = `Solde\n${hide ? '•••' : formatAmount(data.balance)}`;
-            if (btnRec) btnRec.textContent = `Flux de trésorerie\n${hide ? '•••' : formatAmount(data.recurrent)}`;
+            if (btnRec) btnRec.textContent = `Récurrents\n${hide ? '•••' : formatAmount(data.recurrent)}`;
         }
 
         async function fetchMonthlyCategories(month) {

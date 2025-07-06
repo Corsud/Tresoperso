@@ -18,6 +18,7 @@ def setup_db(monkeypatch):
     models.SessionLocal = sessionmaker(bind=engine)
     app_module.SessionLocal = models.SessionLocal
     monkeypatch.setattr(app_module, 'datetime', FixedDate)
+    monkeypatch.setattr(app_module.routes, 'datetime', FixedDate)
     models.init_db()
     return models.SessionLocal()
 
