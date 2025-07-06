@@ -323,6 +323,7 @@ body.hide-amounts .amount-input {
 #recurrents-table td {
     border: 1px solid var(--border-color);
     padding: 4px 4px;
+
 }
 #recurrents-table td:nth-child(2) {
     font-size: 0.85rem;
@@ -331,6 +332,7 @@ body.hide-amounts .amount-input {
     text-align: right;
     white-space: nowrap;
     min-width: 8em;
+
 }
 #recurrents-table td:nth-child(4) {
     text-align: right;
