@@ -839,8 +839,10 @@ def stats_recurrents_summary():
         or 0
     )
 
-    rec_start = _shift_month(current_first, -5)
-    recs = compute_recurrents(session, rec_start, end)
+    rec_ref = datetime.now().date().replace(day=1)
+    rec_start = _shift_month(rec_ref, -5)
+    rec_end = _shift_month(rec_ref, 1) - timedelta(days=1)
+    recs = compute_recurrents(session, rec_start, rec_end)
     recurrent_total = sum(
         abs(r['average_amount']) for r in recs if r['average_amount'] < 0
     )
