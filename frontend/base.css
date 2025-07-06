@@ -24,6 +24,16 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
 .thin-grid td {
     border: 1px solid var(--border-color);
 }
+#income-table,
+#expense-table {
+    border-collapse: collapse;
+}
+#income-table th,
+#income-table td,
+#expense-table th,
+#expense-table td {
+    border: 1px solid var(--border-color);
+}
 #transactions-table {
     font-size: 0.85rem;
     width: 95%;
