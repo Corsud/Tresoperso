@@ -2,8 +2,7 @@ from flask import request, jsonify
 import logging
 from flask_login import login_required
 from sqlalchemy import func, or_, and_, case
-import backend
-from datetime import timedelta
+from datetime import datetime, timedelta  # use standard datetime
 import numpy as np
 import re
 from difflib import SequenceMatcher
@@ -97,7 +96,7 @@ def account_balance(account_id):
         val = data['balance_date']
         if val:
             try:
-                acc.balance_date = backend.datetime.strptime(val, '%Y-%m-%d').date()
+                acc.balance_date = datetime.strptime(val, '%Y-%m-%d').date()
             except ValueError:
                 session.close()
                 return jsonify({'error': 'invalid balance'}), 400
@@ -160,7 +159,7 @@ def account_detail(account_id):
         val = data['export_date']
         if val:
             try:
-                acc.export_date = backend.datetime.strptime(val, '%Y-%m-%d').date()
+                acc.export_date = datetime.strptime(val, '%Y-%m-%d').date()
             except ValueError:
                 pass
         else:
@@ -321,7 +320,7 @@ def confirm_import():
     try:
         for t in rows:
             try:
-                date = backend.datetime.strptime(t['date'], '%Y-%m-%d').date()
+                date = datetime.strptime(t['date'], '%Y-%m-%d').date()
             except (KeyError, ValueError):
                 errors.append('Date invalide')
                 continue
@@ -417,7 +416,7 @@ def list_transactions():
     start_date = request.args.get('start_date')
     if start_date:
         try:
-            date = backend.datetime.strptime(start_date, '%Y-%m-%d').date()
+            date = datetime.strptime(start_date, '%Y-%m-%d').date()
             query = query.filter(models.Transaction.date >= date)
         except ValueError:
             pass
@@ -425,7 +424,7 @@ def list_transactions():
     end_date = request.args.get('end_date')
     if end_date:
         try:
-            date = backend.datetime.strptime(end_date, '%Y-%m-%d').date()
+            date = datetime.strptime(end_date, '%Y-%m-%d').date()
             query = query.filter(models.Transaction.date <= date)
         except ValueError:
             pass
@@ -566,7 +565,7 @@ def stats():
     start_date = request.args.get('start_date')
     if start_date:
         try:
-            date = backend.datetime.strptime(start_date, '%Y-%m-%d').date()
+            date = datetime.strptime(start_date, '%Y-%m-%d').date()
             query = query.filter(models.Transaction.date >= date)
         except ValueError:
             pass
@@ -574,7 +573,7 @@ def stats():
     end_date = request.args.get('end_date')
     if end_date:
         try:
-            date = backend.datetime.strptime(end_date, '%Y-%m-%d').date()
+            date = datetime.strptime(end_date, '%Y-%m-%d').date()
             query = query.filter(models.Transaction.date <= date)
         except ValueError:
             pass
@@ -609,7 +608,7 @@ def stats_by_category():
     start_date = request.args.get('start_date')
     if start_date:
         try:
-            date = backend.datetime.strptime(start_date, '%Y-%m-%d').date()
+            date = datetime.strptime(start_date, '%Y-%m-%d').date()
             query = query.filter(models.Transaction.date >= date)
         except ValueError:
             pass
@@ -617,7 +616,7 @@ def stats_by_category():
     end_date = request.args.get('end_date')
     if end_date:
         try:
-            date = backend.datetime.strptime(end_date, '%Y-%m-%d').date()
+            date = datetime.strptime(end_date, '%Y-%m-%d').date()
             query = query.filter(models.Transaction.date <= date)
         except ValueError:
             pass
@@ -656,7 +655,7 @@ def stats_sankey():
     start_date = request.args.get('start_date')
     if start_date:
         try:
-            date = backend.datetime.strptime(start_date, '%Y-%m-%d').date()
+            date = datetime.strptime(start_date, '%Y-%m-%d').date()
             query = query.filter(models.Transaction.date >= date)
         except ValueError:
             pass
@@ -664,7 +663,7 @@ def stats_sankey():
     end_date = request.args.get('end_date')
     if end_date:
         try:
-            date = backend.datetime.strptime(end_date, '%Y-%m-%d').date()
+            date = datetime.strptime(end_date, '%Y-%m-%d').date()
             query = query.filter(models.Transaction.date <= date)
         except ValueError:
             pass
@@ -697,11 +696,11 @@ def stats_recurrents():
     month = request.args.get('month')
     if month:
         try:
-            current_first = backend.datetime.strptime(month + '-01', '%Y-%m-%d').date()
+            current_first = datetime.strptime(month + '-01', '%Y-%m-%d').date()
         except ValueError:
-            current_first = backend.datetime.now().date().replace(day=1)
+            current_first = datetime.now().date().replace(day=1)
     else:
-        current_first = backend.datetime.now().date().replace(day=1)
+        current_first = datetime.now().date().replace(day=1)
 
     start = _shift_month(current_first, -5)
     end = _shift_month(current_first, 1) - timedelta(days=1)
@@ -777,11 +776,11 @@ def stats_recurrents_categories():
     month = request.args.get('month')
     if month:
         try:
-            current_first = backend.datetime.strptime(month + '-01', '%Y-%m-%d').date()
+            current_first = datetime.strptime(month + '-01', '%Y-%m-%d').date()
         except ValueError:
-            current_first = backend.datetime.now().date().replace(day=1)
+            current_first = datetime.now().date().replace(day=1)
     else:
-        current_first = backend.datetime.now().date().replace(day=1)
+        current_first = datetime.now().date().replace(day=1)
 
     start = _shift_month(current_first, -5)
     end = _shift_month(current_first, 1) - timedelta(days=1)
@@ -804,11 +803,11 @@ def stats_recurrents_summary():
     month = request.args.get('month')
     if month:
         try:
-            current_first = backend.datetime.strptime(month + '-01', '%Y-%m-%d').date()
+            current_first = datetime.strptime(month + '-01', '%Y-%m-%d').date()
         except ValueError:
-            current_first = backend.datetime.now().date().replace(day=1)
+            current_first = datetime.now().date().replace(day=1)
     else:
-        current_first = backend.datetime.now().date().replace(day=1)
+        current_first = datetime.now().date().replace(day=1)
 
     start = current_first
     end = _shift_month(current_first, 1) - timedelta(days=1)
@@ -978,7 +977,7 @@ def compute_dashboard_averages(session):
         .all()
     )
 
-    today = backend.datetime.now().date()
+    today = datetime.now().date()
     curr_first = today.replace(day=1)
     months = []
     for i in range(1, 4):
@@ -1003,7 +1002,7 @@ def compute_category_monthly_averages(session, months=12):
     The computation spans the ``months`` prior to the current month and
     includes months without transactions as zero.
     """
-    today = backend.datetime.now().date()
+    today = datetime.now().date()
     current_start = today.replace(day=1)
     start = _shift_month(current_start, -months)
 
@@ -1040,7 +1039,7 @@ def compute_category_forecast(session, months=12, forecast=12):
     months for each category. Months without transactions are considered to
     have a total of zero.
     """
-    today = backend.datetime.now().date()
+    today = datetime.now().date()
     current_start = today.replace(day=1)
     start = _shift_month(current_start, -months)
 
@@ -1108,7 +1107,7 @@ def dashboard():
         if subconds:
             conditions.append(and_(*subconds))
     fav_count = session.query(func.count(models.Transaction.id)).filter(or_(*conditions)).scalar() or 0
-    cutoff = backend.datetime.now().date() - timedelta(days=30)
+    cutoff = datetime.now().date() - timedelta(days=30)
     recent_total = (
         session.query(func.sum(models.Transaction.amount))
         .filter(models.Transaction.date >= cutoff)
@@ -1151,7 +1150,7 @@ def dashboard():
                 }
             )
 
-    current_start = backend.datetime.now().date().replace(day=1)
+    current_start = datetime.now().date().replace(day=1)
     groups = {}
 
     def add_item(cat_name, item):
@@ -1280,7 +1279,7 @@ def dashboard():
 @login_required
 def projection():
     session = models.SessionLocal()
-    six_months_ago = backend.datetime.now().date() - timedelta(days=180)
+    six_months_ago = datetime.now().date() - timedelta(days=180)
     data = (
         session.query(
             func.strftime('%Y-%m', models.Transaction.date).label('month'),
@@ -1306,7 +1305,7 @@ def projection():
 @login_required
 def projection_categories():
     session = models.SessionLocal()
-    today = backend.datetime.now().date()
+    today = datetime.now().date()
     current_start = today.replace(day=1)
     start = _shift_month(current_start, -12)
     end = current_start
