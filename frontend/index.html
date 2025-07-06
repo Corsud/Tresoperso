@@ -182,6 +182,7 @@
                     <span id="recurrents-total"></span>
                 </div>
                 <div id="recurrents-controls">
+                    <input type="month" id="recurrent-month">
                     <button id="recurrents-btn-calendar" class="selected">Calendrier</button>
                     <button id="recurrents-btn-list">Liste/anneau</button>
                 </div>
@@ -1542,14 +1543,20 @@
         }
 
         async function fetchRecurrents() {
-            const today = new Date();
-            const month = today.toISOString().slice(0,7);
+            const monthInput = document.getElementById('recurrent-month');
+            let month = monthInput && monthInput.value;
+            if (!month) {
+                const now = new Date();
+                month = now.toISOString().slice(0,7);
+                if (monthInput) monthInput.value = month;
+            }
+            const [y, m] = month.split('-').map(Number);
             const container = document.getElementById('recurrents-calendar');
             if (!container) return;
 
             // Build calendar grid
             container.innerHTML = '';
-            const daysInMonth = new Date(today.getFullYear(), today.getMonth()+1, 0).getDate();
+            const daysInMonth = new Date(y, m, 0).getDate();
             for (let i=1;i<=daysInMonth;i++) {
                 const div = document.createElement('div');
                 div.className = 'day';
@@ -1635,8 +1642,13 @@
             const totOut = document.getElementById('recurrents-total-out');
             const balance = document.getElementById('recurrents-balance');
             const total = document.getElementById('recurrents-total');
-            const today = new Date();
-            const month = today.toISOString().slice(0,7);
+            const monthInput = document.getElementById('recurrent-month');
+            let month = monthInput && monthInput.value;
+            if (!month) {
+                const now = new Date();
+                month = now.toISOString().slice(0,7);
+                if (monthInput) monthInput.value = month;
+            }
             const resp = await fetch(`/stats/recurrents/summary?month=${month}`);
             if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
@@ -2137,6 +2149,7 @@
         const favFilterOverlayCategorySelect = document.getElementById('fav-filter-overlay-category');
         const projectionModeInputs = document.querySelectorAll('#projection-mode input');
         const dashboardThresholdInput = document.getElementById('dashboard-threshold');
+        const recurrentMonthInput = document.getElementById('recurrent-month');
 
         function applyPreferences() {
             const theme = localStorage.getItem('theme') || 'light';
@@ -2177,6 +2190,12 @@
             dashboardThresholdInput.addEventListener('change', () => {
                 localStorage.setItem('dashboardThreshold', dashboardThresholdInput.value);
                 fetchDashboard();
+            });
+        }
+
+        if (recurrentMonthInput) {
+            recurrentMonthInput.addEventListener('change', () => {
+                fetchRecurrents();
             });
         }
 
