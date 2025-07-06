@@ -10,7 +10,7 @@ Tresoperso est une application de gestion de trésorerie personnelle. Elle perme
 - Affichage des transactions dans un tableau filtrable
 - Graphiques d'analyse (donut, Sankey)
 - Projection de trésorerie basée sur l'historique
-- Visualisation des transactions récurrentes
+- Visualisation du flux de trésorerie
 
 La page **Flux de trésorerie** affiche les opérations récurrentes détectées sur les six
 derniers mois. Les libellés des transactions sont prétraités (suppression des
@@ -20,6 +20,8 @@ est atteint et que leurs montants restent entre 80&nbsp;% et 130&nbsp;% de la
 moyenne du groupe. La détection est désormais plus souple&nbsp;: la contrainte
 sur l'écart en jours entre deux occurrences a été supprimée afin de prendre en
 compte les prélèvements dont la date varie légèrement d'un mois à l'autre.
+
+Un sélecteur de mois permet de choisir la période à afficher. Les boutons « Calendrier » et « Liste/anneau » basculent respectivement entre la vue calendrier et une liste accompagnée d'un graphique en anneau. Les boutons en tête de section affichent soit l'ensemble des flux, soit uniquement les entrées, les sorties ou le solde pour le mois choisi.
 
 
 ## Lancement rapide
