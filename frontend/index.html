@@ -176,10 +176,10 @@
             <section id="recurrents-section" style="display:none;">
                 <h2>Flux de trésorerie</h2>
                 <div id="recurrents-header">
-                    <span id="recurrents-total-in"></span>
-                    <span id="recurrents-total-out"></span>
-                    <span id="recurrents-balance"></span>
-                    <span id="recurrents-total"></span>
+                    <button id="btn-recurrent" class="selected"></button>
+                    <button id="btn-income"></button>
+                    <button id="btn-expense"></button>
+                    <button id="btn-balance"></button>
                 </div>
                 <div id="recurrents-controls">
                     <input type="month" id="recurrent-month">
@@ -200,6 +200,14 @@
                     </table>
                 </div>
                 <div id="recurrents-no-data" style="display:none;">Aucune transaction récurrente trouvée selon les critères de similarité ou de montant.</div>
+                <table id="income-category-table" style="display:none;">
+                    <thead><tr><th>Catégorie</th><th>Total</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <table id="expense-category-table" style="display:none;">
+                    <thead><tr><th>Catégorie</th><th>Total</th></tr></thead>
+                    <tbody></tbody>
+                </table>
             </section>
 
             <section id="projection-section" style="display:none;">
@@ -1638,10 +1646,10 @@
         }
 
         async function updateRecurrentsTotals() {
-            const totIn = document.getElementById('recurrents-total-in');
-            const totOut = document.getElementById('recurrents-total-out');
-            const balance = document.getElementById('recurrents-balance');
-            const total = document.getElementById('recurrents-total');
+            const btnIn = document.getElementById('btn-income');
+            const btnOut = document.getElementById('btn-expense');
+            const btnBal = document.getElementById('btn-balance');
+            const btnRec = document.getElementById('btn-recurrent');
             const monthInput = document.getElementById('recurrent-month');
             let month = monthInput && monthInput.value;
             if (!month) {
@@ -1653,10 +1661,105 @@
             if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
             const hide = localStorage.getItem('hideAmounts') === 'true';
-            if (totIn) totIn.textContent = `Entrées: ${hide ? '•••' : formatAmount(data.positive)}`;
-            if (totOut) totOut.textContent = `Sorties: ${hide ? '•••' : formatAmount(data.negative)}`;
-            if (balance) balance.textContent = `Solde: ${hide ? '•••' : formatAmount(data.balance)}`;
-            if (total) total.textContent = `Total récurrent: ${hide ? '•••' : formatAmount(data.recurrent)}`;
+            if (btnIn) btnIn.textContent = `Entrées\n${hide ? '•••' : formatAmount(data.positive)}`;
+            if (btnOut) btnOut.textContent = `Sorties\n${hide ? '•••' : formatAmount(data.negative)}`;
+            if (btnBal) btnBal.textContent = `Solde\n${hide ? '•••' : formatAmount(data.balance)}`;
+            if (btnRec) btnRec.textContent = `Récurrents\n${hide ? '•••' : formatAmount(data.recurrent)}`;
+        }
+
+        async function fetchMonthlyCategoryStats(month) {
+            const [y, m] = month.split('-').map(Number);
+            const end = new Date(y, m, 0).toISOString().slice(0, 10);
+            const params = new URLSearchParams({ start_date: month + '-01', end_date: end });
+            const resp = await fetch('/stats/categories?' + params.toString());
+            if (handleUnauthorized(resp) || !resp.ok) return [];
+            return await resp.json();
+        }
+
+        async function showIncomeCategories() {
+            if (!btnIncome) return;
+            btnIncome.classList.add('selected');
+            btnExpense?.classList.remove('selected');
+            btnRecurrents?.classList.remove('selected');
+            btnBalance?.classList.remove('selected');
+            if (recurrentsControls) recurrentsControls.style.display = 'none';
+            if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'none';
+            if (recurrentsListView) recurrentsListView.style.display = 'none';
+            if (recurrentsNoData) recurrentsNoData.style.display = 'none';
+            if (expenseCatTable) expenseCatTable.style.display = 'none';
+            if (incomeCatTable) incomeCatTable.style.display = 'table';
+            const month = recurrentMonthInput?.value || new Date().toISOString().slice(0,7);
+            const rows = await fetchMonthlyCategoryStats(month);
+            const tbody = incomeCatTable?.querySelector('tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const hide = localStorage.getItem('hideAmounts') === 'true';
+            rows.filter(r => r.positive > 0).forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${r.name}</td><td class="amount">${hide ? '•••' : formatAmount(r.positive)}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function showExpenseCategories() {
+            if (!btnExpense) return;
+            btnExpense.classList.add('selected');
+            btnIncome?.classList.remove('selected');
+            btnRecurrents?.classList.remove('selected');
+            btnBalance?.classList.remove('selected');
+            if (recurrentsControls) recurrentsControls.style.display = 'none';
+            if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'none';
+            if (recurrentsListView) recurrentsListView.style.display = 'none';
+            if (recurrentsNoData) recurrentsNoData.style.display = 'none';
+            if (incomeCatTable) incomeCatTable.style.display = 'none';
+            if (expenseCatTable) expenseCatTable.style.display = 'table';
+            const month = recurrentMonthInput?.value || new Date().toISOString().slice(0,7);
+            const rows = await fetchMonthlyCategoryStats(month);
+            const tbody = expenseCatTable?.querySelector('tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const hide = localStorage.getItem('hideAmounts') === 'true';
+            rows.filter(r => Math.abs(r.negative) > 0).forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${r.name}</td><td class="amount">${hide ? '•••' : formatAmount(Math.abs(r.negative))}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function showRecurrentsView() {
+            btnRecurrents?.classList.add('selected');
+            btnIncome?.classList.remove('selected');
+            btnExpense?.classList.remove('selected');
+            btnBalance?.classList.remove('selected');
+            if (incomeCatTable) incomeCatTable.style.display = 'none';
+            if (expenseCatTable) expenseCatTable.style.display = 'none';
+            if (recurrentsControls) recurrentsControls.style.display = 'block';
+            if (recurrentsData.length === 0) {
+                if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'none';
+                if (recurrentsListView) recurrentsListView.style.display = 'none';
+            } else {
+                if (recurrentsBtnCalendar?.classList.contains('selected')) {
+                    if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'flex';
+                    if (recurrentsListView) recurrentsListView.style.display = 'none';
+                } else {
+                    if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'none';
+                    if (recurrentsListView) recurrentsListView.style.display = 'flex';
+                    recurrentsChart?.resize();
+                }
+            }
+        }
+
+        function showBalanceOnly() {
+            btnBalance?.classList.add('selected');
+            btnIncome?.classList.remove('selected');
+            btnExpense?.classList.remove('selected');
+            btnRecurrents?.classList.remove('selected');
+            if (recurrentsControls) recurrentsControls.style.display = 'none';
+            if (incomeCatTable) incomeCatTable.style.display = 'none';
+            if (expenseCatTable) expenseCatTable.style.display = 'none';
+            if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'none';
+            if (recurrentsListView) recurrentsListView.style.display = 'none';
+            if (recurrentsNoData) recurrentsNoData.style.display = 'none';
         }
 
         function populateRecurrentsList() {
@@ -1754,6 +1857,14 @@
         const recurrentsBtnList = document.getElementById('recurrents-btn-list');
         const recurrentsCalendarView = document.getElementById('recurrents-calendar-view');
         const recurrentsListView = document.getElementById('recurrents-list-view');
+        const incomeCatTable = document.getElementById('income-category-table');
+        const expenseCatTable = document.getElementById('expense-category-table');
+        const recurrentsControls = document.getElementById('recurrents-controls');
+        const btnRecurrents = document.getElementById('btn-recurrent');
+        const btnIncome = document.getElementById('btn-income');
+        const btnExpense = document.getElementById('btn-expense');
+        const btnBalance = document.getElementById('btn-balance');
+        const recurrentsNoData = document.getElementById('recurrents-no-data');
         let manageCatId = null;
 
         function showPopupAt(overlay, x, y) {
@@ -1946,6 +2057,13 @@
                 if (recurrentsListView) recurrentsListView.style.display = 'flex';
                 if (recurrentsChart) recurrentsChart.resize();
             });
+        }
+
+        if (btnRecurrents && btnIncome && btnExpense && btnBalance) {
+            btnRecurrents.addEventListener('click', () => { showRecurrentsView(); });
+            btnIncome.addEventListener('click', () => { showIncomeCategories(); });
+            btnExpense.addEventListener('click', () => { showExpenseCategories(); });
+            btnBalance.addEventListener('click', () => { showBalanceOnly(); });
         }
 
         function showDuplicates(dups, accountId) {
