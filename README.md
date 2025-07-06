@@ -40,10 +40,8 @@ Si ce n'est pas le cas, ouvrez manuellement cette URL.
 Le serveur Flask écoute sur l'adresse `0.0.0.0`, ce qui permet d'exposer
 l'application sur le réseau local.
 
-Par défaut, le cookie de session est marqué comme sécurisé. Pour un
-déploiement local en HTTP simple, définissez la variable d'environnement
-`USE_SECURE_COOKIES=0` avant de lancer `python run.py` afin de désactiver
-l'attribut *secure* du cookie.
+Le cookie de session n'est plus marqué comme sécurisé par défaut. Il est donc
+accepté même en HTTP simple sans configuration supplémentaire.
 
 ## Environnement de développement
 
