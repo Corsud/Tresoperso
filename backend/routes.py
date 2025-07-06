@@ -1012,9 +1012,15 @@ def compute_category_monthly_averages(session, months=12):
             models.Category.name,
             func.sum(models.Transaction.amount),
         )
-        .outerjoin(models.Category, models.Transaction.category_id == models.Category.id)
-        .filter(models.Transaction.date >= start)
-        .filter(models.Transaction.date < current_start)
+        .select_from(models.Category)
+        .outerjoin(
+            models.Transaction,
+            and_(
+                models.Transaction.category_id == models.Category.id,
+                models.Transaction.date >= start,
+                models.Transaction.date < current_start,
+            ),
+        )
         .group_by(models.Category.name)
         .all()
     )
