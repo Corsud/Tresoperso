@@ -359,11 +359,16 @@ body.hide-amounts .amount-input {
     margin-bottom: 0.5em;
     font-weight: bold;
 }
-#recurrents-header span {
-    background: var(--selected-color);
-    color: var(--bg-color);
+#recurrents-header button {
+    white-space: pre-line;
     padding: 2px 6px;
     border-radius: 4px;
+    border: none;
+    background: transparent;
+}
+#recurrents-header button.selected {
+    background: var(--selected-color);
+    color: var(--bg-color);
 }
 #recurrents-calendar .day {
     border: 1px solid var(--border-color);
