@@ -217,11 +217,13 @@
 
             <section id="projection-section" style="display:none;">
                 <h2>Projection</h2>
+                <h3>Dépenses passées</h3>
                 <p id="projection-cat-period"></p>
                 <table id="projection-cat-table">
                     <thead></thead>
                     <tbody></tbody>
                 </table>
+                <h3>Prévisions</h3>
                 <p id="projection-future-period"></p>
                 <div id="projection-mode">
                     <label><input type="radio" name="projection-mode" value="average" checked> valeurs moyennes</label>
@@ -355,6 +357,16 @@
                 <h3 id="recurrents-title"></h3>
                 <ul id="recurrents-list"></ul>
                 <button id="recurrents-close">Fermer</button>
+            </div>
+        </div>
+        <div id="projection-details-overlay" class="overlay">
+            <div class="popup">
+                <h3 id="projection-details-title"></h3>
+                <table id="projection-details-table">
+                    <thead><tr><th>Date</th><th>Libellé</th><th>Montant</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <button id="projection-details-close">Fermer</button>
             </div>
         </div>
     </div>
@@ -511,7 +523,9 @@
             if (localStorage.getItem('hideAmounts') === 'true') {
                 return '•••';
             }
-            return (v || 0).toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            return (v || 0)
+                .toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+                .replace(/,/g, ' ');
         }
 
         function getChartOptions(hide, withScale = true) {
@@ -1538,15 +1552,34 @@
                 headRow.appendChild(th);
             });
             thead.appendChild(headRow);
+
+            const totals = new Array(data.months.length).fill(0);
+            data.rows.forEach(r => {
+                r.values.forEach((v, idx) => { totals[idx] += v; });
+            });
+
+            const totalRow = document.createElement('tr');
+            totalRow.innerHTML = '<td>Total</td>';
+            totals.forEach(v => {
+                const td = document.createElement('td');
+                td.textContent = formatAmount(v);
+                td.className = 'amount';
+                totalRow.appendChild(td);
+            });
+            tbody.appendChild(totalRow);
+
             data.rows.forEach(r => {
                 const tr = document.createElement('tr');
                 const tdCat = document.createElement('td');
                 tdCat.textContent = r.category;
                 tr.appendChild(tdCat);
-                r.values.forEach(v => {
+                r.values.forEach((v, idx) => {
                     const td = document.createElement('td');
                     td.textContent = formatAmount(v);
                     td.className = 'amount';
+                    td.dataset.month = data.months[idx];
+                    td.dataset.category = r.category;
+                    td.addEventListener('click', () => showProjectionDetails(r.category, data.months[idx]));
                     tr.appendChild(td);
                 });
                 tbody.appendChild(tr);
@@ -1591,12 +1624,28 @@
                 headRow.appendChild(th);
             });
             thead.appendChild(headRow);
+
+            const totals = new Array(months.length).fill(0);
+            rows.forEach(r => {
+                r.values.forEach((v, idx) => { totals[idx] += v; });
+            });
+
+            const totalRow = document.createElement('tr');
+            totalRow.innerHTML = '<td>Total</td>';
+            totals.forEach(v => {
+                const td = document.createElement('td');
+                td.textContent = formatAmount(v);
+                td.className = 'amount';
+                totalRow.appendChild(td);
+            });
+            tbody.appendChild(totalRow);
+
             rows.forEach(r => {
                 const tr = document.createElement('tr');
                 const tdCat = document.createElement('td');
                 tdCat.textContent = r.category;
                 tr.appendChild(tdCat);
-                r.values.forEach(v => {
+                r.values.forEach((v, idx) => {
                     const td = document.createElement('td');
                     td.textContent = formatAmount(v);
                     td.className = 'amount';
@@ -1685,6 +1734,35 @@
                 list.appendChild(li);
             });
             overlay.style.display = 'flex';
+        }
+
+        async function showProjectionDetails(catName, month) {
+            if (!projDetailsOverlay || !projDetailsTitle || !projDetailsTbody) return;
+            projDetailsTitle.textContent = `${catName} - ${month}`;
+            projDetailsTbody.innerHTML = '';
+            const [y, m] = month.split('-').map(Number);
+            const end = new Date(y, m, 0).toISOString().slice(0,10);
+            const cat = categoriesData.find(c => c.name === catName);
+            const params = new URLSearchParams({
+                start_date: month + '-01',
+                end_date: end,
+                sort_by: 'date',
+                order: 'asc'
+            });
+            if (cat) {
+                params.append('category_id', cat.id);
+            } else if (catName === 'Inconnu') {
+                params.append('category_none', 'true');
+            }
+            const resp = await fetch('/transactions?' + params.toString());
+            if (handleUnauthorized(resp) || !resp.ok) return;
+            const data = await resp.json();
+            data.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${formatDate(t.date)}</td><td>${t.label}</td><td class="amount">${formatAmount(t.amount)}</td>`;
+                projDetailsTbody.appendChild(tr);
+            });
+            projDetailsOverlay.style.display = 'flex';
         }
 
         function showSidebarDay(day) {
@@ -1925,6 +2003,11 @@
         const recurrentsNoData = document.getElementById('recurrents-no-data');
         let manageCatId = null;
 
+        const projDetailsOverlay = document.getElementById('projection-details-overlay');
+        const projDetailsTitle = document.getElementById('projection-details-title');
+        const projDetailsTbody = document.querySelector('#projection-details-table tbody');
+        const projDetailsClose = document.getElementById('projection-details-close');
+
         function showPopupAt(overlay, x, y) {
             overlay.style.display = 'block';
             overlay.style.alignItems = 'flex-start';
@@ -2109,6 +2192,8 @@
         if (delErrorClose) delErrorClose.addEventListener('click', () => { delErrorOverlay.style.display = 'none'; });
         if (recurrentsClose) recurrentsClose.addEventListener('click', () => { recurrentsOverlay.style.display = 'none'; });
         recurrentsOverlay.addEventListener('click', e => { if (e.target === recurrentsOverlay) recurrentsOverlay.style.display = 'none'; });
+        if (projDetailsClose) projDetailsClose.addEventListener('click', () => { projDetailsOverlay.style.display = 'none'; });
+        if (projDetailsOverlay) projDetailsOverlay.addEventListener('click', e => { if (e.target === projDetailsOverlay) projDetailsOverlay.style.display = 'none'; });
         if (recurrentsBtnCalendar && recurrentsBtnList) {
             recurrentsBtnCalendar.addEventListener('click', () => {
                 if (recurrentsData.length === 0) return;

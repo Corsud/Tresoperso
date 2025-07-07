@@ -314,6 +314,11 @@ body.hide-amounts .amount-input {
     visibility: hidden;
 }
 
+.amount,
+.amount-input {
+    text-align: right;
+}
+
 #recurrents-calendar {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
