@@ -130,8 +130,8 @@
                             <th>Catégorie</th>
                             <th>Sous-catégorie</th>
                             <th>Règle</th>
-                            <th>Pointée</th>
-                            <th>A analyser</th>
+                            <th>Pointée <button id="toggle-all-reconciled" class="toggle-all-btn">✓</button></th>
+                            <th>A analyser <button id="toggle-all-toanalyze" class="toggle-all-btn">✓</button></th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -984,6 +984,8 @@
                 const recBox = document.createElement('input');
                 recBox.type = 'checkbox';
                 recBox.checked = t.reconciled;
+                recBox.dataset.id = t.id;
+                recBox.className = 'reconciled-checkbox';
                 recBox.addEventListener('change', async () => {
                     await fetch('/transactions/' + t.id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({reconciled: recBox.checked})});
                     fetchTransactions();
@@ -995,6 +997,8 @@
                 const analyzeBox = document.createElement('input');
                 analyzeBox.type = 'checkbox';
                 analyzeBox.checked = t.to_analyze;
+                analyzeBox.dataset.id = t.id;
+                analyzeBox.className = 'to-analyze-checkbox';
                 analyzeBox.addEventListener('change', async () => {
                     await fetch('/transactions/' + t.id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({to_analyze: analyzeBox.checked})});
                     fetchTransactions();
@@ -2535,6 +2539,37 @@
                 });
             }
         });
+
+        async function toggleReconciledAll() {
+            const boxes = Array.from(document.querySelectorAll('#transactions-table tbody input.reconciled-checkbox'));
+            if (!boxes.length) return;
+            const shouldCheck = boxes.some(cb => !cb.checked);
+            await Promise.all(boxes.filter(cb => cb.checked !== shouldCheck).map(cb => {
+                return fetch('/transactions/' + cb.dataset.id, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ reconciled: shouldCheck })
+                });
+            }));
+            fetchTransactions();
+        }
+
+        async function toggleToAnalyzeAll() {
+            const boxes = Array.from(document.querySelectorAll('#transactions-table tbody input.to-analyze-checkbox'));
+            if (!boxes.length) return;
+            const shouldCheck = boxes.some(cb => !cb.checked);
+            await Promise.all(boxes.filter(cb => cb.checked !== shouldCheck).map(cb => {
+                return fetch('/transactions/' + cb.dataset.id, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ to_analyze: shouldCheck })
+                });
+            }));
+            fetchTransactions();
+        }
+
+        document.getElementById('toggle-all-reconciled').addEventListener('click', toggleReconciledAll);
+        document.getElementById('toggle-all-toanalyze').addEventListener('click', toggleToAnalyzeAll);
 
         document.getElementById('reset-transactions').addEventListener('click', async () => {
             if (!confirm('Confirmer la suppression de toutes les transactions ?')) return;
