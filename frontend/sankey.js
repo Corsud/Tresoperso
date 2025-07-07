@@ -96,8 +96,28 @@
             major.sort((a,b)=>b.val-a.val);
             const remaining = totalIncome - totalExpense;
 
-            const labels = ['Revenus', 'Total', ...major.map(c => c.cat)];
-            if (remaining !== 0) labels.push('Solde');
+            // Build node labels with amounts for clearer display
+            const fmt = v => `€${v.toFixed(0)}`;
+            const labels = [
+                `Revenus : ${fmt(totalIncome)}`,
+                'Total',
+                ...major.map(c => `${c.cat} : ${fmt(c.val)}`)
+            ];
+            if (remaining !== 0) labels.push(`Solde : ${fmt(remaining)}`);
+
+            // Map each category to a color for link and label styling
+            const palette = [
+                '#2196f3', '#f44336', '#ff9800', '#9c27b0', '#3f51b5',
+                '#00bcd4', '#8bc34a', '#795548', '#607d8b'
+            ];
+            const colors = [ '#4caf50', '#9e9e9e' ];
+            const colorMap = {};
+            major.forEach((c, i) => {
+                const col = palette[i % palette.length];
+                colorMap[c.cat] = col;
+                colors.push(col);
+            });
+            if (remaining !== 0) colors.push('#ff9800');
 
             const source = [];
             const target = [];
@@ -122,26 +142,37 @@
 
 
 
+            const nodeX = [0, 0.2];
+            major.forEach(() => nodeX.push(1));
+            if (remaining !== 0) nodeX.push(0.4);
+
             Plotly.react(this.elements.chart, [{
                 type:'sankey',
                 arrangement:'snap',
-                node:{ label:labels, pad:15, thickness:20,
-                    color: labels.map((_,i)=>{
-                        if(i===0) return '#4caf50';
-                        if(i===1) return '#9e9e9e';
-                        if(remaining !== 0 && i===labels.length-1) return '#ff9800';
-                        return '#2196f3';
-                    }) },
-
+                node:{
+                    label: labels,
+                    pad: 10,
+                    thickness: 15,
+                    line:{color:'transparent'},
+                    color: colors,
+                    x: nodeX,
+                    font:{color: colors}
+                },
                 link:{
                     source, target, value: values,
+                    color: target.map(t => colors[t]),
+                    line:{color:'transparent'},
                     customdata: custom,
                     hovertemplate: '%{customdata.cat}<br>€%{value:.2f} (%{customdata.pct:.1f}% du total)<extra></extra>'
                 }
             }], {
                 paper_bgcolor: getComputedStyle(document.documentElement).getPropertyValue('--bg-color').trim(),
-                font:{color:getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim()},
-                margin:{t:20,l:20,r:20,b:20}
+                plot_bgcolor: getComputedStyle(document.documentElement).getPropertyValue('--bg-color').trim(),
+                font:{
+                    color:getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim(),
+                    family:getComputedStyle(document.documentElement).getPropertyValue('--font-family').trim()
+                },
+                margin:{t:10,l:10,r:10,b:10}
             }, {responsive:true});
 
             this.elements.chart.on('plotly_click', ev => {
