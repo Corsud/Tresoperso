@@ -27,7 +27,7 @@ def client(monkeypatch):
     session.flush()
     session.add_all([
         models.Transaction(date=datetime.date(2020, 8, 10), label='t1', amount=10, category=food),
-        models.Transaction(date=datetime.date(2020, 9, 5), label='t2', amount=5, category=food),
+        models.Transaction(date=datetime.date(2020, 9, 5), label='t2', amount=5, category=food, to_analyze=False),
         models.Transaction(date=datetime.date(2021, 2, 20), label='t3', amount=3, category=food),
         models.Transaction(date=datetime.date(2021, 6, 1), label='t4', amount=7, category=misc),
         models.Transaction(date=datetime.date(2021, 7, 1), label='t5', amount=2, category=misc),
@@ -51,6 +51,6 @@ def test_projection_categories(client):
     assert data['months'][-1] == '2021-06'
     rows = {r['category']: r['values'] for r in data['rows']}
     assert rows['Food'][1] == 10
-    assert rows['Food'][2] == 5
+    assert rows['Food'][2] == 0
     assert rows['Food'][7] == 3
     assert rows['Misc'][11] == 7

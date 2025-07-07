@@ -1337,6 +1337,7 @@ def projection_categories():
         .outerjoin(models.Category, models.Transaction.category_id == models.Category.id)
         .filter(models.Transaction.date >= start)
         .filter(models.Transaction.date < end)
+        .filter(models.Transaction.to_analyze.is_(True))
         .group_by('month', models.Category.name)
         .all()
     )
