@@ -24,6 +24,13 @@ h1 {
     font-size: 1.8em;
 }
 
+.section-title {
+    color: var(--interactive-color);
+    font-weight: bold;
+    font-size: 1.2em;
+    margin: 1em 0 0.2em 0;
+}
+
 table { border-collapse: collapse; width: 100%; }
 th, td { border: 1px solid var(--border-color); padding: 4px; }
 .thin-grid th,
@@ -481,17 +488,6 @@ body.hide-amounts .amount-input {
 }
 
 /* Projection styles */
-#projection-section > h2 {
-    font-size: 1.6em;
-    color: var(--interactive-color);
-    margin-bottom: 0.5em;
-}
-
-#projection-section h3 {
-    font-size: 1.2em;
-    color: var(--interactive-color);
-    margin: 1em 0 0.2em 0;
-}
 
 #projection-cat-table,
 #projection-future-table {
