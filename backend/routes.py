@@ -1037,6 +1037,7 @@ def compute_category_monthly_averages(session, months=12):
                 models.Transaction.category_id == models.Category.id,
                 models.Transaction.date >= start,
                 models.Transaction.date < current_start,
+                models.Transaction.to_analyze.is_(True),
             ),
         )
         .group_by(models.Category.name)
@@ -1071,6 +1072,7 @@ def compute_category_forecast(session, months=12, forecast=12):
         .outerjoin(models.Category, models.Transaction.category_id == models.Category.id)
         .filter(models.Transaction.date >= start)
         .filter(models.Transaction.date < current_start)
+        .filter(models.Transaction.to_analyze.is_(True))
         .group_by('month', models.Category.name)
         .all()
     )
@@ -1305,6 +1307,7 @@ def projection():
             func.sum(models.Transaction.amount)
         )
         .filter(models.Transaction.date >= six_months_ago)
+        .filter(models.Transaction.to_analyze.is_(True))
         .group_by('month')
         .order_by('month')
         .all()

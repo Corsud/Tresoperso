@@ -31,7 +31,13 @@ def client(monkeypatch):
     for i in range(12):
         d = app_module._shift_month(start, i)
         session.add_all([
-            models.Transaction(date=d, label=f'f{i}', amount=2 * i + 3, category=food),
+            models.Transaction(
+                date=d,
+                label=f'f{i}',
+                amount=2 * i + 3,
+                category=food,
+                to_analyze=False if i == 0 else True,
+            ),
             models.Transaction(date=d, label=f'm{i}', amount=10, category=misc),
         ])
     session.commit()
@@ -52,6 +58,6 @@ def test_projection_category_forecast(client):
     data = resp.get_json()
     assert data['period'] == '2021-07 to 2022-06'
     rows = {r['category']: r['values'] for r in data['rows']}
-    assert rows['Food'][0] == pytest.approx(27)
-    assert rows['Food'][-1] == pytest.approx(49)
+    assert rows['Food'][0] == pytest.approx(27.5)
+    assert rows['Food'][-1] == pytest.approx(50.76923)
     assert all(v == pytest.approx(10) for v in rows['Misc'])
