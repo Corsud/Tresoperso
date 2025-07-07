@@ -231,6 +231,7 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
 #app { display: flex; flex-direction: column; }
 #navbar { position: fixed; top: 0; left: 0; right: 0; border-bottom: 1px solid var(--border-color); background: var(--bg-color); z-index: 1000; }
 #navbar ul { list-style: none; margin: 0; padding: 0; display: flex; }
+#navbar .logo { font-weight: bold; color: #fc9107; padding: 4px 8px; }
 #navbar li { position: relative; margin-right: 20px; }
 #navbar .menu-header {
     cursor: pointer;
