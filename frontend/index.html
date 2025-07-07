@@ -2399,9 +2399,17 @@
             sidebarButtons[0].classList.add('selected');
         }
 
-        document.querySelectorAll('#navbar .menu-header').forEach(header => {
-            header.addEventListener('click', () => {
-                header.parentElement.classList.toggle('open');
+        document.querySelectorAll('#navbar li').forEach(li => {
+            const header = li.querySelector('.menu-header');
+            if (!header) return;
+            header.addEventListener('mouseenter', () => {
+                document.querySelectorAll('#navbar li.open').forEach(openLi => {
+                    if (openLi !== li) openLi.classList.remove('open');
+                });
+                li.classList.add('open');
+            });
+            li.addEventListener('mouseleave', () => {
+                li.classList.remove('open');
             });
         });
 
