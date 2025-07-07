@@ -238,6 +238,12 @@ th, td { border: 1px solid var(--border-color); padding: 4px; }
     font-weight: bold;
     padding: 4px 8px;
     border: none;
+    transition: background-color 0.2s, color 0.2s;
+}
+#navbar li.open > .menu-header,
+#navbar li > .menu-header:hover {
+    color: #fc9107;
+    background-color: var(--bg-color);
 }
 #navbar .submenu { list-style: none; padding: 0; position: absolute; top: 100%; left: 0; background: var(--bg-color); border: 1px solid var(--border-color); display: none; }
 #navbar li.open > .submenu { display: block; }
