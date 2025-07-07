@@ -5,5 +5,6 @@
     --popup-bg: #2a2a2a;
     --interactive-color: #66c2ff;
     --selected-color: #fc9107;
+    --table-header-bg: var(--selected-color);
 }
 
