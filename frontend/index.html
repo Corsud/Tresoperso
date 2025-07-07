@@ -233,10 +233,6 @@
                     <thead></thead>
                     <tbody></tbody>
                 </table>
-                <table id="projection-table">
-                    <thead><tr><th>Mois</th><th>Montant</th></tr></thead>
-                    <tbody></tbody>
-                </table>
                 <canvas id="projectionChart" width="400" height="200"></canvas>
             </section>
 
@@ -383,6 +379,8 @@
         let selectedAccountId = '';
         let recurrentsData = [];
         let recurrentsChart = null;
+        let projectionData = [];
+        let projectionFutureTotals = [];
 
         function showLoginForm() {
             document.getElementById('app').style.display = 'none';
@@ -404,6 +402,19 @@
 
         function findSubcategory(id) {
             return subcategoriesData.find(s => String(s.id) === String(id));
+        }
+
+        function normalizeName(name) {
+            return (name || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-zA-Z0-9]/g, '')
+                .toLowerCase();
+        }
+
+        function findCategoryByName(name) {
+            const norm = normalizeName(name);
+            return categoriesData.find(c => normalizeName(c.name) === norm);
         }
 
         async function fetchCategoryOptions() {
@@ -1475,17 +1486,15 @@
         }
 
         function drawProjectionChart() {
-            const rows1 = document.querySelectorAll('#projection-table tbody tr');
-            const rows2 = document.querySelectorAll('#projection-future-table tbody tr');
             const labels = [];
             const values = [];
-            rows1.forEach(r => {
-                labels.push(r.children[0].textContent);
-                values.push(parseFloat(r.querySelector('input').value) || 0);
+            projectionData.forEach(d => {
+                labels.push(d.month);
+                values.push(parseFloat(d.total) || 0);
             });
-            rows2.forEach(r => {
-                labels.push(r.children[0].textContent);
-                values.push(parseFloat(r.querySelector('input').value) || 0);
+            projectionFutureTotals.forEach(d => {
+                labels.push(d.month);
+                values.push(parseFloat(d.total) || 0);
             });
             const ctx = document.getElementById('projectionChart').getContext('2d');
             if (projChart) projChart.destroy();
@@ -1508,30 +1517,10 @@
         async function fetchProjection() {
             const resp = await fetch('/projection');
             if (handleUnauthorized(resp) || !resp.ok) return;
-            const data = await resp.json();
-            const tbody = document.querySelector('#projection-table tbody');
-            tbody.innerHTML = '';
-            data.forEach(d => {
-                const tr = document.createElement('tr');
-                const monthCell = document.createElement('td');
-                monthCell.textContent = d.month;
-                tr.appendChild(monthCell);
-
-                const amountCell = document.createElement('td');
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.step = '0.01';
-                input.value = Number(d.amount).toFixed(2);
-                input.className = 'amount-input';
-                amountCell.appendChild(input);
-                tr.appendChild(amountCell);
-
-            tbody.appendChild(tr);
-        });
+            projectionData = await resp.json();
             drawProjectionChart();
         }
 
-        document.getElementById('projection-table').addEventListener('input', drawProjectionChart);
         document.getElementById('projection-future-table').addEventListener('input', drawProjectionChart);
 
         async function fetchProjectionCategories() {
@@ -1630,6 +1619,8 @@
                 r.values.forEach((v, idx) => { totals[idx] += v; });
             });
 
+            projectionFutureTotals = months.map((m, idx) => ({ month: m, total: totals[idx] }));
+
             const totalRow = document.createElement('tr');
             totalRow.innerHTML = '<td>Total</td>';
             totals.forEach(v => {
@@ -1653,6 +1644,7 @@
                 });
                 tbody.appendChild(tr);
             });
+            drawProjectionChart();
         }
 
         async function fetchRecurrents() {
@@ -1742,7 +1734,7 @@
             projDetailsTbody.innerHTML = '';
             const [y, m] = month.split('-').map(Number);
             const end = new Date(y, m, 0).toISOString().slice(0,10);
-            const cat = categoriesData.find(c => c.name === catName);
+            const cat = findCategoryByName(catName);
             const params = new URLSearchParams({
                 start_date: month + '-01',
                 end_date: end,
@@ -1751,7 +1743,7 @@
             });
             if (cat) {
                 params.append('category_id', cat.id);
-            } else if (catName === 'Inconnu') {
+            } else if (normalizeName(catName) === normalizeName('Inconnu')) {
                 params.append('category_none', 'true');
             }
             const resp = await fetch('/transactions?' + params.toString());
