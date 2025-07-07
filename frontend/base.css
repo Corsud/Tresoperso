@@ -18,6 +18,12 @@ body {
     color: var(--text-color);
 }
 
+h1 {
+    color: #fc9107;
+    font-weight: bold;
+    font-size: 1.8em;
+}
+
 table { border-collapse: collapse; width: 100%; }
 th, td { border: 1px solid var(--border-color); padding: 4px; }
 .thin-grid th,

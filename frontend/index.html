@@ -45,7 +45,7 @@
         </nav>
         <div id="content">
             <section id="dashboard-section" style="display:none;">
-                <h2>Dashboard</h2>
+                <h1>Dashboard</h1>
                 <label for="dashboard-threshold">Seuil exceptionnel&nbsp;:</label>
                 <input type="number" id="dashboard-threshold" step="0.1" value="1.5" style="width:4em;" />
                 <div id="dashboard-content">Chargement...</div>
@@ -54,7 +54,7 @@
             <section id="transactions-section">
 
                 <div class="transactions-header">
-                    <h2>Transactions</h2>
+                    <h1>Transactions</h1>
                     <div id="account-controls">
                         <label for="account-select">Compte :</label>
                         <select id="account-select">
@@ -139,7 +139,7 @@
             </section>
 
             <section id="accounts-section" style="display:none;">
-                <h2>Comptes</h2>
+                <h1>Comptes</h1>
                 <form id="upload-form">
                     <input type="file" id="csv-file" name="file" accept=".csv" required />
                     <button type="submit">Importer CSV</button>
@@ -151,7 +151,7 @@
             </section>
 
             <section id="stats-section" style="display:none;">
-                <h2>Statistiques mensuelles</h2>
+                <h1>Statistiques mensuelles</h1>
                 <select id="stats-period">
                     <option value="current-week">Semaine en cours</option>
                     <option value="previous-week">Semaine précédente</option>
@@ -175,7 +175,7 @@
             </section>
 
             <section id="recurrents-section" style="display:none;">
-                <h2>Flux de trésorerie</h2>
+                <h1>Flux de trésorerie</h1>
                 <div id="recurrents-header">
                     <button id="btn-recurrent" class="selected"></button>
                     <button id="btn-income"></button>
@@ -216,7 +216,7 @@
             </section>
 
             <section id="projection-section" style="display:none;">
-                <h2>Projection</h2>
+                <h1>Projection</h1>
                 <h3>Dépenses passées</h3>
                 <p id="projection-cat-period"></p>
                 <table id="projection-cat-table">
@@ -239,7 +239,7 @@
             <section id="settings-section" style="display:none;">
                 <div id="catsubs-container">
                     <div class="settings-col">
-                        <h2>Catégories</h2>
+                        <h1>Catégories</h1>
                         <form id="category-form">
                             <input type="hidden" id="category-id" />
                             <input type="text" id="category-name" placeholder="Nom" required />
@@ -263,7 +263,7 @@
                     </div>
                 </div>
 
-                <h2 style="display:none;">Règles</h2>
+                <h1 style="display:none;">Règles</h1>
                 <form id="rule-form" style="display:none;">
                     <input type="hidden" id="rule-id" />
                     <input type="text" id="rule-pattern" placeholder="Mot-clé" required />
@@ -274,7 +274,7 @@
                     <button type="submit">Enregistrer</button>
                 </form>
                 <ul id="rules-list" style="display:none;"></ul>
-                <h2>Préférences d'affichage</h2>
+                <h1>Préférences d'affichage</h1>
                 <label for="theme-select">Thème :</label>
                 <select id="theme-select">
                     <option value="light">Clair</option>
@@ -290,7 +290,7 @@
                     <label><input type="checkbox" id="hide-amounts"> Masquer montants</label>
                 </div>
 
-                <h2>RESET</h2>
+                <h1>RESET</h1>
                 <button id="reset-transactions">Effacer les transactions</button>
             </section>
         </div>
