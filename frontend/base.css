@@ -287,6 +287,11 @@ input[type="button"] {
     cursor: pointer;
 }
 
+.toggle-all-btn {
+    padding: 0 4px;
+    margin-left: 4px;
+}
+
 /* Ensure menu buttons have no visible border */
 #navbar button[data-target],
 .menu-header {
