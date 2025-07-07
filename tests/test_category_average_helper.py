@@ -31,14 +31,14 @@ def test_compute_category_monthly_averages(monkeypatch):
     session.flush()
     session.add_all([
         models.Transaction(date=datetime.date(2020, 8, 10), label='t1', amount=10, category=food),
-        models.Transaction(date=datetime.date(2020, 9, 5), label='t2', amount=5, category=food),
+        models.Transaction(date=datetime.date(2020, 9, 5), label='t2', amount=5, category=food, to_analyze=False),
         models.Transaction(date=datetime.date(2021, 2, 20), label='t3', amount=3, category=food),
         models.Transaction(date=datetime.date(2021, 6, 1), label='t4', amount=7, category=misc),
         models.Transaction(date=datetime.date(2021, 7, 1), label='t5', amount=2, category=misc),
     ])
     session.commit()
     avgs = app_module.compute_category_monthly_averages(session)
-    assert avgs['Food'] == pytest.approx(18/12)
+    assert avgs['Food'] == pytest.approx(13/12)
     assert avgs['Misc'] == pytest.approx(7/12)
     session.close()
 
