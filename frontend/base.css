@@ -10,6 +10,7 @@
     --popup-bg: #fff;
     --interactive-color: #0066cc;
     --selected-color: #cce5ff;
+    --table-header-bg: var(--selected-color);
 }
 
 body {
@@ -33,6 +34,11 @@ h1 {
 
 table { border-collapse: collapse; width: 100%; border: none; }
 th, td { border: 1px solid #808080; padding: 4px; }
+thead th,
+tbody th {
+    background: var(--table-header-bg);
+    color: var(--bg-color);
+}
 .thin-grid th,
 .thin-grid td {
     border: 1px solid var(--border-color);
