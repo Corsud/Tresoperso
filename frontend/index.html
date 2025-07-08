@@ -1745,6 +1745,7 @@
                 sort_by: 'date',
                 order: 'asc'
             });
+            params.append('to_analyze', 'true');
             if (cat) {
                 params.append('category_id', cat.id);
             } else if (normalizeName(catName) === normalizeName('Inconnu')) {
