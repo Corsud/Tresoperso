@@ -48,6 +48,8 @@
                 <h1>Dashboard</h1>
                 <label for="dashboard-threshold">Seuil exceptionnel&nbsp;:</label>
                 <input type="number" id="dashboard-threshold" step="0.1" value="1.5" style="width:4em;" />
+                <label for="dashboard-months" style="margin-left:1em;">Nombre de mois de référence&nbsp;:</label>
+                <input type="number" id="dashboard-months" step="1" min="1" value="3" style="width:3em;" />
                 <div id="dashboard-content">Chargement...</div>
                 <canvas id="dashboardChart" width="400" height="200"></canvas>
             </section>
@@ -363,6 +365,12 @@
                     <tbody></tbody>
                 </table>
                 <button id="projection-details-close">Fermer</button>
+            </div>
+        </div>
+        <div id="favorite-info-overlay" class="overlay">
+            <div class="popup">
+                <p>Ce tableau regroupe par catégorie les éléments marqués comme favoris (filtres, catégories ou sous-catégories) avec leur total du mois en cours et la moyenne des six derniers mois.</p>
+                <button id="favorite-info-close">Fermer</button>
             </div>
         </div>
     </div>
@@ -1431,7 +1439,12 @@
             if (dashboardThresholdInput) {
                 threshold = parseFloat(dashboardThresholdInput.value) || 1.5;
             }
-            const resp = await fetch(`/dashboard?threshold=${encodeURIComponent(threshold)}`);
+            let months = 3;
+            if (dashboardMonthsInput) {
+                months = parseInt(dashboardMonthsInput.value) || 3;
+            }
+            const params = new URLSearchParams({ threshold, months });
+            const resp = await fetch('/dashboard?' + params.toString());
             if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
             const container = document.getElementById('dashboard-content');
@@ -1448,6 +1461,10 @@
                 container.appendChild(table);
             }
             if (data.favorite_summaries && data.favorite_summaries.length) {
+                const title = document.createElement('h2');
+                title.className = 'section-title';
+                title.innerHTML = 'Favoris par catégorie <span id="favorite-info" class="info-icon">?</span>';
+                container.appendChild(title);
                 const table = document.createElement('table');
                 table.innerHTML = '<thead><tr><th>Catégorie</th><th>Favoris</th></tr></thead><tbody></tbody>';
                 const tbody = table.querySelector('tbody');
@@ -1472,6 +1489,12 @@
                     tbody.appendChild(tr);
                 });
                 container.appendChild(table);
+                const infoIcon = document.getElementById('favorite-info');
+                if (infoIcon) {
+                    infoIcon.addEventListener('click', () => {
+                        document.getElementById('favorite-info-overlay').style.display = 'flex';
+                    });
+                }
             }
             const ctx = document.getElementById('dashboardChart').getContext('2d');
             if (dashboardChart) dashboardChart.destroy();
@@ -2005,6 +2028,8 @@
         const projDetailsTitle = document.getElementById('projection-details-title');
         const projDetailsTbody = document.querySelector('#projection-details-table tbody');
         const projDetailsClose = document.getElementById('projection-details-close');
+        const favoriteInfoOverlay = document.getElementById('favorite-info-overlay');
+        const favoriteInfoClose = document.getElementById('favorite-info-close');
 
         function showPopupAt(overlay, x, y) {
             overlay.style.display = 'block';
@@ -2192,6 +2217,8 @@
         recurrentsOverlay.addEventListener('click', e => { if (e.target === recurrentsOverlay) recurrentsOverlay.style.display = 'none'; });
         if (projDetailsClose) projDetailsClose.addEventListener('click', () => { projDetailsOverlay.style.display = 'none'; });
         if (projDetailsOverlay) projDetailsOverlay.addEventListener('click', e => { if (e.target === projDetailsOverlay) projDetailsOverlay.style.display = 'none'; });
+        if (favoriteInfoClose) favoriteInfoClose.addEventListener('click', () => { favoriteInfoOverlay.style.display = 'none'; });
+        if (favoriteInfoOverlay) favoriteInfoOverlay.addEventListener('click', e => { if (e.target === favoriteInfoOverlay) favoriteInfoOverlay.style.display = 'none'; });
         if (recurrentsBtnCalendar && recurrentsBtnList) {
             recurrentsBtnCalendar.addEventListener('click', () => {
                 if (recurrentsData.length === 0) return;
@@ -2426,6 +2453,7 @@
         const favFilterOverlayCategorySelect = document.getElementById('fav-filter-overlay-category');
         const projectionModeInputs = document.querySelectorAll('#projection-mode input');
         const dashboardThresholdInput = document.getElementById('dashboard-threshold');
+        const dashboardMonthsInput = document.getElementById('dashboard-months');
         const recurrentMonthInput = document.getElementById('recurrent-month');
 
         function applyPreferences() {
@@ -2433,6 +2461,7 @@
             const font = localStorage.getItem('font') || 'roboto';
             const hide = localStorage.getItem('hideAmounts') === 'true';
             const threshold = localStorage.getItem('dashboardThreshold') || '1.5';
+            const months = localStorage.getItem('dashboardMonths') || '3';
             themeLink.href = theme + '.css';
             document.body.classList.remove('font-roboto', 'font-arial', 'font-geneva');
             document.body.classList.add('font-' + font);
@@ -2441,6 +2470,7 @@
             fontSelect.value = font;
             hideAmountsBox.checked = hide;
             if (dashboardThresholdInput) dashboardThresholdInput.value = threshold;
+            if (dashboardMonthsInput) dashboardMonthsInput.value = months;
         }
 
         themeSelect.addEventListener('change', () => {
@@ -2463,9 +2493,16 @@
             fetchSankeyStats();
         });
 
-        if (dashboardThresholdInput) {
+       if (dashboardThresholdInput) {
             dashboardThresholdInput.addEventListener('change', () => {
                 localStorage.setItem('dashboardThreshold', dashboardThresholdInput.value);
+                fetchDashboard();
+            });
+        }
+
+        if (dashboardMonthsInput) {
+            dashboardMonthsInput.addEventListener('change', () => {
+                localStorage.setItem('dashboardMonths', dashboardMonthsInput.value);
                 fetchDashboard();
             });
         }
