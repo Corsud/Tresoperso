@@ -1738,7 +1738,7 @@
             projDetailsTitle.textContent = `${catName} - ${month}`;
             projDetailsTbody.innerHTML = '';
             const [y, m] = month.split('-').map(Number);
-            const end = new Date(y, m, 0).toISOString().slice(0,10);
+            const end = new Date(Date.UTC(y, m, 0)).toISOString().slice(0,10);
             const cat = findCategoryByName(catName);
             const params = new URLSearchParams({
                 start_date: month + '-01',
