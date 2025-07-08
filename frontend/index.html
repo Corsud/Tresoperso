@@ -1002,6 +1002,7 @@
                 analyzeBox.addEventListener('change', async () => {
                     await fetch('/transactions/' + t.id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({to_analyze: analyzeBox.checked})});
                     fetchTransactions();
+                    fetchProjectionCategories();
                 });
                 analyzeCell.appendChild(analyzeBox);
                 tr.appendChild(analyzeCell);
@@ -2575,6 +2576,7 @@
                 });
             }));
             fetchTransactions();
+            fetchProjectionCategories();
         }
 
         document.getElementById('toggle-all-reconciled').addEventListener('click', toggleReconciledAll);
