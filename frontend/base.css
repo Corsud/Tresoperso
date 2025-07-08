@@ -318,6 +318,12 @@ input[type="button"] {
     margin-left: 4px;
 }
 
+.info-icon {
+    cursor: pointer;
+    margin-left: 0.5em;
+    color: var(--interactive-color);
+}
+
 /* Ensure menu buttons have no visible border */
 #navbar button[data-target],
 .menu-header {
