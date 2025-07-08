@@ -984,8 +984,12 @@ def aggregate_recurrents_by_category(recs):
     return totals
 
 
-def compute_dashboard_averages(session):
-    """Return per-category averages and income average of the last 3 months."""
+def compute_dashboard_averages(session, months=3):
+    """Return per-category averages (all transactions) and income average.
+
+    The income average is computed over the specified number of months.
+    Per-category averages consider every transaction regardless of date.
+    """
     cat_avgs = dict(
         session.query(
             models.Transaction.category_id,
@@ -998,8 +1002,8 @@ def compute_dashboard_averages(session):
 
     today = datetime.now().date()
     curr_first = today.replace(day=1)
-    months = []
-    for i in range(1, 4):
+    months_list = []
+    for i in range(1, months + 1):
         start = _shift_month(curr_first, -i)
         end = _shift_month(curr_first, -(i - 1)) - timedelta(days=1)
         total = (
@@ -1010,8 +1014,8 @@ def compute_dashboard_averages(session):
             .scalar()
             or 0
         )
-        months.append(total)
-    income_avg = sum(months) / len(months) if months else 0
+        months_list.append(total)
+    income_avg = sum(months_list) / len(months_list) if months_list else 0
     return cat_avgs, income_avg
 
 
@@ -1138,7 +1142,12 @@ def dashboard():
     total = sum(a.initial_balance or 0 for a in session.query(models.BankAccount).all())
     total += session.query(func.sum(models.Transaction.amount)).scalar() or 0
 
-    cat_avgs, income_avg = compute_dashboard_averages(session)
+    months_param = request.args.get('months')
+    try:
+        months = int(months_param) if months_param else 3
+    except ValueError:
+        months = 3
+    cat_avgs, income_avg = compute_dashboard_averages(session, months=months)
 
     alerts = []
     recent_txs = (
@@ -1148,18 +1157,7 @@ def dashboard():
         .all()
     )
     for tx in recent_txs:
-        cat_avg = cat_avgs.get(tx.category_id)
         name = tx.category.name if tx.category else "Inconnu"
-        if cat_avg and abs(tx.amount) > threshold * cat_avg:
-            alerts.append(
-                {
-                    "date": tx.date.isoformat(),
-                    "label": tx.label,
-                    "amount": tx.amount,
-                    "category": name,
-                    "reason": "category_threshold",
-                }
-            )
         if abs(tx.amount) > income_avg:
             alerts.append(
                 {
