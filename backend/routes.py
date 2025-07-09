@@ -984,21 +984,22 @@ def aggregate_recurrents_by_category(recs):
     return totals
 
 
-def compute_dashboard_averages(session, months=3):
-    """Return per-category averages (all transactions) and income average.
+def compute_dashboard_averages(session, months=3, favorites_only=False):
+    """Return per-category averages and income average.
 
-    The income average is computed over the specified number of months.
-    Per-category averages consider every transaction regardless of date.
+    When ``favorites_only`` is ``True``, only transactions marked as favorite
+    contribute to the computations. The income average is computed over the
+    specified number of months. Per-category averages consider every
+    transaction regardless of date unless ``favorites_only`` is enabled.
+    
     """
-    cat_avgs = dict(
-        session.query(
-            models.Transaction.category_id,
-            func.avg(func.abs(models.Transaction.amount)),
-        )
-        .filter(models.Transaction.category_id.isnot(None))
-        .group_by(models.Transaction.category_id)
-        .all()
-    )
+    query = session.query(
+        models.Transaction.category_id,
+        func.avg(func.abs(models.Transaction.amount)),
+    ).filter(models.Transaction.category_id.isnot(None))
+    if favorites_only:
+        query = query.filter(models.Transaction.favorite.is_(True))
+    cat_avgs = dict(query.group_by(models.Transaction.category_id).all())
 
     today = datetime.now().date()
     curr_first = today.replace(day=1)
@@ -1006,14 +1007,15 @@ def compute_dashboard_averages(session, months=3):
     for i in range(1, months + 1):
         start = _shift_month(curr_first, -i)
         end = _shift_month(curr_first, -(i - 1)) - timedelta(days=1)
-        total = (
+        income_query = (
             session.query(func.sum(models.Transaction.amount))
             .filter(models.Transaction.amount > 0)
             .filter(models.Transaction.date >= start)
             .filter(models.Transaction.date <= end)
-            .scalar()
-            or 0
         )
+        if favorites_only:
+            income_query = income_query.filter(models.Transaction.favorite.is_(True))
+        total = income_query.scalar() or 0
         months_list.append(total)
     income_avg = sum(months_list) / len(months_list) if months_list else 0
     return cat_avgs, income_avg
@@ -1119,6 +1121,8 @@ def dashboard():
         threshold = float(request.args.get('threshold', 1.5))
     except ValueError:
         threshold = 1.5
+    fav_param = request.args.get('favorites_only')
+    favorites_only = str(fav_param).lower() in ('true', '1', 'yes')
     filters = session.query(models.FavoriteFilter).all()
     conditions = [models.Transaction.favorite]
     for f in filters:
@@ -1147,15 +1151,19 @@ def dashboard():
         months = int(months_param) if months_param else 3
     except ValueError:
         months = 3
-    cat_avgs, income_avg = compute_dashboard_averages(session, months=months)
+    cat_avgs, income_avg = compute_dashboard_averages(
+        session, months=months, favorites_only=favorites_only
+    )
 
     alerts = []
-    recent_txs = (
+    recent_query = (
         session.query(models.Transaction)
         .outerjoin(models.Category)
         .filter(models.Transaction.date >= cutoff)
-        .all()
     )
+    if favorites_only:
+        recent_query = recent_query.filter(models.Transaction.favorite.is_(True))
+    recent_txs = recent_query.all()
     for tx in recent_txs:
         name = tx.category.name if tx.category else "Inconnu"
         if abs(tx.amount) > income_avg:
@@ -1289,6 +1297,7 @@ def dashboard():
         'favorite_count': fav_count,
         'recent_total': recent_total,
         'balance_total': total,
+        'favorites_only': favorites_only,
         'favorite_summaries': summaries,
     }
     return jsonify(result)
