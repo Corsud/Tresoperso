@@ -86,6 +86,35 @@ def test_dashboard_favorites_only(client):
     assert data['alerts'] == []
 
 
+def test_dashboard_favorites_only_ignores_nonfavorites(client):
+    """Alerts are computed using only favorite transactions."""
+    login(client)
+    session = app_module.SessionLocal()
+    cat = session.query(models.Category).filter_by(name='Food').one()
+    session.query(models.Transaction).filter_by(label='inc2').update({"favorite": True})
+    session.add(
+        models.Transaction(
+            date=datetime.date(2021, 5, 14),
+            label="Fav high",
+            amount=-500,
+            category=cat,
+            favorite=True,
+        )
+    )
+    session.commit()
+    _, income_avg = app_module.compute_dashboard_averages(session, favorites_only=True)
+    session.close()
+
+    resp = client.get("/dashboard?favorites_only=1")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    labels = [a["label"] for a in data["alerts"]]
+    assert "Fav high" in labels
+    assert "Huge expense" not in labels
+    assert len(labels) == 1
+    assert income_avg == pytest.approx(400)
+
+
 def test_dashboard_schema(client):
     login(client)
     resp = client.get('/dashboard')
