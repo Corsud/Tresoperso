@@ -76,12 +76,22 @@ def test_dashboard_custom_threshold(client):
     assert alerts and alerts[0]['reason'] == 'income_threshold'
 
 
+def test_dashboard_favorites_only(client):
+    """Dashboard can filter on favorite transactions only."""
+    login(client)
+    resp = client.get('/dashboard?favorites_only=true')
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data['favorites_only'] is True
+    assert data['alerts'] == []
+
+
 def test_dashboard_schema(client):
     login(client)
     resp = client.get('/dashboard')
     assert resp.status_code == 200
     data = resp.get_json()
-    for key in ['favorite_count', 'recent_total', 'balance_total', 'alerts', 'favorite_summaries']:
+    for key in ['favorite_count', 'recent_total', 'balance_total', 'favorites_only', 'alerts', 'favorite_summaries']:
         assert key in data
     if data['alerts']:
         alert = data['alerts'][0]
