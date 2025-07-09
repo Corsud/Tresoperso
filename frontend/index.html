@@ -45,10 +45,10 @@
         </nav>
         <div id="content">
             <section id="dashboard-section" style="display:none;">
-                <h1>Dashboard</h1>
-                <label for="dashboard-threshold">Seuil exceptionnel&nbsp;:</label>
+                <h1>Transactions hors moyenne <span id="dashboard-info" class="info-icon">?</span></h1>
+                <label for="dashboard-threshold">Coeff de tolérance&nbsp;:</label>
                 <input type="number" id="dashboard-threshold" step="0.1" value="1.5" style="width:4em;" />
-                <label for="dashboard-months" style="margin-left:1em;">Nombre de mois de référence&nbsp;:</label>
+                <label for="dashboard-months" style="margin-left:1em;">Moyenne calculée sur x&nbsp;mois&nbsp;:</label>
                 <input type="number" id="dashboard-months" step="1" min="1" value="3" style="width:3em;" />
                 <label style="margin-left:1em;"><input type="checkbox" id="dashboard-favorites-only" /> Analyser uniquement les transactions favorites</label>
                 <div id="dashboard-content">Chargement...</div>
@@ -372,6 +372,12 @@
             <div class="popup">
                 <p>Ce tableau regroupe par catégorie les éléments marqués comme favoris (filtres, catégories ou sous-catégories) avec leur total du mois en cours et la moyenne des six derniers mois.</p>
                 <button id="favorite-info-close">Fermer</button>
+            </div>
+        </div>
+        <div id="dashboard-info-overlay" class="overlay">
+            <div class="popup">
+                <p>Les transactions listées dépassent la moyenne des x derniers mois multipliée par le coefficient de tolérance.</p>
+                <button id="dashboard-info-close">Fermer</button>
             </div>
         </div>
     </div>
@@ -2037,6 +2043,14 @@
         const projDetailsClose = document.getElementById('projection-details-close');
         const favoriteInfoOverlay = document.getElementById('favorite-info-overlay');
         const favoriteInfoClose = document.getElementById('favorite-info-close');
+        const dashboardInfoOverlay = document.getElementById('dashboard-info-overlay');
+        const dashboardInfoClose = document.getElementById('dashboard-info-close');
+        const dashboardInfoIcon = document.getElementById('dashboard-info');
+        if (dashboardInfoIcon) {
+            dashboardInfoIcon.addEventListener('click', () => {
+                dashboardInfoOverlay.style.display = 'flex';
+            });
+        }
 
         function showPopupAt(overlay, x, y) {
             overlay.style.display = 'block';
@@ -2229,6 +2243,8 @@
         if (projDetailsOverlay) projDetailsOverlay.addEventListener('click', e => { if (e.target === projDetailsOverlay) projDetailsOverlay.style.display = 'none'; });
         if (favoriteInfoClose) favoriteInfoClose.addEventListener('click', () => { favoriteInfoOverlay.style.display = 'none'; });
         if (favoriteInfoOverlay) favoriteInfoOverlay.addEventListener('click', e => { if (e.target === favoriteInfoOverlay) favoriteInfoOverlay.style.display = 'none'; });
+        if (dashboardInfoClose) dashboardInfoClose.addEventListener('click', () => { dashboardInfoOverlay.style.display = 'none'; });
+        if (dashboardInfoOverlay) dashboardInfoOverlay.addEventListener('click', e => { if (e.target === dashboardInfoOverlay) dashboardInfoOverlay.style.display = 'none'; });
         if (recurrentsBtnCalendar && recurrentsBtnList) {
             recurrentsBtnCalendar.addEventListener('click', () => {
                 if (recurrentsData.length === 0) return;
