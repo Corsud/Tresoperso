@@ -56,6 +56,8 @@ def test_dashboard_alerts_and_summaries(client):
     first = data['alerts'][0]
     for key in ['date', 'label', 'amount', 'category', 'reason']:
         assert key in first
+    huge = [a for a in data['alerts'] if a['label'] == 'Huge expense'][0]
+    assert huge['reason'] == 'category_threshold'
     favs = {}
     cats = {grp['category']: grp for grp in data['favorite_summaries']}
     for grp in data['favorite_summaries']:
