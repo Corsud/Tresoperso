@@ -1166,16 +1166,22 @@ def dashboard():
     recent_txs = recent_query.all()
     for tx in recent_txs:
         name = tx.category.name if tx.category else "Inconnu"
-        if abs(tx.amount) > income_avg:
-            alerts.append(
-                {
-                    "date": tx.date.isoformat(),
-                    "label": tx.label,
-                    "amount": tx.amount,
-                    "category": name,
-                    "reason": "income_threshold",
-                }
-            )
+        cat_avg = cat_avgs.get(tx.category_id)
+        if cat_avg and abs(tx.amount) > cat_avg * threshold:
+            reason = "category_threshold"
+        elif abs(tx.amount) > income_avg:
+            reason = "income_threshold"
+        else:
+            continue
+        alerts.append(
+            {
+                "date": tx.date.isoformat(),
+                "label": tx.label,
+                "amount": tx.amount,
+                "category": name,
+                "reason": reason,
+            }
+        )
 
     current_start = datetime.now().date().replace(day=1)
     groups = {}
