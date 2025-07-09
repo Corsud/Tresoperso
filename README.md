@@ -11,6 +11,7 @@ Tresoperso est une application de gestion de trésorerie personnelle. Elle perme
 - Graphiques d'analyse (donut, Sankey)
 - Projection de trésorerie basée sur l'historique
 - Visualisation du flux de trésorerie
+- Tableau de bord filtrable sur les favoris
 
 La page **Flux de trésorerie** affiche les opérations récurrentes détectées sur les six
 derniers mois. Les libellés des transactions sont prétraités (suppression des
@@ -23,6 +24,9 @@ compte les prélèvements dont la date varie légèrement d'un mois à l'autre.
 
 Un sélecteur de mois permet de choisir la période à afficher. Les boutons « Calendrier » et « Liste/anneau » basculent respectivement entre la vue calendrier et une liste accompagnée d'un graphique en anneau. Les boutons en tête de section affichent soit l'ensemble des flux, soit uniquement les entrées, les sorties ou le solde pour le mois choisi.
 
+## Tableau de bord
+
+Cette section offre une vue synthétique des dépenses et des recettes. Un nouveau bouton « Analyser uniquement les transactions favorites » permet de limiter les calculs aux opérations marquées comme favorites. Désactivez-le pour revenir à l'ensemble des transactions. Le backend expose la route `/dashboard` qui accepte le paramètre `favorites_only` (par exemple `/dashboard?favorites_only=true`) pour obtenir les mêmes informations via l'API.
 
 ## Lancement rapide
 
@@ -86,7 +90,9 @@ Utilisez le bouton «Importer CSV» pour sélectionner un fichier et mettre à j
 Le backend expose plusieurs routes JSON consommées par l'interface web. La route
 `/stats/recurrents/summary` fournit par exemple le total des montants positifs,
 négatifs, le solde global (y compris les soldes initiaux des comptes) et le
-montant cumulé des dépenses récurrentes détectées pour le mois demandé.
+montant cumulé des dépenses récurrentes détectées pour le mois demandé. La
+route `/dashboard` accepte quant à elle le paramètre `favorites_only=true` pour
+retourner uniquement les transactions favorites.
 
 ## Tests
 
