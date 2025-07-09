@@ -1099,6 +1099,7 @@
                     });
                     if (resp.ok) {
                         fav.classList.toggle('selected');
+                        fetchDashboard();
                     }
                     await refreshCategoryData();
                 };
@@ -1186,6 +1187,7 @@
                     });
                     if (resp.ok) {
                         fav.classList.toggle('selected');
+                        fetchDashboard();
                     }
                     await refreshCategoryData();
                 };
@@ -2081,11 +2083,14 @@
                 favBtn.className = 'tx-fav-btn' + (s.favorite ? ' selected' : '');
                 favBtn.textContent = s.favorite ? '★' : '☆';
                 favBtn.onclick = async () => {
-                    await fetch('/subcategories/' + s.id, {
+                    const resp = await fetch('/subcategories/' + s.id, {
                         method: 'PUT',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({ favorite: !s.favorite })
                     });
+                    if (resp.ok) {
+                        fetchDashboard();
+                    }
                     await refreshCategoryData();
                     populateManageSubcats(catId);
                 };
