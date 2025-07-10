@@ -92,7 +92,9 @@
     "Plongée",
     "Sports",
     "Abonnements",
-    "Vacances"
+    "Vacances",
+    "Catho",
+    "Parc attraction"
   ],
   "Remboursement emprunt": [
     "Maison",
@@ -137,10 +139,7 @@
     "Transferts internationaux"
   ],
   "Autre": [],
-  "NewCat": [
-    "Sub1"
-  ],
-  "RuleParent": [
-    "RuleChild"
+  "Alimentation": [
+    "eee"
   ]
 }
