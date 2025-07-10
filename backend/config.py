@@ -33,7 +33,8 @@ CATEGORIES_JSON = os.environ.get('CATEGORIES_JSON', str(BASE_DIR / 'categories.j
 SECRET_KEY = _SECRET_KEY
 # Use an absolute path for the default SQLite database so running the
 # application from another directory still points to the same file.
-DEFAULT_DB = ROOT_DIR / 'tresoperso.db'
+DEFAULT_DB = Path(__file__).resolve().parent.parent / 'tresoperso.db'
+
 DATABASE_URI = os.environ.get('DATABASE_URI', f'sqlite:///{DEFAULT_DB}')
 
 __all__ = ['FRONTEND_DIR', 'SECRET_KEY', 'DATABASE_URI', 'CATEGORIES_JSON']
