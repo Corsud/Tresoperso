@@ -47,16 +47,12 @@ def save_categories_json(data):
     except Exception:
         pass
 
+def open_browser(port):
+    webbrowser.open_new(f'http://localhost:{port}')
 
-
-def open_browser():
-    webbrowser.open_new('http://localhost:5000')
-
-
-def run():
+def run(port=5000):
     init_db()
-    threading.Timer(1, open_browser).start()
-    app.run(host='0.0.0.0')
-
+    threading.Timer(1, lambda: open_browser(port)).start()
+    app.run(host='0.0.0.0', port=port)
 
 from . import routes  # noqa: F401
