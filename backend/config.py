@@ -1,12 +1,11 @@
 import os
+import sys
 import logging
 from pathlib import Path
 
-# Load environment variables from a .env file if present
 BASE_DIR = Path(__file__).resolve().parent
 ROOT_DIR = BASE_DIR.parent
 ENV_PATH = ROOT_DIR / '.env'
-
 
 def load_dotenv(path=ENV_PATH):
     if path.exists():
@@ -18,7 +17,6 @@ def load_dotenv(path=ENV_PATH):
                 key, val = line.split('=', 1)
                 os.environ.setdefault(key, val)
 
-
 load_dotenv()
 
 FRONTEND_DIR = ROOT_DIR / 'frontend'
@@ -29,12 +27,19 @@ if not _SECRET_KEY:
     logging.warning('SECRET_KEY environment variable not set; using a generated key')
 
 CATEGORIES_JSON = os.environ.get('CATEGORIES_JSON', str(BASE_DIR / 'categories.json'))
-
 SECRET_KEY = _SECRET_KEY
-# Use an absolute path for the default SQLite database so running the
-# application from another directory still points to the same file.
-DEFAULT_DB = Path(__file__).resolve().parent.parent / 'tresoperso.db'
 
+# *** ADAPTATION CHEMIN BASE ***
+if getattr(sys, 'frozen', False):
+    # Exécuté via PyInstaller
+    app_dir = Path(sys.executable).parent
+else:
+    app_dir = ROOT_DIR
+
+DEFAULT_DB = app_dir / 'tresoperso.db'
 DATABASE_URI = os.environ.get('DATABASE_URI', f'sqlite:///{DEFAULT_DB}')
+
+print("CHEMIN BASE DE DONNÉES UTILISÉ :", DEFAULT_DB)
+print("DATABASE_URI utilisée :", DATABASE_URI)
 
 __all__ = ['FRONTEND_DIR', 'SECRET_KEY', 'DATABASE_URI', 'CATEGORIES_JSON']
