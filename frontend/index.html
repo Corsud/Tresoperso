@@ -396,6 +396,7 @@
         let recurrentsChart = null;
         let projectionData = [];
         let projectionFutureTotals = [];
+        let projectionFutureMonths = [];
 
         function showLoginForm() {
             document.getElementById('app').style.display = 'none';
@@ -552,6 +553,10 @@
             return (v || 0)
                 .toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
                 .replace(/,/g, ' ');
+        }
+
+        function parseAmount(str) {
+            return parseFloat(String(str).replace(/\s+/g, '').replace(',', '.')) || 0;
         }
 
         function getChartOptions(hide, withScale = true) {
@@ -1555,6 +1560,25 @@
             });
         }
 
+        function updateFutureTotals() {
+            const table = document.getElementById('projection-future-table');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr:not(.total-row)'));
+            const totals = [];
+            rows.forEach(tr => {
+                tr.querySelectorAll('td.amount').forEach((td, idx) => {
+                    const val = parseAmount(td.textContent);
+                    totals[idx] = (totals[idx] || 0) + val;
+                });
+            });
+            const totalRow = tbody.querySelector('tr.total-row');
+            totals.forEach((v, idx) => {
+                const cell = totalRow.children[idx + 1];
+                if (cell) cell.textContent = formatAmount(v);
+            });
+            projectionFutureTotals = projectionFutureMonths.map((m, idx) => ({ month: m, total: totals[idx] || 0 }));
+        }
+
         async function fetchProjection() {
             const resp = await fetch('/projection');
             if (handleUnauthorized(resp) || !resp.ok) return;
@@ -1562,7 +1586,10 @@
             drawProjectionChart();
         }
 
-        document.getElementById('projection-future-table').addEventListener('input', drawProjectionChart);
+        document.getElementById('projection-future-table').addEventListener('input', () => {
+            updateFutureTotals();
+            drawProjectionChart();
+        });
 
         async function fetchProjectionCategories() {
             const resp = await fetch('/projection/categories');
@@ -1589,6 +1616,7 @@
             });
 
             const totalRow = document.createElement('tr');
+            totalRow.className = 'total-row';
             totalRow.innerHTML = '<td>Total</td>';
             totals.forEach(v => {
                 const td = document.createElement('td');
@@ -1655,14 +1683,16 @@
             });
             thead.appendChild(headRow);
 
+            projectionFutureMonths = months.slice();
+
             const totals = new Array(months.length).fill(0);
             rows.forEach(r => {
                 r.values.forEach((v, idx) => { totals[idx] += v; });
             });
 
-            projectionFutureTotals = months.map((m, idx) => ({ month: m, total: totals[idx] }));
 
             const totalRow = document.createElement('tr');
+            totalRow.className = 'total-row';
             totalRow.innerHTML = '<td>Total</td>';
             totals.forEach(v => {
                 const td = document.createElement('td');
@@ -1681,10 +1711,17 @@
                     const td = document.createElement('td');
                     td.textContent = formatAmount(v);
                     td.className = 'amount';
+                    td.contentEditable = 'true';
+                    td.addEventListener('blur', () => {
+                        td.textContent = formatAmount(parseAmount(td.textContent));
+                        updateFutureTotals();
+                        drawProjectionChart();
+                    });
                     tr.appendChild(td);
                 });
                 tbody.appendChild(tr);
             });
+            updateFutureTotals();
             drawProjectionChart();
         }
 
