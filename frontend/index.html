@@ -1677,7 +1677,7 @@
         function saveFutureTable() {
             const rows = [];
             document.querySelectorAll('#projection-future-table tbody tr').forEach(tr => {
-                if (tr.classList.contains('total-row') || tr.classList.contains('group-header')) return;
+                if (tr.classList.contains('total-row') || tr.classList.contains('group-header') || tr.classList.contains('add-row')) return;
                 const catCell = tr.children[0];
                 let category = catCell.textContent.replace('×', '').trim();
                 const sign = tr.dataset.sign || 'expense';
@@ -1692,7 +1692,16 @@
         function loadFutureTable() {
             try {
                 const raw = localStorage.getItem('projectionFutureTable');
-                return raw ? JSON.parse(raw) : null;
+                if (!raw) return null;
+                const data = JSON.parse(raw);
+                if (data && Array.isArray(data.rows)) {
+                    const filteredRows = data.rows.filter(r => r.category !== 'Ajouter ligne');
+                    if (filteredRows.length !== data.rows.length) {
+                        data.rows = filteredRows;
+                        localStorage.setItem('projectionFutureTable', JSON.stringify(data));
+                    }
+                }
+                return data;
             } catch (e) {
                 return null;
             }
@@ -1919,6 +1928,7 @@
                     tbody.appendChild(tr);
                 });
                 const addRow = document.createElement('tr');
+                addRow.className = 'add-row';
                 const addTd = document.createElement('td');
                 addTd.colSpan = months.length + 1;
                 const btn = document.createElement('button');
