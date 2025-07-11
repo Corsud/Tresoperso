@@ -43,7 +43,16 @@ class Category(Base):
         back_populates='category',
         cascade='all, delete-orphan',
     )
-    rules = relationship('Rule', back_populates='category')
+    rules = relationship(
+        'Rule',
+        back_populates='category',
+        cascade='all, delete-orphan',
+    )
+    favorite_filters = relationship(
+        'FavoriteFilter',
+        back_populates='category',
+        cascade='all, delete-orphan',
+    )
     subcategories = relationship(
         'Subcategory',
         back_populates='category',
@@ -116,7 +125,7 @@ class FavoriteFilter(Base):
     category_id = Column(Integer, ForeignKey('categories.id'))
     subcategory_id = Column(Integer, ForeignKey('subcategories.id'))
 
-    category = relationship('Category')
+    category = relationship('Category', back_populates='favorite_filters')
     subcategory = relationship('Subcategory')
 
 
