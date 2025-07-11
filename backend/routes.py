@@ -1141,6 +1141,42 @@ def compute_category_forecast(session, months=12, forecast=12, account_ids=None)
     }
 
 
+def compute_account_balance(session, account, date=None):
+    """Return the balance of ``account`` up to ``date``.
+
+    The account's ``initial_balance`` is considered to be the balance on
+    ``account.balance_date`` when set. Transactions prior to that date are
+    ignored when computing the running balance. If a ``date`` before
+    ``balance_date`` is provided, the function subtracts transactions between
+    the given date and ``balance_date``.
+    """
+
+    base = account.initial_balance or 0
+    if account.balance_date:
+        if date is None or date >= account.balance_date:
+            q = session.query(func.sum(models.Transaction.amount)).filter(
+                models.Transaction.bank_account_id == account.id,
+                models.Transaction.date > account.balance_date,
+            )
+            if date:
+                q = q.filter(models.Transaction.date <= date)
+            return base + (q.scalar() or 0)
+        else:
+            q = session.query(func.sum(models.Transaction.amount)).filter(
+                models.Transaction.bank_account_id == account.id,
+                models.Transaction.date > date,
+                models.Transaction.date <= account.balance_date,
+            )
+            return base - (q.scalar() or 0)
+    else:
+        q = session.query(func.sum(models.Transaction.amount)).filter(
+            models.Transaction.bank_account_id == account.id
+        )
+        if date:
+            q = q.filter(models.Transaction.date <= date)
+        return base + (q.scalar() or 0)
+
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -1171,8 +1207,9 @@ def dashboard():
         .scalar()
         or 0
     )
-    total = sum(a.initial_balance or 0 for a in session.query(models.BankAccount).all())
-    total += session.query(func.sum(models.Transaction.amount)).scalar() or 0
+    total = 0
+    for acc in session.query(models.BankAccount).all():
+        total += compute_account_balance(session, acc)
 
     months_param = request.args.get('months')
     try:
@@ -1457,16 +1494,13 @@ def balance():
         date = None
     account_ids = _parse_account_ids()
     session = models.SessionLocal()
-    query = session.query(func.sum(models.BankAccount.initial_balance))
+    query = session.query(models.BankAccount)
     if account_ids:
         query = query.filter(models.BankAccount.id.in_(account_ids))
-    total = query.scalar() or 0
-    tx_query = session.query(func.sum(models.Transaction.amount))
-    if account_ids:
-        tx_query = tx_query.filter(models.Transaction.bank_account_id.in_(account_ids))
-    if date:
-        tx_query = tx_query.filter(models.Transaction.date <= date)
-    total += tx_query.scalar() or 0
+    accounts = query.all()
+    total = 0
+    for acc in accounts:
+        total += compute_account_balance(session, acc, date)
     session.close()
     return jsonify({'balance': float(total)})
 
