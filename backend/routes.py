@@ -18,6 +18,20 @@ SIMILARITY_THRESHOLD = 0.8  # Minimum fuzzy label similarity
 AMOUNT_TOLERANCE = 0.3      # Allowed deviation (\u00b130%) around the average
 
 
+def _parse_account_ids():
+    """Return a list of account IDs from the ``account_ids`` query parameter."""
+    ids_param = request.args.get('account_ids')
+    if not ids_param:
+        return []
+    ids = []
+    for part in ids_param.split(','):
+        try:
+            ids.append(int(part))
+        except ValueError:
+            continue
+    return ids
+
+
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
@@ -1033,7 +1047,7 @@ def compute_dashboard_averages(session, months=3, favorites_only=False):
     return cat_avgs, income_avg
 
 
-def compute_category_monthly_averages(session, months=12):
+def compute_category_monthly_averages(session, months=12, account_ids=None):
     """Return a mapping of category name to average monthly amount.
 
     The computation spans the ``months`` prior to the current month and
@@ -1043,21 +1057,22 @@ def compute_category_monthly_averages(session, months=12):
     current_start = today.replace(day=1)
     start = _shift_month(current_start, -months)
 
+    join_cond = and_(
+        models.Transaction.category_id == models.Category.id,
+        models.Transaction.date >= start,
+        models.Transaction.date < current_start,
+        models.Transaction.to_analyze.is_(True),
+    )
+    if account_ids:
+        join_cond = and_(join_cond, models.Transaction.bank_account_id.in_(account_ids))
+
     data = (
         session.query(
             models.Category.name,
             func.sum(models.Transaction.amount),
         )
         .select_from(models.Category)
-        .outerjoin(
-            models.Transaction,
-            and_(
-                models.Transaction.category_id == models.Category.id,
-                models.Transaction.date >= start,
-                models.Transaction.date < current_start,
-                models.Transaction.to_analyze.is_(True),
-            ),
-        )
+        .outerjoin(models.Transaction, join_cond)
         .group_by(models.Category.name)
         .all()
     )
@@ -1070,7 +1085,7 @@ def compute_category_monthly_averages(session, months=12):
     return result
 
 
-def compute_category_forecast(session, months=12, forecast=12):
+def compute_category_forecast(session, months=12, forecast=12, account_ids=None):
     """Return per-category forecast for the next ``forecast`` months.
 
     A simple linear regression is fitted on the totals of the past ``months``
@@ -1081,14 +1096,15 @@ def compute_category_forecast(session, months=12, forecast=12):
     current_start = today.replace(day=1)
     start = _shift_month(current_start, -months)
 
+    query = session.query(
+        func.strftime('%Y-%m', models.Transaction.date).label('month'),
+        models.Category.name,
+        func.sum(models.Transaction.amount),
+    ).outerjoin(models.Category, models.Transaction.category_id == models.Category.id)
+    if account_ids:
+        query = query.filter(models.Transaction.bank_account_id.in_(account_ids))
     rows = (
-        session.query(
-            func.strftime('%Y-%m', models.Transaction.date).label('month'),
-            models.Category.name,
-            func.sum(models.Transaction.amount),
-        )
-        .outerjoin(models.Category, models.Transaction.category_id == models.Category.id)
-        .filter(models.Transaction.date >= start)
+        query.filter(models.Transaction.date >= start)
         .filter(models.Transaction.date < current_start)
         .filter(models.Transaction.to_analyze.is_(True))
         .group_by('month', models.Category.name)
@@ -1326,13 +1342,15 @@ def dashboard():
 def projection():
     session = models.SessionLocal()
     six_months_ago = datetime.now().date() - timedelta(days=180)
+    account_ids = _parse_account_ids()
+    query = session.query(
+        func.strftime('%Y-%m', models.Transaction.date).label('month'),
+        func.sum(models.Transaction.amount)
+    ).filter(models.Transaction.date >= six_months_ago)
+    if account_ids:
+        query = query.filter(models.Transaction.bank_account_id.in_(account_ids))
     data = (
-        session.query(
-            func.strftime('%Y-%m', models.Transaction.date).label('month'),
-            func.sum(models.Transaction.amount)
-        )
-        .filter(models.Transaction.date >= six_months_ago)
-        .filter(models.Transaction.to_analyze.is_(True))
+        query.filter(models.Transaction.to_analyze.is_(True))
         .group_by('month')
         .order_by('month')
         .all()
@@ -1352,18 +1370,20 @@ def projection():
 @login_required
 def projection_categories():
     session = models.SessionLocal()
+    account_ids = _parse_account_ids()
     today = datetime.now().date()
     current_start = today.replace(day=1)
     start = _shift_month(current_start, -12)
     end = current_start
+    query = session.query(
+        func.strftime('%Y-%m', models.Transaction.date).label('month'),
+        models.Category.name,
+        func.sum(models.Transaction.amount),
+    ).outerjoin(models.Category, models.Transaction.category_id == models.Category.id)
+    if account_ids:
+        query = query.filter(models.Transaction.bank_account_id.in_(account_ids))
     rows = (
-        session.query(
-            func.strftime('%Y-%m', models.Transaction.date).label('month'),
-            models.Category.name,
-            func.sum(models.Transaction.amount),
-        )
-        .outerjoin(models.Category, models.Transaction.category_id == models.Category.id)
-        .filter(models.Transaction.date >= start)
+        query.filter(models.Transaction.date >= start)
         .filter(models.Transaction.date < end)
         .filter(models.Transaction.to_analyze.is_(True))
         .group_by('month', models.Category.name)
@@ -1402,7 +1422,8 @@ def projection_categories():
 def projection_categories_average():
     """Return per-category average monthly amount for the last 12 months."""
     session = models.SessionLocal()
-    averages = compute_category_monthly_averages(session, months=12)
+    account_ids = _parse_account_ids()
+    averages = compute_category_monthly_averages(session, months=12, account_ids=account_ids)
     session.close()
     result = [
         {'category': name, 'average': avg}
@@ -1416,9 +1437,38 @@ def projection_categories_average():
 def projection_categories_forecast():
     """Return per-category forecast for the next 12 months."""
     session = models.SessionLocal()
-    result = compute_category_forecast(session, months=12, forecast=12)
+    account_ids = _parse_account_ids()
+    result = compute_category_forecast(session, months=12, forecast=12, account_ids=account_ids)
     session.close()
     return jsonify(result)
+
+
+@app.route('/balance')
+@login_required
+def balance():
+    """Return account balance up to a specific date."""
+    date_str = request.args.get('date')
+    if date_str:
+        try:
+            date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({'error': 'invalid date'}), 400
+    else:
+        date = None
+    account_ids = _parse_account_ids()
+    session = models.SessionLocal()
+    query = session.query(func.sum(models.BankAccount.initial_balance))
+    if account_ids:
+        query = query.filter(models.BankAccount.id.in_(account_ids))
+    total = query.scalar() or 0
+    tx_query = session.query(func.sum(models.Transaction.amount))
+    if account_ids:
+        tx_query = tx_query.filter(models.Transaction.bank_account_id.in_(account_ids))
+    if date:
+        tx_query = tx_query.filter(models.Transaction.date <= date)
+    total += tx_query.scalar() or 0
+    session.close()
+    return jsonify({'balance': float(total)})
 
 
 @app.route('/category-options')
