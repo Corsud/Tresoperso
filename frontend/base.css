@@ -529,6 +529,7 @@ body.hide-amounts .amount-input {
 
 #projection-reset-controls {
     margin: 0.5em 0;
+    font-size: 1.1em;
 }
 
 .reset-cell {
@@ -538,8 +539,12 @@ body.hide-amounts .amount-input {
     font-size: 0.9em;
 }
 
+.reset-label {
+    margin-right: 0.5em;
+}
+
 .editable-cell { position: relative; }
-.editable-cell .reset-cell { position: absolute; right: 2px; top: 2px; }
+.editable-cell .reset-cell { position: absolute; left: 2px; bottom: 2px; }
 .editable-cell .cell-value { display: inline-block; min-width: 4em; }
 
 /* Income/expense background helpers */
