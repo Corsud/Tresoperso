@@ -70,6 +70,7 @@
                         <input type="date" id="balance-date" />
                         <input type="number" step="0.01" id="balance-amount" placeholder="Solde" />
                         <button type="submit">Enregistrer</button>
+                        <span id="balance-form-msg" style="margin-left:0.5em;"></span>
                     </form>
                 </div>
                 <table id="transactions-table">
@@ -2715,11 +2716,26 @@
             if (!selectedAccountId) return;
             const date = document.getElementById('balance-date').value;
             const amount = document.getElementById('balance-amount').value;
-            await fetch(`/accounts/${selectedAccountId}/balance`, {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ balance_date: date, initial_balance: amount })
-            });
+            const btn = e.target.querySelector('button[type="submit"]');
+            const msg = document.getElementById('balance-form-msg');
+            if (btn) btn.disabled = true;
+            if (msg) msg.textContent = '';
+            try {
+                const resp = await fetch(`/accounts/${selectedAccountId}/balance`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ balance_date: date, initial_balance: amount })
+                });
+                if (handleUnauthorized(resp)) return;
+                if (!resp.ok) {
+                    alert('Erreur lors de l\u2019enregistrement du solde');
+                } else if (msg) {
+                    msg.textContent = 'Enregistr\u00e9';
+                    setTimeout(() => { msg.textContent = ''; }, 2000);
+                }
+            } finally {
+                if (btn) btn.disabled = false;
+            }
             fetchDashboard();
             fetchStats();
         });
