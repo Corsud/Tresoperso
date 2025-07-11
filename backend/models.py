@@ -8,6 +8,7 @@ from sqlalchemy import (
     Boolean,
     ForeignKey,
     text,
+    event,
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from flask_login import UserMixin
@@ -18,6 +19,14 @@ import json
 from . import config
 
 engine = create_engine(config.DATABASE_URI)
+
+
+@event.listens_for(engine, "connect")
+def _set_sqlite_pragma(dbapi_connection, connection_record):
+    """Ensure SQLite enforces foreign key constraints."""
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
@@ -82,7 +91,11 @@ class BankAccount(Base):
     initial_balance = Column(Float, default=0)
     balance_date = Column(Date)
 
-    transactions = relationship('Transaction', back_populates='account')
+    transactions = relationship(
+        'Transaction',
+        back_populates='account',
+        cascade='all, delete-orphan'
+    )
 
 class Transaction(Base):
     __tablename__ = 'transactions'
@@ -93,7 +106,7 @@ class Transaction(Base):
     amount = Column(Float, nullable=False)
     tx_type = Column(String)
     payment_method = Column(String)
-    bank_account_id = Column(Integer, ForeignKey('bank_accounts.id'))
+    bank_account_id = Column(Integer, ForeignKey('bank_accounts.id', ondelete='CASCADE'))
     favorite = Column(Boolean, default=False)
     category_id = Column(Integer, ForeignKey('categories.id'))
     subcategory_id = Column(Integer, ForeignKey('subcategories.id'))
@@ -131,6 +144,8 @@ class FavoriteFilter(Base):
 
 def init_db():
     """Create database tables if they do not exist."""
+    with engine.connect() as conn:
+        conn.execute(text('PRAGMA foreign_keys=ON'))
     Base.metadata.create_all(engine)
 
     # Ensure new columns exist when upgrading from older versions
