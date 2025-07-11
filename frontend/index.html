@@ -221,6 +221,7 @@
 
             <section id="projection-section" style="display:none;">
                 <h1>Projection</h1>
+                <div id="projection-accounts"></div>
                 <h2 class="section-title">Dépenses passées</h2>
                 <p id="projection-cat-period"></p>
                 <table id="projection-cat-table">
@@ -404,6 +405,8 @@
         let projectionData = [];
         let projectionFutureTotals = [];
         let projectionFutureMonths = [];
+        let projectionAccountIds = [];
+        let projectionStartBalance = 0;
         let activeFutureCell = null;
 
         function showLoginForm() {
@@ -659,6 +662,28 @@
             select.value = selectedAccountId;
         }
 
+        function populateProjectionAccounts() {
+            const container = document.getElementById('projection-accounts');
+            if (!container) return;
+            container.innerHTML = '';
+            accountsData.forEach(a => {
+                const lbl = document.createElement('label');
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.value = a.id;
+                cb.checked = !projectionAccountIds.length || projectionAccountIds.includes(String(a.id));
+                cb.addEventListener('change', () => {
+                    projectionAccountIds = Array.from(container.querySelectorAll('input:checked')).map(c => c.value);
+                    fetchProjection();
+                    fetchProjectionCategories();
+                    fetchProjectionFuture();
+                });
+                lbl.appendChild(cb);
+                lbl.append(' ' + `${a.account_type} ${a.number}`.trim());
+                container.appendChild(lbl);
+            });
+        }
+
         function displayAccountInfo() {
             const info = document.getElementById('account-info');
             const acc = accountsData.find(a => String(a.id) === String(selectedAccountId));
@@ -760,6 +785,7 @@
             if (handleUnauthorized(resp) || !resp.ok) return;
             accountsData = await resp.json();
             updateAccountDropdown();
+            populateProjectionAccounts();
             await populateAccountsTable();
         }
 
@@ -1594,8 +1620,43 @@
             projectionFutureTotals = projectionFutureMonths.map((m, idx) => ({ month: m, total: totals[idx] || 0 }));
         }
 
+        async function fetchStartBalance() {
+            const params = new URLSearchParams();
+            if (projectionAccountIds.length) params.set('account_ids', projectionAccountIds.join(','));
+            const resp = await fetch('/balance' + (params.toString() ? `?${params.toString()}` : ''));
+            if (handleUnauthorized(resp) || !resp.ok) return 0;
+            const data = await resp.json();
+            return parseFloat(data.balance) || 0;
+        }
+
+        async function updateBalanceRow() {
+            const tbody = document.getElementById('projection-future-table').querySelector('tbody');
+            const existing = tbody.querySelector('tr.balance-row');
+            if (existing) existing.remove();
+            const totals = projectionFutureTotals.map(t => t.total || 0);
+            if (!Number.isFinite(projectionStartBalance)) {
+                projectionStartBalance = await fetchStartBalance();
+            }
+            let running = projectionStartBalance;
+            const row = document.createElement('tr');
+            row.className = 'total-row balance-row';
+            const first = document.createElement('td');
+            first.textContent = 'Solde';
+            row.appendChild(first);
+            totals.forEach(total => {
+                running += total;
+                const td = document.createElement('td');
+                td.textContent = formatAmount(running);
+                td.className = 'amount';
+                row.appendChild(td);
+            });
+            tbody.appendChild(row);
+        }
+
         async function fetchProjection() {
-            const resp = await fetch('/projection');
+            const params = new URLSearchParams();
+            if (projectionAccountIds.length) params.set('account_ids', projectionAccountIds.join(','));
+            const resp = await fetch('/projection' + (params.toString() ? `?${params.toString()}` : ''));
             if (handleUnauthorized(resp) || !resp.ok) return;
             projectionData = await resp.json();
             drawProjectionChart();
@@ -1603,11 +1664,14 @@
 
         document.getElementById('projection-future-table').addEventListener('input', () => {
             updateFutureTotals();
+            updateBalanceRow();
             drawProjectionChart();
         });
 
         async function fetchProjectionCategories() {
-            const resp = await fetch('/projection/categories');
+            const params = new URLSearchParams();
+            if (projectionAccountIds.length) params.set('account_ids', projectionAccountIds.join(','));
+            const resp = await fetch('/projection/categories' + (params.toString() ? `?${params.toString()}` : ''));
             if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
             document.getElementById('projection-cat-period').textContent = data.period;
@@ -1661,15 +1725,18 @@
 
         async function fetchProjectionFuture() {
             const mode = document.querySelector('input[name="projection-mode"]:checked')?.value || 'average';
+            const params = new URLSearchParams();
+            if (projectionAccountIds.length) params.set('account_ids', projectionAccountIds.join(','));
+            projectionStartBalance = NaN;
             if (mode === 'forecast') {
-                const resp = await fetch('/projection/categories/forecast');
+                const resp = await fetch('/projection/categories/forecast' + (params.toString() ? `?${params.toString()}` : ''));
                 if (handleUnauthorized(resp) || !resp.ok) return;
                 const data = await resp.json();
-                buildFutureTable(data.months, data.rows, data.period);
+                await buildFutureTable(data.months, data.rows, data.period);
             } else {
                 const [avgResp, fResp] = await Promise.all([
-                    fetch('/projection/categories/average'),
-                    fetch('/projection/categories/forecast'),
+                    fetch('/projection/categories/average' + (params.toString() ? `?${params.toString()}` : '')),
+                    fetch('/projection/categories/forecast' + (params.toString() ? `?${params.toString()}` : '')),
                 ]);
                 if (handleUnauthorized(avgResp) || handleUnauthorized(fResp) || !avgResp.ok || !fResp.ok) return;
                 const avgs = await avgResp.json();
@@ -1678,11 +1745,11 @@
                     category: a.category,
                     values: fData.months.map(() => a.average),
                 }));
-                buildFutureTable(fData.months, rows, fData.period);
+                await buildFutureTable(fData.months, rows, fData.period);
             }
         }
 
-        function buildFutureTable(months, rows, period) {
+        async function buildFutureTable(months, rows, period) {
             document.getElementById('projection-future-period').textContent = period;
             const table = document.getElementById('projection-future-table');
             const thead = table.querySelector('thead');
@@ -1772,11 +1839,57 @@
                     });
                     tbody.appendChild(tr);
                 });
+                const addRow = document.createElement('tr');
+                const addTd = document.createElement('td');
+                addTd.colSpan = months.length + 1;
+                const btn = document.createElement('button');
+                btn.textContent = 'Ajouter ligne';
+                btn.addEventListener('click', () => {
+                    const tr = document.createElement('tr');
+                    const tdCat = document.createElement('td');
+                    tdCat.contentEditable = 'true';
+                    tr.appendChild(tdCat);
+                    for (let i=0;i<months.length;i++) {
+                        const td = document.createElement('td');
+                        td.className = 'amount editable-cell ' + (label === 'Recettes' ? 'income-cell' : 'expense-cell');
+                        td.dataset.original = 0;
+                        const valSpan = document.createElement('span');
+                        valSpan.className = 'cell-value';
+                        valSpan.contentEditable = 'true';
+                        valSpan.textContent = '0.00';
+                        valSpan.addEventListener('focus', () => { activeFutureCell = td; });
+                        valSpan.addEventListener('blur', () => {
+                            valSpan.textContent = formatAmount(parseAmount(valSpan.textContent));
+                            updateFutureTotals();
+                            updateBalanceRow();
+                            drawProjectionChart();
+                        });
+                        const reset = document.createElement('span');
+                        reset.className = 'reset-cell';
+                        reset.textContent = '\u21BA';
+                        reset.title = 'Réinitialiser';
+                        reset.addEventListener('click', (e) => {
+                            valSpan.textContent = formatAmount(0);
+                            updateFutureTotals();
+                            updateBalanceRow();
+                            drawProjectionChart();
+                            e.stopPropagation();
+                        });
+                        td.appendChild(valSpan);
+                        td.appendChild(reset);
+                        tr.appendChild(td);
+                    }
+                    tbody.insertBefore(tr, addRow);
+                });
+                addTd.appendChild(btn);
+                addRow.appendChild(addTd);
+                tbody.appendChild(addRow);
             }
 
             appendGroup('Recettes', incomes);
             appendGroup('Dépenses', expenses);
             updateFutureTotals();
+            await updateBalanceRow();
             drawProjectionChart();
         }
 
@@ -1787,6 +1900,7 @@
                 if (span) span.textContent = formatAmount(td.dataset.original);
             });
             updateFutureTotals();
+            updateBalanceRow();
             drawProjectionChart();
         }
 
@@ -1801,6 +1915,7 @@
                 }
             });
             updateFutureTotals();
+            updateBalanceRow();
             drawProjectionChart();
         }
 
@@ -1810,6 +1925,7 @@
                 if (span) span.textContent = formatAmount(td.dataset.original);
             });
             updateFutureTotals();
+            updateBalanceRow();
             drawProjectionChart();
         }
 
@@ -1912,6 +2028,9 @@
                 params.append('category_id', cat.id);
             } else if (normalizeName(catName) === normalizeName('Inconnu')) {
                 params.append('category_none', 'true');
+            }
+            if (projectionAccountIds.length === 1) {
+                params.append('account_id', projectionAccountIds[0]);
             }
             const resp = await fetch('/transactions?' + params.toString());
             if (handleUnauthorized(resp) || !resp.ok) return;
