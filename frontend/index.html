@@ -243,6 +243,7 @@
                     <button id="reset-future-row">↺ Ligne</button>
                     <button id="reset-future-column">↺ Colonne</button>
                     <button id="reset-future-table">↺ Tableau</button>
+                    <button id="clear-custom-rows">Supprimer lignes perso</button>
                 </div>
                 <canvas id="projectionChart" width="400" height="200"></canvas>
             </section>
@@ -1618,6 +1619,26 @@
                 if (cell) cell.textContent = formatAmount(v);
             });
             projectionFutureTotals = projectionFutureMonths.map((m, idx) => ({ month: m, total: totals[idx] || 0 }));
+            updateMonthBalanceRow();
+        }
+
+        function updateMonthBalanceRow() {
+            const tbody = document.getElementById('projection-future-table').querySelector('tbody');
+            const existing = tbody.querySelector('tr.month-balance-row');
+            if (existing) existing.remove();
+            const row = document.createElement('tr');
+            row.className = 'total-row month-balance-row';
+            const first = document.createElement('td');
+            first.textContent = 'Solde du mois';
+            row.appendChild(first);
+            projectionFutureTotals.forEach(t => {
+                const td = document.createElement('td');
+                td.textContent = formatAmount(t.total || 0);
+                td.className = 'amount';
+                row.appendChild(td);
+            });
+            const bal = tbody.querySelector('tr.balance-row');
+            if (bal) tbody.insertBefore(row, bal); else tbody.appendChild(row);
         }
 
         async function fetchStartBalance() {
@@ -1653,6 +1674,34 @@
             tbody.appendChild(row);
         }
 
+        function saveFutureTable() {
+            const rows = [];
+            document.querySelectorAll('#projection-future-table tbody tr').forEach(tr => {
+                if (tr.classList.contains('total-row') || tr.classList.contains('group-header')) return;
+                const catCell = tr.children[0];
+                let category = catCell.textContent.replace('×', '').trim();
+                const sign = tr.dataset.sign || 'expense';
+                const custom = tr.dataset.custom === 'true';
+                const values = Array.from(tr.querySelectorAll('td.amount .cell-value')).map(span => parseAmount(span.textContent));
+                rows.push({category, sign, values, custom});
+            });
+            const data = {months: projectionFutureMonths, rows};
+            localStorage.setItem('projectionFutureTable', JSON.stringify(data));
+        }
+
+        function loadFutureTable() {
+            try {
+                const raw = localStorage.getItem('projectionFutureTable');
+                return raw ? JSON.parse(raw) : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function clearSavedFutureTable() {
+            localStorage.removeItem('projectionFutureTable');
+        }
+
         async function fetchProjection() {
             const params = new URLSearchParams();
             if (projectionAccountIds.length) params.set('account_ids', projectionAccountIds.join(','));
@@ -1666,6 +1715,7 @@
             updateFutureTotals();
             updateBalanceRow();
             drawProjectionChart();
+            saveFutureTable();
         });
 
         async function fetchProjectionCategories() {
@@ -1767,11 +1817,74 @@
 
             projectionFutureMonths = months.slice();
 
+            const saved = loadFutureTable();
+            if (saved && JSON.stringify(saved.months) === JSON.stringify(months)) {
+                rows = saved.rows;
+            }
+
+            function createEditableRow(r, sign) {
+                const tr = document.createElement('tr');
+                tr.dataset.sign = sign;
+                if (r.custom) tr.dataset.custom = 'true';
+                const tdCat = document.createElement('td');
+                tdCat.textContent = r.category || '';
+                if (r.custom) {
+                    tdCat.contentEditable = 'true';
+                    const del = document.createElement('span');
+                    del.className = 'remove-row';
+                    del.textContent = '×';
+                    del.title = 'Supprimer';
+                    del.addEventListener('click', () => {
+                        tr.remove();
+                        updateFutureTotals();
+                        updateBalanceRow();
+                        drawProjectionChart();
+                        saveFutureTable();
+                    });
+                    tdCat.appendChild(del);
+                    tdCat.addEventListener('blur', saveFutureTable);
+                }
+                tr.appendChild(tdCat);
+                for (let i=0;i<months.length;i++) {
+                    const orig = r.values[i] || 0;
+                    const td = document.createElement('td');
+                    td.className = 'amount editable-cell ' + (sign === 'income' ? 'income-cell' : 'expense-cell');
+                    td.dataset.original = orig;
+                    const valSpan = document.createElement('span');
+                    valSpan.className = 'cell-value';
+                    valSpan.contentEditable = 'true';
+                    valSpan.textContent = formatAmount(orig);
+                    valSpan.addEventListener('focus', () => { activeFutureCell = td; });
+                    valSpan.addEventListener('blur', () => {
+                        valSpan.textContent = formatAmount(parseAmount(valSpan.textContent));
+                        updateFutureTotals();
+                        updateBalanceRow();
+                        drawProjectionChart();
+                        saveFutureTable();
+                    });
+                    const reset = document.createElement('span');
+                    reset.className = 'reset-cell';
+                    reset.textContent = '\u21BA';
+                    reset.title = 'Réinitialiser';
+                    reset.addEventListener('click', (e) => {
+                        valSpan.textContent = formatAmount(td.dataset.original);
+                        updateFutureTotals();
+                        updateBalanceRow();
+                        drawProjectionChart();
+                        saveFutureTable();
+                        e.stopPropagation();
+                    });
+                    td.appendChild(valSpan);
+                    td.appendChild(reset);
+                    tr.appendChild(td);
+                }
+                return tr;
+            }
+
             const totals = new Array(months.length).fill(0);
             rows.forEach(r => {
                 r.values.forEach((v, idx) => { totals[idx] += v; });
             });
-
 
             const totalRow = document.createElement('tr');
             totalRow.className = 'total-row';
@@ -1787,12 +1900,12 @@
             const incomes = [];
             const expenses = [];
             rows.forEach(r => {
-                const total = r.values.reduce((a, b) => a + b, 0);
-                r.__sign = total >= 0 ? 'income' : 'expense';
-                (total >= 0 ? incomes : expenses).push(r);
+                const sign = r.sign || (r.values.reduce((a,b)=>a+b,0) >= 0 ? 'income' : 'expense');
+                r.__sign = sign;
+                (sign === 'income' ? incomes : expenses).push(r);
             });
 
-            function appendGroup(label, groupRows) {
+            function appendGroup(label, groupRows, sign) {
                 if (!groupRows.length) return;
                 const header = document.createElement('tr');
                 header.className = 'group-header';
@@ -1802,41 +1915,7 @@
                 header.appendChild(td);
                 tbody.appendChild(header);
                 groupRows.forEach(r => {
-                    const tr = document.createElement('tr');
-                    const tdCat = document.createElement('td');
-                    tdCat.textContent = r.category;
-                    tr.appendChild(tdCat);
-                    r.values.forEach((v, idx) => {
-                        const td = document.createElement('td');
-                        td.className = 'amount editable-cell ' + (r.__sign === 'income' ? 'income-cell' : 'expense-cell');
-                        td.dataset.original = v;
-
-                        const valSpan = document.createElement('span');
-                        valSpan.className = 'cell-value';
-                        valSpan.contentEditable = 'true';
-                        valSpan.textContent = formatAmount(v);
-                        valSpan.addEventListener('focus', () => { activeFutureCell = td; });
-                        valSpan.addEventListener('blur', () => {
-                            valSpan.textContent = formatAmount(parseAmount(valSpan.textContent));
-                            updateFutureTotals();
-                            drawProjectionChart();
-                        });
-
-                        const reset = document.createElement('span');
-                        reset.className = 'reset-cell';
-                        reset.textContent = '\u21BA';
-                        reset.title = 'Réinitialiser';
-                        reset.addEventListener('click', (e) => {
-                            valSpan.textContent = formatAmount(td.dataset.original);
-                            updateFutureTotals();
-                            drawProjectionChart();
-                            e.stopPropagation();
-                        });
-
-                        td.appendChild(valSpan);
-                        td.appendChild(reset);
-                        tr.appendChild(td);
-                    });
+                    const tr = createEditableRow(r, sign);
                     tbody.appendChild(tr);
                 });
                 const addRow = document.createElement('tr');
@@ -1845,52 +1924,21 @@
                 const btn = document.createElement('button');
                 btn.textContent = 'Ajouter ligne';
                 btn.addEventListener('click', () => {
-                    const tr = document.createElement('tr');
-                    const tdCat = document.createElement('td');
-                    tdCat.contentEditable = 'true';
-                    tr.appendChild(tdCat);
-                    for (let i=0;i<months.length;i++) {
-                        const td = document.createElement('td');
-                        td.className = 'amount editable-cell ' + (label === 'Recettes' ? 'income-cell' : 'expense-cell');
-                        td.dataset.original = 0;
-                        const valSpan = document.createElement('span');
-                        valSpan.className = 'cell-value';
-                        valSpan.contentEditable = 'true';
-                        valSpan.textContent = '0.00';
-                        valSpan.addEventListener('focus', () => { activeFutureCell = td; });
-                        valSpan.addEventListener('blur', () => {
-                            valSpan.textContent = formatAmount(parseAmount(valSpan.textContent));
-                            updateFutureTotals();
-                            updateBalanceRow();
-                            drawProjectionChart();
-                        });
-                        const reset = document.createElement('span');
-                        reset.className = 'reset-cell';
-                        reset.textContent = '\u21BA';
-                        reset.title = 'Réinitialiser';
-                        reset.addEventListener('click', (e) => {
-                            valSpan.textContent = formatAmount(0);
-                            updateFutureTotals();
-                            updateBalanceRow();
-                            drawProjectionChart();
-                            e.stopPropagation();
-                        });
-                        td.appendChild(valSpan);
-                        td.appendChild(reset);
-                        tr.appendChild(td);
-                    }
+                    const tr = createEditableRow({category:'', values:new Array(months.length).fill(0), custom:true}, sign);
                     tbody.insertBefore(tr, addRow);
+                    saveFutureTable();
                 });
                 addTd.appendChild(btn);
                 addRow.appendChild(addTd);
                 tbody.appendChild(addRow);
             }
 
-            appendGroup('Recettes', incomes);
-            appendGroup('Dépenses', expenses);
+            appendGroup('Recettes', incomes, 'income');
+            appendGroup('Dépenses', expenses, 'expense');
             updateFutureTotals();
             await updateBalanceRow();
             drawProjectionChart();
+            saveFutureTable();
         }
 
         function resetFutureRow() {
@@ -1902,6 +1950,7 @@
             updateFutureTotals();
             updateBalanceRow();
             drawProjectionChart();
+            saveFutureTable();
         }
 
         function resetFutureColumn() {
@@ -1917,6 +1966,7 @@
             updateFutureTotals();
             updateBalanceRow();
             drawProjectionChart();
+            saveFutureTable();
         }
 
         function resetFutureTable() {
@@ -1924,9 +1974,12 @@
                 const span = td.querySelector('.cell-value');
                 if (span) span.textContent = formatAmount(td.dataset.original);
             });
+            document.querySelectorAll('#projection-future-table tbody tr[data-custom="true"]').forEach(tr => tr.remove());
+            clearSavedFutureTable();
             updateFutureTotals();
             updateBalanceRow();
             drawProjectionChart();
+            saveFutureTable();
         }
 
         async function fetchRecurrents() {
@@ -2932,6 +2985,14 @@
         document.getElementById('reset-future-row').addEventListener('click', resetFutureRow);
         document.getElementById('reset-future-column').addEventListener('click', resetFutureColumn);
         document.getElementById('reset-future-table').addEventListener('click', resetFutureTable);
+        document.getElementById('clear-custom-rows').addEventListener('click', () => {
+            document.querySelectorAll('#projection-future-table tbody tr[data-custom="true"]').forEach(tr => tr.remove());
+            clearSavedFutureTable();
+            updateFutureTotals();
+            updateBalanceRow();
+            drawProjectionChart();
+            saveFutureTable();
+        });
 
         window.addEventListener('resize', () => {
             if (incomeChart) incomeChart.resize();

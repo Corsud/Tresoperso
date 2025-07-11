@@ -547,6 +547,14 @@ body.hide-amounts .amount-input {
 .editable-cell .reset-cell { position: absolute; left: 2px; bottom: 2px; }
 .editable-cell .cell-value { display: inline-block; min-width: 4em; }
 
+.remove-row {
+    margin-left: 0.5em;
+    cursor: pointer;
+    color: red;
+    user-select: none;
+    font-weight: bold;
+}
+
 /* Income/expense background helpers */
 .income-cell { background: rgba(0, 128, 0, 0.5); }
 .expense-cell { background: rgba(255, 0, 0, 0.5); }
