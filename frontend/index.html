@@ -556,7 +556,8 @@
             if (localStorage.getItem('hideAmounts') === 'true') {
                 return '•••';
             }
-            return (v || 0)
+            const num = typeof v === 'string' ? parseFloat(v) : v;
+            return (num || 0)
                 .toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
                 .replace(/,/g, ' ');
         }
