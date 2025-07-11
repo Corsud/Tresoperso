@@ -671,7 +671,7 @@
             }
         }
 
-        function populateAccountsTable() {
+        async function populateAccountsTable() {
             const tbody = document.querySelector('#accounts-table tbody');
             if (!tbody) return;
             tbody.innerHTML = '';
@@ -706,30 +706,36 @@
                 tbody.appendChild(tr);
             });
 
-            const noneTr = document.createElement('tr');
-            const noneInfo = document.createElement('td');
-            noneInfo.textContent = 'Pas de référence de compte';
-            noneTr.appendChild(noneInfo);
+            const resp = await fetch('/transactions/unassigned/count');
+            if (!handleUnauthorized(resp) && resp.ok) {
+                const data = await resp.json();
+                if (data.count) {
+                    const noneTr = document.createElement('tr');
+                    const noneInfo = document.createElement('td');
+                    noneInfo.textContent = 'Pas de référence de compte';
+                    noneTr.appendChild(noneInfo);
 
-            const noneAction = document.createElement('td');
-            const noneUpd = document.createElement('button');
-            noneUpd.textContent = 'Mettre à jour';
-            noneUpd.onclick = () => {
-                selectedAccountId = 'none';
-                updateAccountDropdown();
-                displayAccountInfo();
-                fetchBalanceInfo();
-            };
-            const noneDel = document.createElement('button');
-            noneDel.textContent = 'Supprimer';
-            noneDel.onclick = async () => {
-                if (!confirm('Supprimer ces transactions ?')) return;
-                await deleteUnassignedTransactions();
-            };
-            noneAction.appendChild(noneUpd);
-            noneAction.append(' ', noneDel);
-            noneTr.appendChild(noneAction);
-            tbody.appendChild(noneTr);
+                    const noneAction = document.createElement('td');
+                    const noneUpd = document.createElement('button');
+                    noneUpd.textContent = 'Mettre à jour';
+                    noneUpd.onclick = () => {
+                        selectedAccountId = 'none';
+                        updateAccountDropdown();
+                        displayAccountInfo();
+                        fetchBalanceInfo();
+                    };
+                    const noneDel = document.createElement('button');
+                    noneDel.textContent = 'Supprimer';
+                    noneDel.onclick = async () => {
+                        if (!confirm('Supprimer ces transactions ?')) return;
+                        await deleteUnassignedTransactions();
+                    };
+                    noneAction.appendChild(noneUpd);
+                    noneAction.append(' ', noneDel);
+                    noneTr.appendChild(noneAction);
+                    tbody.appendChild(noneTr);
+                }
+            }
             adjustLabelColumns();
         }
 
@@ -753,7 +759,7 @@
             if (handleUnauthorized(resp) || !resp.ok) return;
             accountsData = await resp.json();
             updateAccountDropdown();
-            populateAccountsTable();
+            await populateAccountsTable();
         }
 
         async function createAccount(file) {

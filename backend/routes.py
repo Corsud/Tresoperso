@@ -570,6 +570,18 @@ def delete_unassigned_transactions():
     return jsonify({'deleted': count})
 
 
+@app.route('/transactions/unassigned/count')
+@login_required
+def count_unassigned_transactions():
+    """Return the number of transactions without an associated bank account."""
+    session = models.SessionLocal()
+    count = session.query(func.count(models.Transaction.id)).filter(
+        models.Transaction.bank_account_id.is_(None)
+    ).scalar() or 0
+    session.close()
+    return jsonify({'count': count})
+
+
 @app.route('/stats')
 @login_required
 def stats():
