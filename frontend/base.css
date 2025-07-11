@@ -541,3 +541,13 @@ body.hide-amounts .amount-input {
 .editable-cell { position: relative; }
 .editable-cell .reset-cell { position: absolute; right: 2px; top: 2px; }
 .editable-cell .cell-value { display: inline-block; min-width: 4em; }
+
+/* Income/expense background helpers */
+.income-cell { background: rgba(0, 128, 0, 0.5); }
+.expense-cell { background: rgba(255, 0, 0, 0.5); }
+
+.group-header td {
+    background: var(--table-header-bg);
+    color: var(--bg-color);
+    font-weight: bold;
+}
