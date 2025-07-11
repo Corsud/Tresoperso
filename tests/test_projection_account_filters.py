@@ -21,8 +21,18 @@ def client_with_accounts(monkeypatch):
     monkeypatch.setattr(app_module.routes, 'datetime', FixedDate)
     models.init_db()
     session = models.SessionLocal()
-    a1 = models.BankAccount(account_type='Compte', number='A1', initial_balance=100)
-    a2 = models.BankAccount(account_type='Compte', number='A2', initial_balance=200)
+    a1 = models.BankAccount(
+        account_type='Compte',
+        number='A1',
+        initial_balance=100,
+        balance_date=datetime.date(2021, 6, 10),
+    )
+    a2 = models.BankAccount(
+        account_type='Compte',
+        number='A2',
+        initial_balance=200,
+        balance_date=datetime.date(2021, 5, 1),
+    )
     session.add_all([a1, a2])
     session.flush()
     a1_id = a1.id
@@ -56,7 +66,15 @@ def test_balance_endpoint(client_with_accounts):
     login(client)
     resp = client.get(f'/balance?date=2021-06-30&account_ids={a1}')
     assert resp.status_code == 200
-    assert resp.get_json()['balance'] == pytest.approx(105)
+    assert resp.get_json()['balance'] == pytest.approx(95)
     resp = client.get(f'/balance?date=2021-06-30&account_ids={a1},{a2}')
     assert resp.status_code == 200
-    assert resp.get_json()['balance'] == pytest.approx(325)
+    assert resp.get_json()['balance'] == pytest.approx(295)
+
+
+def test_balance_before_balance_date(client_with_accounts):
+    client, a1, _ = client_with_accounts
+    login(client)
+    resp = client.get(f'/balance?date=2021-06-05&account_ids={a1}')
+    assert resp.status_code == 200
+    assert resp.get_json()['balance'] == pytest.approx(90)
