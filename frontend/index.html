@@ -236,6 +236,11 @@
                     <thead></thead>
                     <tbody></tbody>
                 </table>
+                <div id="projection-reset-controls">
+                    <button id="reset-future-row">↺ Ligne</button>
+                    <button id="reset-future-column">↺ Colonne</button>
+                    <button id="reset-future-table">↺ Tableau</button>
+                </div>
                 <canvas id="projectionChart" width="400" height="200"></canvas>
             </section>
 
@@ -397,6 +402,7 @@
         let projectionData = [];
         let projectionFutureTotals = [];
         let projectionFutureMonths = [];
+        let activeFutureCell = null;
 
         function showLoginForm() {
             document.getElementById('app').style.display = 'none';
@@ -1709,17 +1715,69 @@
                 tr.appendChild(tdCat);
                 r.values.forEach((v, idx) => {
                     const td = document.createElement('td');
-                    td.textContent = formatAmount(v);
-                    td.className = 'amount';
-                    td.contentEditable = 'true';
-                    td.addEventListener('blur', () => {
-                        td.textContent = formatAmount(parseAmount(td.textContent));
+                    td.className = 'amount editable-cell';
+                    td.dataset.original = v;
+
+                    const valSpan = document.createElement('span');
+                    valSpan.className = 'cell-value';
+                    valSpan.contentEditable = 'true';
+                    valSpan.textContent = formatAmount(v);
+                    valSpan.addEventListener('focus', () => { activeFutureCell = td; });
+                    valSpan.addEventListener('blur', () => {
+                        valSpan.textContent = formatAmount(parseAmount(valSpan.textContent));
                         updateFutureTotals();
                         drawProjectionChart();
                     });
+
+                    const reset = document.createElement('span');
+                    reset.className = 'reset-cell';
+                    reset.textContent = '\u21BA';
+                    reset.title = 'Réinitialiser';
+                    reset.addEventListener('click', (e) => {
+                        valSpan.textContent = formatAmount(td.dataset.original);
+                        updateFutureTotals();
+                        drawProjectionChart();
+                        e.stopPropagation();
+                    });
+
+                    td.appendChild(valSpan);
+                    td.appendChild(reset);
                     tr.appendChild(td);
                 });
                 tbody.appendChild(tr);
+            });
+            updateFutureTotals();
+            drawProjectionChart();
+        }
+
+        function resetFutureRow() {
+            if (!activeFutureCell) return;
+            activeFutureCell.parentElement.querySelectorAll('td[data-original]').forEach(td => {
+                const span = td.querySelector('.cell-value');
+                if (span) span.textContent = formatAmount(td.dataset.original);
+            });
+            updateFutureTotals();
+            drawProjectionChart();
+        }
+
+        function resetFutureColumn() {
+            if (!activeFutureCell) return;
+            const idx = activeFutureCell.cellIndex;
+            document.querySelectorAll('#projection-future-table tbody tr').forEach(tr => {
+                const td = tr.children[idx];
+                if (td && td.dataset.original !== undefined) {
+                    const span = td.querySelector('.cell-value');
+                    if (span) span.textContent = formatAmount(td.dataset.original);
+                }
+            });
+            updateFutureTotals();
+            drawProjectionChart();
+        }
+
+        function resetFutureTable() {
+            document.querySelectorAll('#projection-future-table tbody td[data-original]').forEach(td => {
+                const span = td.querySelector('.cell-value');
+                if (span) span.textContent = formatAmount(td.dataset.original);
             });
             updateFutureTotals();
             drawProjectionChart();
@@ -2706,6 +2764,10 @@
                 fetchSankeyStats();
             }
         });
+
+        document.getElementById('reset-future-row').addEventListener('click', resetFutureRow);
+        document.getElementById('reset-future-column').addEventListener('click', resetFutureColumn);
+        document.getElementById('reset-future-table').addEventListener('click', resetFutureTable);
 
         window.addEventListener('resize', () => {
             if (incomeChart) incomeChart.resize();
