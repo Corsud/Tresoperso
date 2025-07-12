@@ -75,70 +75,44 @@
                 </div>
                 <table id="transactions-table">
                     <thead>
-                        <tr class="filter-row">
-                            <th><select id="filter-favorite">
-                                <option value="">(Tous)</option>
-                                <option value="true">Oui</option>
-                                <option value="false">Non</option>
-                            </select></th>
-                            <th></th>
-                            <th class="stack">
-                                <input type="date" id="filter-start-date" />
-                                <input type="date" id="filter-end-date" />
-                                <select id="filter-period">
-                                    <option value="">(Période)</option>
-                                    <option value="current-week">Semaine en cours</option>
-                                    <option value="previous-week">Semaine précédente</option>
-                                    <option value="current-month">Mois en cours</option>
-                                    <option value="previous-month">Mois précédent</option>
-                                    <option value="ytd">Année en cours</option>
-                                    <option value="last-6-months">6 derniers mois</option>
-                                    <option value="previous-year">Année précédente</option>
-                                    <option value="all">Tout</option>
-                                </select>
-                            </th>
-                            <th><select id="filter-type"><option value="">(Tous)</option></select></th>
-                            <th><select id="filter-payment"><option value="">(Tous)</option></select></th>
-                            <th><input type="text" id="filter-label" placeholder="Libellé" /></th>
-                            <th class="stack">
-                                <input type="number" id="filter-min-amount" placeholder="Min" style="width:5em;" />
-                                <input type="number" id="filter-max-amount" placeholder="Max" style="width:5em;" />
-                                <select id="filter-amount-order">
-                                    <option value="">(Date)</option>
-                                    <option value="asc">Croissant</option>
-                                    <option value="desc">Décroissant</option>
-                                </select>
-                            </th>
-                            <th><select id="filter-category"><option value="">(Toutes)</option></select></th>
-                            <th><select id="filter-subcategory"><option value="">(Toutes)</option></select></th>
-                            <th></th>
-                            <th><select id="filter-reconciled">
-                                <option value="">(Tous)</option>
-                                <option value="true">Oui</option>
-                                <option value="false">Non</option>
-                            </select></th>
-                            <th><select id="filter-toanalyze">
-                                <option value="">(Tous)</option>
-                                <option value="true">Oui</option>
-                                <option value="false">Non</option>
-                            </select></th>
-                        </tr>
-                        <tr>
-                            <th>★</th>
-                            <th>Filtre</th>
-                            <th>Date</th>
-                            <th>Type</th>
-                            <th>Moyen de paiement</th>
-                            <th>Libellé</th>
-                            <th>Montant</th>
-                            <th>Catégorie</th>
-                            <th>Sous-catégorie</th>
-                            <th>Règle</th>
-                            <th>Pointée <button id="toggle-all-reconciled" class="toggle-all-btn">✓</button></th>
-                            <th>A analyser <button id="toggle-all-toanalyze" class="toggle-all-btn">✓</button></th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
+    <tr>
+        <th class="col-star">★</th>
+        <th class="col-filter">Filtre</th>
+        <th class="col-date">Date</th>
+        <th class="col-type">Type</th>
+        <th class="col-moyen">Moyen de paiement</th>
+        <th class="col-libelle">Libellé</th>
+        <th class="col-montant">Montant</th>
+        <th class="col-categorie">Catégorie</th>
+        <th class="col-souscat">Sous-catégorie</th>
+        <th class="col-regle">Règle</th>
+        <th class="col-pointee">Pointée</th>
+        <th class="col-analyser">À analyser</th>
+    </tr>
+</thead>
+<tbody>
+{% for row in table %}
+<tr>
+    <td class="col-star"><button class="star-btn">★</button></td>
+    <td class="col-filter">{{ row.filtre }}</td>
+    <td class="col-date">{{ row.date }}</td>
+    <td class="col-type">{{ row.type }}</td>
+    <td class="col-moyen">{{ row.paiement }}</td>
+    <td class="col-libelle">{{ row.libelle|safe }}</td>
+    <td class="col-montant">{{ row.montant }}</td>
+    <td class="col-categorie"><span style="color: {{ row.couleur_categorie }}; font-weight: bold">{{ row.categorie }}</span></td>
+    <td class="col-souscat"><span style="color: {{ row.couleur_sous_categorie }}; font-weight: bold">{{ row.sous_categorie }}</span></td>
+    <td class="col-regle">
+        {% if row.regle %}
+        <button class="btn-regle" style="background: #f8c471; color: #22243a">⚙️</button>
+        {% endif %}
+    </td>
+    <td class="col-pointee"><input type="checkbox" {% if row.pointee %}checked{% endif %} disabled></td>
+    <td class="col-analyser"><input type="checkbox" name="a_analyser" value="1" {% if row.a_analyser %}checked{% endif %}></td>
+</tr>
+{% endfor %}
+</tbody>
+
                 </table>
             </section>
 
