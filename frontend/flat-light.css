@@ -1,0 +1,71 @@
+/* flat-light.css */
+/* Flat design épuré clair : bleu vif, gris clair, police moderne et ronde */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+body {
+  background: #f3f5f9;
+  color: #222;
+  font-family: 'Poppins', Arial, sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: 'Poppins', Arial, sans-serif;
+  color: #2d6cdf;
+  letter-spacing: 0.01em;
+}
+
+.header, .navbar {
+  background: #ffffff;
+  color: #2d6cdf;
+  border-bottom: 2px solid #e3eafc;
+}
+
+.button, button {
+  background: #2d6cdf;
+  color: #fff;
+  border-radius: 12px;
+  padding: 0.5em 1.5em;
+  font-weight: bold;
+  border: none;
+  box-shadow: none;
+  transition: background 0.2s;
+}
+
+.button:hover, button:hover {
+  background: #184799;
+}
+
+.card, .box {
+  background: #ffffff;
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(45,108,223,0.08);
+  padding: 1.5em;
+}
+
+.table {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(45,108,223,0.05);
+  color: #222;
+}
+
+input, select, textarea {
+  border-radius: 8px;
+  border: 1px solid #e3eafc;
+  background: #f9fbfd;
+  color: #184799;
+  padding: 0.5em;
+  font-family: inherit;
+}
+
+a {
+  color: #2d6cdf;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: #184799;
+}
