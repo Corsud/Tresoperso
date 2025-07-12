@@ -1,5 +1,5 @@
-/* luxury-dark.css */
-/* Thème premium sombre : bleu nuit, or mat, blanc chaud, police élégante */
+/* luxury-dark.css - Version premium optimisée */
+/* Palette : bleu nuit #181c2a, or mat #f8c471/#e6be6a, blanc cassé #fffdfa */
 
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Montserrat:wght@400;600&display=swap');
 
@@ -9,63 +9,216 @@ body {
   font-family: 'Montserrat', Arial, sans-serif;
 }
 
-h1, h2, h3 {
-  font-family: 'Playfair Display', serif;
-  color: #f8c471;
-  letter-spacing: 0.01em;
-}
-
+/* ------ Navigation & Header ------ */
 .header, .navbar {
   background: #14213d;
   color: #f8c471;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15em;
   border-bottom: 3px solid #e6be6a;
 }
 
-.button, button {
+.navbar a, .navbar button {
+  color: #f8c471;
+  background: transparent;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 600;
+  padding: 0.6em 2em;
+  border: none;
+  border-radius: 14px 14px 0 0;
+  margin-right: 0.4em;
+  transition: background 0.15s, color 0.15s;
+}
+
+.navbar a.active, .navbar button.active {
+  background: #f8c471;
+  color: #14213d !important;
+  font-family: 'Playfair Display', serif;
+  font-weight: bold;
+  border-bottom: 0;
+}
+
+.navbar a:hover:not(.active), .navbar button:hover:not(.active) {
+  background: #22243a;
+  color: #fffdfa;
+}
+
+/* ------ Titres ------ */
+h1, h2, h3, .main-title {
+  font-family: 'Playfair Display', serif;
+  color: #f8c471;
+  margin-bottom: 0.8em;
+  letter-spacing: 0.01em;
+}
+
+h1 {
+  font-size: 2.3em;
+  margin-top: 0.2em;
+}
+
+h2 {
+  font-size: 1.5em;
+}
+
+h3 {
+  font-size: 1.15em;
+}
+
+/* ------ Boutons ------ */
+.button, button, .btn {
   background: linear-gradient(90deg, #f8c471, #e6be6a);
   color: #14213d;
   border-radius: 12px;
   padding: 0.5em 1.5em;
   font-weight: bold;
+  font-family: 'Montserrat', Arial, sans-serif;
   border: none;
-  box-shadow: 0 2px 8px rgba(248,196,113,0.1);
-  transition: filter 0.2s;
+  box-shadow: 0 2px 12px rgba(230,190,106,0.14);
+  transition: filter 0.15s, box-shadow 0.15s;
+  font-size: 1em;
+  outline: none;
 }
 
-.button:hover, button:hover {
-  filter: brightness(1.1);
+.button:hover, button:hover, .btn:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 2px 16px rgba(248,196,113,0.30);
 }
 
-.card, .box {
+.button:active, button:active, .btn:active {
+  filter: brightness(0.97);
+}
+
+/* Icones et boutons arrondis */
+.button.icon, .btn.icon {
+  border-radius: 50%;
+  padding: 0.35em 0.5em;
+  font-size: 1.2em;
+  margin: 0 0.1em;
+}
+
+/* ------ Tableaux ------ */
+.table, table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #181c2a;
+  color: #fffdfa;
+  font-family: 'Montserrat', Arial, sans-serif;
+}
+
+.table thead, table thead {
   background: #22243a;
-  border: 1px solid #f8c471;
-  border-radius: 18px;
-  box-shadow: 0 4px 24px rgba(248,196,113,0.05);
-  padding: 1.5em;
 }
 
-.table {
-  background: #1e2133;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(248,196,113,0.08);
-  color: #f6f7fb;
-}
-
-input, select, textarea {
-  border-radius: 8px;
-  border: 1px solid #e6be6a;
-  background: #1e2133;
+.table th, table th {
   color: #f8c471;
-  padding: 0.5em;
-  font-family: inherit;
+  font-family: 'Playfair Display', serif;
+  font-size: 1em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 2px solid rgba(230,190,106,0.33);
+  padding: 0.75em 0.4em;
+  background: #22243a;
 }
 
+.table td, table td {
+  color: #fffdfa;
+  padding: 0.65em 0.4em;
+  border-bottom: 1px solid rgba(230,190,106,0.16);
+  background: #181c2a;
+}
+
+.table tr {
+  background: #181c2a;
+  transition: background 0.18s;
+}
+
+.table tr:hover, table tr:hover {
+  background: #22243a;
+}
+
+.table .highlight, .table tr.selected {
+  background: #f8c471 !important;
+  color: #14213d !important;
+}
+
+/* Style pour les boutons/icônes dans le tableau */
+.table .btn, .table .button {
+  font-size: 1.1em;
+  padding: 0.3em 1em;
+}
+
+/* ------ Filtres, Inputs, Selects ------ */
+input, select, textarea {
+  background: #22243a;
+  color: #fffdfa;
+  border: 1.5px solid #e6be6a;
+  border-radius: 8px;
+  padding: 0.4em 0.8em;
+  font-size: 1em;
+  font-family: 'Montserrat', Arial, sans-serif;
+  margin-bottom: 0.25em;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #f8c471;
+  box-shadow: 0 0 0 1.5px #f8c47122;
+}
+
+input::placeholder, select option, textarea::placeholder {
+  color: #e6be6a;
+  opacity: 0.85;
+}
+
+/* ------ Etiquettes, tags, badges ------ */
+.badge, .tag {
+  background: #f8c471;
+  color: #14213d;
+  font-size: 0.97em;
+  border-radius: 8px;
+  padding: 0.25em 0.8em;
+  font-weight: bold;
+  margin-right: 0.4em;
+}
+
+/* ------ Divers ------ */
 a {
   color: #f8c471;
   text-decoration: underline;
-  transition: color 0.2s;
+  transition: color 0.18s;
 }
-
 a:hover {
   color: #e6be6a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #e6be6a;
+  border-radius: 12px;
+}
+
+::-webkit-scrollbar {
+  background: #22243a;
+  width: 10px;
+}
+
+/* Amélioration pour la lisibilité des totaux et chiffres clés */
+.summary, .total, .important {
+  color: #f8c471;
+  font-family: 'Playfair Display', serif;
+  font-weight: bold;
+  font-size: 1.08em;
+}
+
+/* Adaptation responsive si besoin */
+@media (max-width: 900px) {
+  .navbar a, .navbar button {
+    padding: 0.6em 1.2em;
+    font-size: 0.98em;
+  }
+  .table th, .table td, table th, table td {
+    font-size: 0.93em;
+    padding: 0.6em 0.25em;
+  }
 }
