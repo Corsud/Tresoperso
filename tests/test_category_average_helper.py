@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from backend import models
 import backend as app_module
 
+
 class FixedDate(datetime.datetime):
     @classmethod
     def now(cls, tz=None):
@@ -41,4 +42,3 @@ def test_compute_category_monthly_averages(monkeypatch):
     assert avgs['Food'] == pytest.approx(13/12)
     assert avgs['Misc'] == pytest.approx(7/12)
     session.close()
-

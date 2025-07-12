@@ -1,18 +1,19 @@
-import os
 import json
+import logging
+import os
 import threading
 import webbrowser
-import logging
+
+from flask import Flask
+
+from . import config
+from .models import init_db
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s'
 )
 
-from flask import Flask
-
-from . import config
-from .models import init_db
 
 app = Flask(__name__, static_folder=str(config.FRONTEND_DIR), static_url_path='')
 app.secret_key = config.SECRET_KEY
@@ -26,8 +27,6 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SECURE'] = False
 
 CATEGORIES_JSON = config.CATEGORIES_JSON
-
-from . import auth  # noqa: F401
 
 
 def load_categories_json():
@@ -47,12 +46,16 @@ def save_categories_json(data):
     except Exception:
         pass
 
+
 def open_browser(port):
     webbrowser.open_new(f'http://localhost:{port}')
+
 
 def run(port=5000):
     init_db()
     threading.Timer(1, lambda: open_browser(port)).start()
     app.run(host='0.0.0.0', port=port)
 
-from . import routes  # noqa: F401
+
+from . import auth  # noqa: E402,F401
+from . import routes  # noqa: E402,F401

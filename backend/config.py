@@ -7,6 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent
 ROOT_DIR = BASE_DIR.parent
 ENV_PATH = ROOT_DIR / '.env'
 
+
 def load_dotenv(path=ENV_PATH):
     if path.exists():
         with path.open('r', encoding='utf-8') as fh:
@@ -16,6 +17,7 @@ def load_dotenv(path=ENV_PATH):
                     continue
                 key, val = line.split('=', 1)
                 os.environ.setdefault(key, val)
+
 
 load_dotenv()
 

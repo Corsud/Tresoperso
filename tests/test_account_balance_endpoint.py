@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from backend import models
 import backend as app_module
 
+
 @pytest.fixture
 def client(monkeypatch):
     engine = create_engine('sqlite:///:memory:')
@@ -24,9 +25,11 @@ def client(monkeypatch):
         client.acc_id = acc_id
         yield client
 
+
 def login(client):
     resp = client.post('/login', json={'username': 'admin', 'password': 'admin'})
     assert resp.status_code == 200
+
 
 def test_invalid_initial_balance_returns_error(client):
     login(client)
@@ -37,6 +40,7 @@ def test_invalid_initial_balance_returns_error(client):
     acc = session.query(models.BankAccount).get(client.acc_id)
     session.close()
     assert acc.initial_balance == 0
+
 
 def test_invalid_balance_date_returns_error(client):
     login(client)
@@ -50,6 +54,7 @@ def test_invalid_balance_date_returns_error(client):
     acc = session.query(models.BankAccount).get(client.acc_id)
     session.close()
     assert acc.balance_date is None
+
 
 def test_update_balance_success(client):
     login(client)

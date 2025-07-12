@@ -12,8 +12,11 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 # Vérifie d’abord si un admin existe déjà
+
+
 def user_exists(username):
     return session.query(User).filter_by(username=username).first() is not None
+
 
 if not user_exists("admin"):
     user = User(username="admin", password=generate_password_hash("motdepasse"))

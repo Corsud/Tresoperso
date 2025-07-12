@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from backend import models
 import backend as app_module
 
+
 @pytest.fixture
 def client():
     engine = create_engine('sqlite:///:memory:')
@@ -16,9 +17,11 @@ def client():
     with app_module.app.test_client() as client:
         yield client
 
+
 def login(client):
     resp = client.post('/login', json={'username': 'admin', 'password': 'admin'})
     assert resp.status_code == 200
+
 
 def import_file(client, csv):
     data = {'file': (io.BytesIO(csv.encode('utf-8')), 'test.csv')}

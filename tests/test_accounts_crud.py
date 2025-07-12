@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from backend import models
 import backend as app_module
 
+
 @pytest.fixture
 def client():
     engine = create_engine('sqlite:///:memory:')
@@ -14,6 +15,7 @@ def client():
     models.init_db()
     with app_module.app.test_client() as client:
         yield client
+
 
 def login(client):
     resp = client.post('/login', json={'username': 'admin', 'password': 'admin'})
@@ -43,4 +45,3 @@ def test_create_update_delete_account(client):
     acc = session.query(models.BankAccount).get(acc_id)
     session.close()
     assert acc is None
-

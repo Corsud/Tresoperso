@@ -753,7 +753,14 @@ def stats_recurrents():
     recs = compute_recurrents(session, start, end, account_ids=account_ids)
     if not recs:
         session.close()
-        return jsonify({'message': 'Aucune transaction récurrente trouvée selon les critères de similarité ou de montant.'})
+        return jsonify(
+            {
+                'message': (
+                    'Aucune transaction récurrente trouvée selon les critères de similarité '
+                    'ou de montant.'
+                )
+            }
+        )
 
     result = []
     for rec in recs:
@@ -761,7 +768,7 @@ def stats_recurrents():
         cat = rec['category']
         avg_amount = rec['average_amount']
         last_date = rec['last_date']
-        
+
         if len(txs) > 1:
             diffs = [
                 (txs[i].date - txs[i - 1].date).days for i in range(1, len(txs))
@@ -1022,7 +1029,7 @@ def compute_dashboard_averages(session, months=3, favorites_only=False):
     contribute to the computations. The income average is computed over the
     specified number of months. Per-category averages consider every
     transaction regardless of date unless ``favorites_only`` is enabled.
-    
+
     """
     query = session.query(
         models.Transaction.category_id,

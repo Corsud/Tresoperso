@@ -42,6 +42,7 @@ def client():
         client.new_sub_id = new_sub_id
         yield client
 
+
 def login(client):
     resp = client.post('/login', json={'username': 'admin', 'password': 'admin'})
     assert resp.status_code == 200

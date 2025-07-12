@@ -19,8 +19,8 @@ def client():
     session.add(acc)
     session.flush()
     session.add_all([
-        models.Transaction(date=datetime.date(2021,1,1), label='T1', amount=1, bank_account_id=acc.id),
-        models.Transaction(date=datetime.date(2021,1,2), label='T2', amount=2, bank_account_id=acc.id)
+        models.Transaction(date=datetime.date(2021, 1, 1), label='T1', amount=1, bank_account_id=acc.id),
+        models.Transaction(date=datetime.date(2021, 1, 2), label='T2', amount=2, bank_account_id=acc.id)
     ])
     session.commit()
     acc_id = acc.id

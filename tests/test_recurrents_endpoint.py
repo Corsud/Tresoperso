@@ -6,10 +6,12 @@ from sqlalchemy.orm import sessionmaker
 from backend import models
 import backend as app_module
 
+
 class FixedDate(datetime.datetime):
     @classmethod
     def now(cls, tz=None):
         return cls(2021, 5, 15)
+
 
 @pytest.fixture
 def client(monkeypatch):
@@ -25,13 +27,13 @@ def client(monkeypatch):
     session.add(cat)
     session.flush()
     session.add_all([
-        models.Transaction(date=datetime.date(2020,12,5), label='Abo 01', amount=-50, category=cat),
-        models.Transaction(date=datetime.date(2021,1,5), label='Abo 02', amount=-52, category=cat),
-        models.Transaction(date=datetime.date(2021,2,5), label='Abo 03', amount=-48, category=cat),
-        models.Transaction(date=datetime.date(2021,1,1), label='Club 01', amount=-20, category=cat),
-        models.Transaction(date=datetime.date(2021,2,25), label='Club 02', amount=-21, category=cat),
+        models.Transaction(date=datetime.date(2020, 12, 5), label='Abo 01', amount=-50, category=cat),
+        models.Transaction(date=datetime.date(2021, 1, 5), label='Abo 02', amount=-52, category=cat),
+        models.Transaction(date=datetime.date(2021, 2, 5), label='Abo 03', amount=-48, category=cat),
+        models.Transaction(date=datetime.date(2021, 1, 1), label='Club 01', amount=-20, category=cat),
+        models.Transaction(date=datetime.date(2021, 2, 25), label='Club 02', amount=-21, category=cat),
 
-        models.Transaction(date=datetime.date(2021,1,20), label='Unique 01', amount=-5, category=cat),
+        models.Transaction(date=datetime.date(2021, 1, 20), label='Unique 01', amount=-5, category=cat),
     ])
     session.commit()
     session.close()
@@ -113,5 +115,4 @@ def test_recurrents_amount_threshold(client):
     data = resp.get_json()
     assert len(data) == 1
     labels = [t['label'] for t in data[0]['transactions']]
-    assert all('Club' in l for l in labels)
-
+    assert all('Club' in label for label in labels)

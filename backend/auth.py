@@ -1,12 +1,12 @@
+from .app import app
+from . import models
+from werkzeug.security import check_password_hash
+from flask_login import LoginManager, login_user, logout_user, current_user
 from flask import request, jsonify
 import logging
 
 logger = logging.getLogger(__name__)
-from flask_login import LoginManager, login_user, logout_user, current_user
-from werkzeug.security import check_password_hash
 
-from . import models
-from .app import app
 
 login_manager = LoginManager()
 login_manager.login_view = None

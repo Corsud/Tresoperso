@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from backend import models
 import backend as app_module
 
+
 class FixedDate(datetime.datetime):
     @classmethod
     def now(cls, tz=None):
@@ -28,16 +29,16 @@ def client(monkeypatch):
     session.add_all([acc1, acc2, cat])
     session.flush()
     session.add_all([
-        models.Transaction(date=datetime.date(2020,12,5), label='Abo 01', amount=-50, category=cat, account=acc1),
-        models.Transaction(date=datetime.date(2021,1,5), label='Abo 02', amount=-52, category=cat, account=acc1),
-        models.Transaction(date=datetime.date(2021,2,5), label='Abo 03', amount=-48, category=cat, account=acc1),
-        models.Transaction(date=datetime.date(2021,1,1), label='Club 01', amount=-20, category=cat, account=acc1),
-        models.Transaction(date=datetime.date(2021,2,25), label='Club 02', amount=-21, category=cat, account=acc1),
-        models.Transaction(date=datetime.date(2021,1,20), label='Unique 01', amount=-5, category=cat, account=acc1),
-        models.Transaction(date=datetime.date(2021,5,10), label='Salary', amount=1000, account=acc1),
-        models.Transaction(date=datetime.date(2021,5,15), label='Groceries', amount=-100, category=cat, account=acc1),
-        models.Transaction(date=datetime.date(2021,5,20), label='Stuff', amount=-30, category=cat, account=acc1),
-        models.Transaction(date=datetime.date(2021,5,5), label='Other', amount=200, account=acc2),
+        models.Transaction(date=datetime.date(2020, 12, 5), label='Abo 01', amount=-50, category=cat, account=acc1),
+        models.Transaction(date=datetime.date(2021, 1, 5), label='Abo 02', amount=-52, category=cat, account=acc1),
+        models.Transaction(date=datetime.date(2021, 2, 5), label='Abo 03', amount=-48, category=cat, account=acc1),
+        models.Transaction(date=datetime.date(2021, 1, 1), label='Club 01', amount=-20, category=cat, account=acc1),
+        models.Transaction(date=datetime.date(2021, 2, 25), label='Club 02', amount=-21, category=cat, account=acc1),
+        models.Transaction(date=datetime.date(2021, 1, 20), label='Unique 01', amount=-5, category=cat, account=acc1),
+        models.Transaction(date=datetime.date(2021, 5, 10), label='Salary', amount=1000, account=acc1),
+        models.Transaction(date=datetime.date(2021, 5, 15), label='Groceries', amount=-100, category=cat, account=acc1),
+        models.Transaction(date=datetime.date(2021, 5, 20), label='Stuff', amount=-30, category=cat, account=acc1),
+        models.Transaction(date=datetime.date(2021, 5, 5), label='Other', amount=200, account=acc2),
     ])
     session.commit()
     a1_id = acc1.id

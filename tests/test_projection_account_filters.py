@@ -6,10 +6,12 @@ from sqlalchemy.orm import sessionmaker
 from backend import models
 import backend as app_module
 
+
 class FixedDate(datetime.datetime):
     @classmethod
     def now(cls, tz=None):
         return cls(2021, 7, 15)
+
 
 @pytest.fixture
 def client_with_accounts(monkeypatch):
@@ -38,19 +40,21 @@ def client_with_accounts(monkeypatch):
     a1_id = a1.id
     a2_id = a2.id
     session.add_all([
-        models.Transaction(date=datetime.date(2021,6,10), label='t1', amount=10, bank_account_id=a1.id),
-        models.Transaction(date=datetime.date(2021,6,20), label='t2', amount=-5, bank_account_id=a1.id),
-        models.Transaction(date=datetime.date(2021,5,1), label='t3', amount=20, bank_account_id=a2.id),
-        models.Transaction(date=datetime.date(2021,7,1), label='t4', amount=-7, bank_account_id=a2.id),
+        models.Transaction(date=datetime.date(2021, 6, 10), label='t1', amount=10, bank_account_id=a1.id),
+        models.Transaction(date=datetime.date(2021, 6, 20), label='t2', amount=-5, bank_account_id=a1.id),
+        models.Transaction(date=datetime.date(2021, 5, 1), label='t3', amount=20, bank_account_id=a2.id),
+        models.Transaction(date=datetime.date(2021, 7, 1), label='t4', amount=-7, bank_account_id=a2.id),
     ])
     session.commit()
     session.close()
     with app_module.app.test_client() as client:
         yield client, a1_id, a2_id
 
+
 def login(client):
     resp = client.post('/login', json={'username': 'admin', 'password': 'admin'})
     assert resp.status_code == 200
+
 
 def test_projection_account_filter(client_with_accounts):
     client, a1, a2 = client_with_accounts
@@ -60,6 +64,7 @@ def test_projection_account_filter(client_with_accounts):
     data = resp.get_json()
     assert len(data) == 1
     assert data[0]['total'] == 5  # 10 + (-5)
+
 
 def test_balance_endpoint(client_with_accounts):
     client, a1, a2 = client_with_accounts
