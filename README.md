@@ -49,6 +49,25 @@ l'application sur le réseau local.
 Le cookie de session n'est plus marqué comme sécurisé par défaut. Il est donc
 accepté même en HTTP simple sans configuration supplémentaire.
 
+## Thèmes disponibles
+
+L'interface propose plusieurs feuilles de style sélectionnables depuis le menu
+« Paramètres ». Les thèmes intégrés correspondent aux fichiers CSS suivants :
+
+```
+light.css
+dark.css
+flat-light.css
+flat-dark.css
+luxury-light.css
+luxury-dark.css
+magazine-light.css
+magazine-dark.css
+```
+
+Choisissez simplement le nom de thème désiré dans la liste pour appliquer la
+mise en forme associée.
+
 ## Environnement de développement
 
 Les dépendances principales (**Flask**, **SQLAlchemy**, **Flask-Login**) ainsi que
