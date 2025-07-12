@@ -1,6 +1,4 @@
-/* luxury-dark.css - Optimisé pour TrésoPerso */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Montserrat:wght@400;600&display=swap');
-
+/* ----------- BODY & GLOBAL ----------- */
 body {
   background: #181c2a;
   color: #f6f7fb;
@@ -8,83 +6,93 @@ body {
   margin: 0;
 }
 
-/* --- NAVBAR & HEADER --- */
-.header, .navbar {
+/* ----------- NAVBAR & MENU ----------- */
+#navbar, #navbar ul.menu {
   background: #14213d !important;
   color: #f8c471 !important;
-  font-family: 'Playfair Display', serif;
-  font-size: 1.15em;
-  border-bottom: 3px solid #e6be6a;
   width: 100vw;
+  border-bottom: 3px solid #e6be6a;
+  font-family: 'Playfair Display', serif;
 }
-.navbar {
+#navbar ul.menu {
   display: flex;
   align-items: center;
-  width: 100vw;
+  list-style: none;
+  margin: 0; padding: 0;
 }
-.navbar a, .navbar button {
+#navbar ul.menu > li {
+  margin-right: 0.5em;
+  position: relative;
+}
+#navbar .logo {
+  font-size: 1.5em;
   color: #f8c471;
-  background: transparent;
-  font-family: 'Montserrat', Arial, sans-serif;
-  font-weight: 600;
-  padding: 0.6em 2em;
-  border: none;
-  border-radius: 14px 14px 0 0;
-  margin-right: 0.4em;
-  transition: background 0.15s, color 0.15s;
-}
-.navbar a.active, .navbar button.active {
-  background: #f8c471;
-  color: #14213d !important;
   font-family: 'Playfair Display', serif;
   font-weight: bold;
+  letter-spacing: 0.04em;
+  margin-right: 1.5em;
+  padding: 0.3em 1em;
 }
-.navbar a:hover:not(.active), .navbar button:hover:not(.active) {
+#navbar .menu-header {
+  color: #f8c471;
+  font-size: 1.06em;
+  padding: 0.2em 0.8em;
+}
+#navbar button, #navbar li > button, #navbar .submenu button {
+  background: transparent;
+  color: #f8c471;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 600;
+  border: none;
+  border-radius: 14px 14px 0 0;
+  padding: 0.5em 1.2em;
+  font-size: 1em;
+  transition: background 0.15s, color 0.15s;
+  cursor: pointer;
+}
+#navbar button:hover, #navbar .submenu button:hover {
   background: #22243a;
   color: #fffdfa;
 }
-
-/* --- TITRES --- */
-h1, h2, h3, .main-title {
-  font-family: 'Playfair Display', serif;
-  color: #f8c471;
-  margin-bottom: 0.8em;
-  letter-spacing: 0.01em;
+#navbar li.open > .menu-header {
+  background: #f8c471;
+  color: #14213d !important;
+  border-radius: 14px 14px 0 0;
 }
-h1 { font-size: 2.3em; margin-top: 0.2em; }
-h2 { font-size: 1.5em; }
-h3 { font-size: 1.15em; }
-
-/* --- BOUTONS --- */
-.button, button, .btn {
-  background: linear-gradient(90deg, #f8c471, #e6be6a);
-  color: #14213d;
-  border-radius: 12px;
-  padding: 0.5em 1.5em;
-  font-weight: bold;
-  font-family: 'Montserrat', Arial, sans-serif;
-  border: none;
-  box-shadow: 0 2px 12px rgba(230,190,106,0.14);
-  transition: filter 0.15s, box-shadow 0.15s;
+#navbar .submenu {
+  display: none;
+  position: absolute;
+  background: #181c2a;
+  border-radius: 0 0 16px 16px;
+  top: 2.5em;
+  left: 0;
+  min-width: 180px;
+  z-index: 5;
+  padding: 0.4em 0.2em;
+  box-shadow: 0 6px 18px #22243a88;
+}
+#navbar li.open:hover .submenu, #navbar li.open:focus-within .submenu {
+  display: block;
+}
+#navbar .submenu li {
+  margin: 0;
+  width: 100%;
+}
+#navbar .submenu button {
+  width: 100%;
+  text-align: left;
+  padding: 0.6em 1.1em;
   font-size: 1em;
-  outline: none;
+  color: #f8c471;
+  border-radius: 8px;
 }
-.button:hover, button:hover, .btn:hover {
-  filter: brightness(1.08);
-  box-shadow: 0 2px 16px rgba(248,196,113,0.30);
-}
-.button:active, button:active, .btn:active {
-  filter: brightness(0.97);
-}
-.button.icon, .btn.icon {
-  border-radius: 50%;
-  padding: 0.35em 0.5em;
-  font-size: 1.2em;
-  margin: 0 0.1em;
+#navbar .submenu button:hover {
+  background: #f8c471;
+  color: #14213d;
 }
 
-/* --- TABLEAU PREMIUM --- */
-.table, table {
+/* ----------- TABLEAU TRANSACTIONS ----------- */
+#transactions-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
@@ -92,56 +100,56 @@ h3 { font-size: 1.15em; }
   color: #fffdfa;
   font-family: 'Montserrat', Arial, sans-serif;
   table-layout: fixed;
+  margin-top: 1.5em;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 6px 22px #22243a18;
 }
-.table thead, table thead {
+#transactions-table thead {
   background: #22243a;
 }
-.table th, table th {
+#transactions-table th {
   color: #f8c471;
   font-family: 'Playfair Display', serif;
   font-size: 1em;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  border-bottom: 2px solid rgba(230,190,106,0.33);
-  padding: 0.75em 0.4em;
+  border-bottom: 2px solid #e6be6a44;
+  padding: 0.7em 0.2em;
   background: #22243a;
   overflow: hidden;
 }
-.table td, table td {
+#transactions-table td {
   color: #fffdfa;
-  padding: 0.65em 0.4em;
-  border-bottom: 1px solid rgba(230,190,106,0.16);
+  padding: 0.6em 0.2em;
+  border-bottom: 1px solid #e6be6a28;
   background: #181c2a;
   overflow: hidden;
   text-overflow: ellipsis;
+  vertical-align: middle;
+  font-size: 0.98em;
 }
-.table tr { background: #181c2a; transition: background 0.18s; }
-.table tr:hover, table tr:hover { background: #22243a; }
-.table .highlight, .table tr.selected {
-  background: #f8c471 !important;
-  color: #14213d !important;
+
+/* -- Largeur & retour à la ligne par colonne -- */
+/* Colonnes SANS retour à la ligne */
+#transactions-table th:nth-child(1), #transactions-table td:nth-child(1),
+#transactions-table th:nth-child(2), #transactions-table td:nth-child(2),
+#transactions-table th:nth-child(3), #transactions-table td:nth-child(3),
+#transactions-table th:nth-child(7), #transactions-table td:nth-child(7),
+#transactions-table th:nth-child(10), #transactions-table td:nth-child(10),
+#transactions-table th:nth-child(11), #transactions-table td:nth-child(11),
+#transactions-table th:nth-child(12), #transactions-table td:nth-child(12) {
+  white-space: nowrap !important;
+  max-width: 85px;
+  min-width: 50px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.table .btn, .table .button { font-size: 1.1em; padding: 0.3em 1em; }
 
-/* --- COLONNES : Largeurs et retour à la ligne --- */
-.table th:nth-child(1), .table td:nth-child(1) { /* Filtre (★) */
-  white-space: nowrap !important; max-width: 45px; min-width: 40px; }
-.table th:nth-child(2), .table td:nth-child(2) { /* + bouton */
-  white-space: nowrap !important; max-width: 55px; min-width: 45px; }
-.table th:nth-child(3), .table td:nth-child(3) { /* Date */
-  white-space: nowrap !important; max-width: 95px; min-width: 85px; }
-.table th:nth-child(7), .table td:nth-child(7) { /* Montant */
-  white-space: nowrap !important; max-width: 105px; min-width: 85px; text-align: right; }
-.table th:nth-child(10), .table td:nth-child(10) { /* Règle */
-  white-space: nowrap !important; max-width: 80px; min-width: 70px; }
-.table th:nth-child(11), .table td:nth-child(11) { /* Pointée */
-  white-space: nowrap !important; max-width: 70px; min-width: 50px; }
-.table th:nth-child(12), .table td:nth-child(12) { /* A analyser */
-  white-space: nowrap !important; max-width: 100px; min-width: 65px; }
-
-/* Colonne LIBELLÉ (colonne 6) : large, retour à la ligne max 5 lignes */
-.table th:nth-child(6), .table td:nth-child(6) {
-  min-width: 320px; max-width: 420px;
+/* Colonne LIBELLÉ (colonne 6) : large, max 5 lignes */
+#transactions-table th:nth-child(6), #transactions-table td:nth-child(6) {
+  min-width: 320px;
+  max-width: 420px;
   white-space: normal !important;
   overflow: hidden;
   display: -webkit-box;
@@ -153,14 +161,30 @@ h3 { font-size: 1.15em; }
   text-overflow: ellipsis;
   word-break: break-word;
 }
-
-/* Colonnes flexibles : retour à la ligne autorisé */
-.table td, .table th {
-  word-break: break-word;
-  vertical-align: middle;
+/* Alignement à droite pour Montant */
+#transactions-table th:nth-child(7), #transactions-table td:nth-child(7) {
+  text-align: right;
 }
 
-/* --- CHAMPS (input/select) --- */
+/* Les autres colonnes : flex, retour à la ligne possible */
+#transactions-table th, #transactions-table td {
+  word-break: break-word;
+}
+
+/* Ligne sélectionnée ou hover */
+#transactions-table tr:hover {
+  background: #22243a;
+}
+#transactions-table tr.selected {
+  background: #f8c471 !important;
+  color: #14213d !important;
+}
+#transactions-table td.amount {
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: bold;
+}
+
+/* ----------- CHAMPS ----------- */
 input, select, textarea {
   background: #22243a;
   color: #fffdfa;
@@ -182,7 +206,40 @@ input::placeholder, select option, textarea::placeholder {
   opacity: 0.85;
 }
 
-/* --- BADGES & DIVERS --- */
+/* ----------- BOUTONS ----------- */
+button, .btn {
+  background: linear-gradient(90deg, #f8c471, #e6be6a);
+  color: #14213d;
+  border-radius: 12px;
+  padding: 0.5em 1.3em;
+  font-weight: bold;
+  font-family: 'Montserrat', Arial, sans-serif;
+  border: none;
+  box-shadow: 0 2px 12px rgba(230,190,106,0.14);
+  font-size: 1em;
+  outline: none;
+  transition: filter 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+}
+button:hover, .btn:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 2px 16px rgba(248,196,113,0.25);
+}
+button:active, .btn:active {
+  filter: brightness(0.97);
+}
+
+/* ----------- DIVERS ----------- */
+a {
+  color: #f8c471;
+  text-decoration: underline;
+  transition: color 0.18s;
+}
+a:hover {
+  color: #e6be6a;
+}
+
+/* ----------- BADGES ----------- */
 .badge, .tag {
   background: #f8c471;
   color: #14213d;
@@ -193,33 +250,23 @@ input::placeholder, select option, textarea::placeholder {
   margin-right: 0.4em;
 }
 
-/* --- LIENS --- */
-a {
-  color: #f8c471;
-  text-decoration: underline;
-  transition: color 0.18s;
+/* ----------- SCROLLBAR ----------- */
+::-webkit-scrollbar-thumb {
+  background: #e6be6a;
+  border-radius: 12px;
 }
-a:hover { color: #e6be6a; }
-
-/* --- SCROLLBAR --- */
-::-webkit-scrollbar-thumb { background: #e6be6a; border-radius: 12px; }
-::-webkit-scrollbar { background: #22243a; width: 10px; }
-
-/* --- HIGHLIGHT CLÉS --- */
-.summary, .total, .important {
-  color: #f8c471;
-  font-family: 'Playfair Display', serif;
-  font-weight: bold;
-  font-size: 1.08em;
+::-webkit-scrollbar {
+  background: #22243a;
+  width: 10px;
 }
 
-/* --- RESPONSIVE --- */
+/* ----------- RESPONSIVE ----------- */
 @media (max-width: 1200px) {
-  .table th:nth-child(6), .table td:nth-child(6) {
+  #transactions-table th:nth-child(6), #transactions-table td:nth-child(6) {
     min-width: 200px; max-width: 260px;
   }
 }
 @media (max-width: 900px) {
-  .navbar a, .navbar button { padding: 0.6em 1.2em; font-size: 0.98em; }
-  .table th, .table td { font-size: 0.93em; padding: 0.6em 0.25em; }
+  #navbar ul.menu > li { font-size: 0.97em; }
+  #transactions-table th, #transactions-table td { font-size: 0.93em; padding: 0.6em 0.2em; }
 }
