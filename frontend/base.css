@@ -251,7 +251,7 @@ tbody th {
 #navbar { position: fixed; top: 0; left: 0; right: 0; border-bottom: 1px solid var(--border-color); background: var(--bg-color); z-index: 1000; }
 #navbar ul { list-style: none; margin: 0; padding: 0; display: flex; }
 #navbar .logo { font-weight: bold; color: #fc9107; padding: 4px 8px; }
-.logo img { height: 1.5em; }
+.logo img { height: 2em; }
 #navbar li { position: relative; margin-right: 20px; }
 #navbar .menu-header {
     cursor: pointer;
@@ -276,6 +276,7 @@ tbody th {
 #navbar button[data-target] {
     padding: 4px 8px;
     border: none;
+    font-size: 1em;
 }
 #navbar > ul > li > button[data-target] {
     font-weight: bold;
