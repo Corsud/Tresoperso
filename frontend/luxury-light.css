@@ -1,0 +1,71 @@
+/* luxury-light.css */
+/* Thème premium clair : bleu nuit, or mat, blanc cassé, police élégante */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Montserrat:wght@400;600&display=swap');
+
+body {
+  background: #f6f7fb;
+  color: #222;
+  font-family: 'Montserrat', Arial, sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: 'Playfair Display', serif;
+  color: #14213d;
+  letter-spacing: 0.01em;
+}
+
+.header, .navbar {
+  background: #14213d;
+  color: #f8c471;
+  border-bottom: 3px solid #e6be6a;
+}
+
+.button, button {
+  background: linear-gradient(90deg, #f8c471, #e6be6a);
+  color: #14213d;
+  border-radius: 12px;
+  padding: 0.5em 1.5em;
+  font-weight: bold;
+  border: none;
+  box-shadow: 0 2px 8px rgba(20,33,61,0.1);
+  transition: filter 0.2s;
+}
+
+.button:hover, button:hover {
+  filter: brightness(1.1);
+}
+
+.card, .box {
+  background: #fffdfa;
+  border: 1px solid #e6be6a;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(20,33,61,0.05);
+  padding: 1.5em;
+}
+
+.table {
+  background: #fffdfa;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(20,33,61,0.05);
+  color: #222;
+}
+
+input, select, textarea {
+  border-radius: 8px;
+  border: 1px solid #e6be6a;
+  background: #fcfcfc;
+  color: #14213d;
+  padding: 0.5em;
+  font-family: inherit;
+}
+
+a {
+  color: #f8c471;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: #e6be6a;
+}
