@@ -1,0 +1,72 @@
+/* magazine-light.css */
+/* Magazine/editorial clair : blanc, gris chaud, accent bordeaux, police éditoriale élégante */
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@700&family=Montserrat:wght@400;600&display=swap');
+
+body {
+  background: #fcfbf8;
+  color: #222;
+  font-family: 'Montserrat', Arial, sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: 'Roboto Slab', serif;
+  color: #a11d3a;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.header, .navbar {
+  background: #fff;
+  color: #a11d3a;
+  border-bottom: 4px solid #a11d3a;
+}
+
+.button, button {
+  background: #a11d3a;
+  color: #fff;
+  border-radius: 0;
+  padding: 0.5em 1.5em;
+  font-weight: bold;
+  border: none;
+  box-shadow: 0 2px 6px rgba(161,29,58,0.08);
+  transition: filter 0.2s;
+}
+
+.button:hover, button:hover {
+  filter: brightness(1.1);
+}
+
+.card, .box {
+  background: #fff;
+  border-left: 6px solid #a11d3a;
+  border-radius: 0 16px 16px 0;
+  box-shadow: 0 8px 32px rgba(161,29,58,0.04);
+  padding: 1.5em;
+}
+
+.table {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(161,29,58,0.04);
+  color: #222;
+}
+
+input, select, textarea {
+  border-radius: 0;
+  border: 1px solid #a11d3a;
+  background: #f7f5f2;
+  color: #a11d3a;
+  padding: 0.5em;
+  font-family: inherit;
+}
+
+a {
+  color: #a11d3a;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: #721327;
+}
