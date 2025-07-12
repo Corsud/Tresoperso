@@ -1,23 +1,27 @@
-/* luxury-dark.css - Version premium optimisée */
-/* Palette : bleu nuit #181c2a, or mat #f8c471/#e6be6a, blanc cassé #fffdfa */
-
+/* luxury-dark.css - Optimisé pour TrésoPerso */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Montserrat:wght@400;600&display=swap');
 
 body {
   background: #181c2a;
   color: #f6f7fb;
   font-family: 'Montserrat', Arial, sans-serif;
+  margin: 0;
 }
 
-/* ------ Navigation & Header ------ */
+/* --- NAVBAR & HEADER --- */
 .header, .navbar {
-  background: #14213d;
-  color: #f8c471;
+  background: #14213d !important;
+  color: #f8c471 !important;
   font-family: 'Playfair Display', serif;
   font-size: 1.15em;
   border-bottom: 3px solid #e6be6a;
+  width: 100vw;
 }
-
+.navbar {
+  display: flex;
+  align-items: center;
+  width: 100vw;
+}
 .navbar a, .navbar button {
   color: #f8c471;
   background: transparent;
@@ -29,42 +33,29 @@ body {
   margin-right: 0.4em;
   transition: background 0.15s, color 0.15s;
 }
-
 .navbar a.active, .navbar button.active {
   background: #f8c471;
   color: #14213d !important;
   font-family: 'Playfair Display', serif;
   font-weight: bold;
-  border-bottom: 0;
 }
-
 .navbar a:hover:not(.active), .navbar button:hover:not(.active) {
   background: #22243a;
   color: #fffdfa;
 }
 
-/* ------ Titres ------ */
+/* --- TITRES --- */
 h1, h2, h3, .main-title {
   font-family: 'Playfair Display', serif;
   color: #f8c471;
   margin-bottom: 0.8em;
   letter-spacing: 0.01em;
 }
+h1 { font-size: 2.3em; margin-top: 0.2em; }
+h2 { font-size: 1.5em; }
+h3 { font-size: 1.15em; }
 
-h1 {
-  font-size: 2.3em;
-  margin-top: 0.2em;
-}
-
-h2 {
-  font-size: 1.5em;
-}
-
-h3 {
-  font-size: 1.15em;
-}
-
-/* ------ Boutons ------ */
+/* --- BOUTONS --- */
 .button, button, .btn {
   background: linear-gradient(90deg, #f8c471, #e6be6a);
   color: #14213d;
@@ -78,17 +69,13 @@ h3 {
   font-size: 1em;
   outline: none;
 }
-
 .button:hover, button:hover, .btn:hover {
   filter: brightness(1.08);
   box-shadow: 0 2px 16px rgba(248,196,113,0.30);
 }
-
 .button:active, button:active, .btn:active {
   filter: brightness(0.97);
 }
-
-/* Icones et boutons arrondis */
 .button.icon, .btn.icon {
   border-radius: 50%;
   padding: 0.35em 0.5em;
@@ -96,7 +83,7 @@ h3 {
   margin: 0 0.1em;
 }
 
-/* ------ Tableaux ------ */
+/* --- TABLEAU PREMIUM --- */
 .table, table {
   width: 100%;
   border-collapse: separate;
@@ -104,12 +91,11 @@ h3 {
   background: #181c2a;
   color: #fffdfa;
   font-family: 'Montserrat', Arial, sans-serif;
+  table-layout: fixed;
 }
-
 .table thead, table thead {
   background: #22243a;
 }
-
 .table th, table th {
   color: #f8c471;
   font-family: 'Playfair Display', serif;
@@ -119,36 +105,62 @@ h3 {
   border-bottom: 2px solid rgba(230,190,106,0.33);
   padding: 0.75em 0.4em;
   background: #22243a;
+  overflow: hidden;
 }
-
 .table td, table td {
   color: #fffdfa;
   padding: 0.65em 0.4em;
   border-bottom: 1px solid rgba(230,190,106,0.16);
   background: #181c2a;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-
-.table tr {
-  background: #181c2a;
-  transition: background 0.18s;
-}
-
-.table tr:hover, table tr:hover {
-  background: #22243a;
-}
-
+.table tr { background: #181c2a; transition: background 0.18s; }
+.table tr:hover, table tr:hover { background: #22243a; }
 .table .highlight, .table tr.selected {
   background: #f8c471 !important;
   color: #14213d !important;
 }
+.table .btn, .table .button { font-size: 1.1em; padding: 0.3em 1em; }
 
-/* Style pour les boutons/icônes dans le tableau */
-.table .btn, .table .button {
-  font-size: 1.1em;
-  padding: 0.3em 1em;
+/* --- COLONNES : Largeurs et retour à la ligne --- */
+.table th:nth-child(1), .table td:nth-child(1) { /* Filtre (★) */
+  white-space: nowrap !important; max-width: 45px; min-width: 40px; }
+.table th:nth-child(2), .table td:nth-child(2) { /* + bouton */
+  white-space: nowrap !important; max-width: 55px; min-width: 45px; }
+.table th:nth-child(3), .table td:nth-child(3) { /* Date */
+  white-space: nowrap !important; max-width: 95px; min-width: 85px; }
+.table th:nth-child(7), .table td:nth-child(7) { /* Montant */
+  white-space: nowrap !important; max-width: 105px; min-width: 85px; text-align: right; }
+.table th:nth-child(10), .table td:nth-child(10) { /* Règle */
+  white-space: nowrap !important; max-width: 80px; min-width: 70px; }
+.table th:nth-child(11), .table td:nth-child(11) { /* Pointée */
+  white-space: nowrap !important; max-width: 70px; min-width: 50px; }
+.table th:nth-child(12), .table td:nth-child(12) { /* A analyser */
+  white-space: nowrap !important; max-width: 100px; min-width: 65px; }
+
+/* Colonne LIBELLÉ (colonne 6) : large, retour à la ligne max 5 lignes */
+.table th:nth-child(6), .table td:nth-child(6) {
+  min-width: 320px; max-width: 420px;
+  white-space: normal !important;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  line-clamp: 5;
+  line-height: 1.3em;
+  height: calc(1.3em * 5);
+  text-overflow: ellipsis;
+  word-break: break-word;
 }
 
-/* ------ Filtres, Inputs, Selects ------ */
+/* Colonnes flexibles : retour à la ligne autorisé */
+.table td, .table th {
+  word-break: break-word;
+  vertical-align: middle;
+}
+
+/* --- CHAMPS (input/select) --- */
 input, select, textarea {
   background: #22243a;
   color: #fffdfa;
@@ -156,23 +168,21 @@ input, select, textarea {
   border-radius: 8px;
   padding: 0.4em 0.8em;
   font-size: 1em;
-  font-family: 'Montserrat', Arial, sans-serif;
+  font-family: inherit;
   margin-bottom: 0.25em;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: #f8c471;
   box-shadow: 0 0 0 1.5px #f8c47122;
 }
-
 input::placeholder, select option, textarea::placeholder {
   color: #e6be6a;
   opacity: 0.85;
 }
 
-/* ------ Etiquettes, tags, badges ------ */
+/* --- BADGES & DIVERS --- */
 .badge, .tag {
   background: #f8c471;
   color: #14213d;
@@ -183,27 +193,19 @@ input::placeholder, select option, textarea::placeholder {
   margin-right: 0.4em;
 }
 
-/* ------ Divers ------ */
+/* --- LIENS --- */
 a {
   color: #f8c471;
   text-decoration: underline;
   transition: color 0.18s;
 }
-a:hover {
-  color: #e6be6a;
-}
+a:hover { color: #e6be6a; }
 
-::-webkit-scrollbar-thumb {
-  background: #e6be6a;
-  border-radius: 12px;
-}
+/* --- SCROLLBAR --- */
+::-webkit-scrollbar-thumb { background: #e6be6a; border-radius: 12px; }
+::-webkit-scrollbar { background: #22243a; width: 10px; }
 
-::-webkit-scrollbar {
-  background: #22243a;
-  width: 10px;
-}
-
-/* Amélioration pour la lisibilité des totaux et chiffres clés */
+/* --- HIGHLIGHT CLÉS --- */
 .summary, .total, .important {
   color: #f8c471;
   font-family: 'Playfair Display', serif;
@@ -211,14 +213,13 @@ a:hover {
   font-size: 1.08em;
 }
 
-/* Adaptation responsive si besoin */
+/* --- RESPONSIVE --- */
+@media (max-width: 1200px) {
+  .table th:nth-child(6), .table td:nth-child(6) {
+    min-width: 200px; max-width: 260px;
+  }
+}
 @media (max-width: 900px) {
-  .navbar a, .navbar button {
-    padding: 0.6em 1.2em;
-    font-size: 0.98em;
-  }
-  .table th, .table td, table th, table td {
-    font-size: 0.93em;
-    padding: 0.6em 0.25em;
-  }
+  .navbar a, .navbar button { padding: 0.6em 1.2em; font-size: 0.98em; }
+  .table th, .table td { font-size: 0.93em; padding: 0.6em 0.25em; }
 }
