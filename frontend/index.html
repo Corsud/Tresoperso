@@ -180,6 +180,10 @@
 
             <section id="recurrents-section" style="display:none;">
                 <h1>Flux de trésorerie</h1>
+                <div id="recurrents-accounts"></div>
+                <div id="recurrent-month-container">
+                    <input type="month" id="recurrent-month">
+                </div>
                 <div id="recurrents-header">
                     <button id="btn-recurrent" class="selected"></button>
                     <button id="btn-income"></button>
@@ -187,7 +191,6 @@
                     <button id="btn-balance"></button>
                 </div>
                 <div id="recurrents-controls">
-                    <input type="month" id="recurrent-month">
                     <button id="recurrents-btn-calendar" class="selected">Calendrier</button>
                     <button id="recurrents-btn-list">Liste/anneau</button>
                 </div>
@@ -403,6 +406,7 @@
         let selectedAccountId = '';
         let recurrentsData = [];
         let recurrentsChart = null;
+        let recurrentsAccountIds = [];
         let projectionData = [];
         let projectionFutureTotals = [];
         let projectionFutureMonths = [];
@@ -685,6 +689,27 @@
             });
         }
 
+        function populateRecurrentsAccounts() {
+            const container = document.getElementById('recurrents-accounts');
+            if (!container) return;
+            container.innerHTML = '';
+            accountsData.forEach(a => {
+                const lbl = document.createElement('label');
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.value = a.id;
+                cb.checked = !recurrentsAccountIds.length || recurrentsAccountIds.includes(String(a.id));
+                cb.addEventListener('change', () => {
+                    recurrentsAccountIds = Array.from(container.querySelectorAll('input:checked')).map(c => c.value);
+                    fetchRecurrents();
+                    updateRecurrentsTotals();
+                });
+                lbl.appendChild(cb);
+                lbl.append(' ' + `${a.account_type} ${a.number}`.trim());
+                container.appendChild(lbl);
+            });
+        }
+
         function displayAccountInfo() {
             const info = document.getElementById('account-info');
             const acc = accountsData.find(a => String(a.id) === String(selectedAccountId));
@@ -787,6 +812,7 @@
             accountsData = await resp.json();
             updateAccountDropdown();
             populateProjectionAccounts();
+            populateRecurrentsAccounts();
             await populateAccountsTable();
         }
 
@@ -2022,7 +2048,9 @@
             }
 
             // Fetch recurring transactions
-            const resp = await fetch(`/stats/recurrents?month=${month}`);
+            const params = new URLSearchParams({ month });
+            if (recurrentsAccountIds.length) params.set('account_ids', recurrentsAccountIds.join(','));
+            const resp = await fetch(`/stats/recurrents?${params.toString()}`);
             if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
             const noDataMsg = document.getElementById('recurrents-no-data');
@@ -2137,7 +2165,9 @@
                 month = now.toISOString().slice(0,7);
                 if (monthInput) monthInput.value = month;
             }
-            const resp = await fetch(`/stats/recurrents/summary?month=${month}`);
+            const params = new URLSearchParams({ month });
+            if (recurrentsAccountIds.length) params.set('account_ids', recurrentsAccountIds.join(','));
+            const resp = await fetch(`/stats/recurrents/summary?${params.toString()}`);
             if (handleUnauthorized(resp) || !resp.ok) return;
             const data = await resp.json();
             const hide = localStorage.getItem('hideAmounts') === 'true';

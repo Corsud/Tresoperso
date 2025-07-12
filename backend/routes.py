@@ -748,8 +748,9 @@ def stats_recurrents():
     start = _shift_month(current_first, -5)
     end = _shift_month(current_first, 1) - timedelta(days=1)
 
+    account_ids = _parse_account_ids()
     session = models.SessionLocal()
-    recs = compute_recurrents(session, start, end)
+    recs = compute_recurrents(session, start, end, account_ids=account_ids)
     if not recs:
         session.close()
         return jsonify({'message': 'Aucune transaction récurrente trouvée selon les critères de similarité ou de montant.'})
@@ -828,8 +829,9 @@ def stats_recurrents_categories():
     start = _shift_month(current_first, -5)
     end = _shift_month(current_first, 1) - timedelta(days=1)
 
+    account_ids = _parse_account_ids()
     session = models.SessionLocal()
-    recs = compute_recurrents(session, start, end)
+    recs = compute_recurrents(session, start, end, account_ids=account_ids)
     totals = aggregate_recurrents_by_category(recs)
     session.close()
     result = [
@@ -855,37 +857,37 @@ def stats_recurrents_summary():
     start = current_first
     end = _shift_month(current_first, 1) - timedelta(days=1)
 
+    account_ids = _parse_account_ids()
     session = models.SessionLocal()
 
-    positive = (
+    pos_q = (
         session.query(func.sum(models.Transaction.amount))
         .filter(models.Transaction.amount > 0)
         .filter(models.Transaction.date >= start)
         .filter(models.Transaction.date <= end)
-        .scalar()
-        or 0
     )
-    negative = (
+    neg_q = (
         session.query(func.sum(func.abs(models.Transaction.amount)))
         .filter(models.Transaction.amount < 0)
         .filter(models.Transaction.date >= start)
         .filter(models.Transaction.date <= end)
-        .scalar()
-        or 0
     )
+    if account_ids:
+        pos_q = pos_q.filter(models.Transaction.bank_account_id.in_(account_ids))
+        neg_q = neg_q.filter(models.Transaction.bank_account_id.in_(account_ids))
+    positive = pos_q.scalar() or 0
+    negative = neg_q.scalar() or 0
 
-    balance = sum(a.initial_balance or 0 for a in session.query(models.BankAccount).all())
-    balance += (
-        session.query(func.sum(models.Transaction.amount))
-        .filter(models.Transaction.date <= end)
-        .scalar()
-        or 0
-    )
+    query = session.query(models.BankAccount)
+    if account_ids:
+        query = query.filter(models.BankAccount.id.in_(account_ids))
+    accounts = query.all()
+    balance = sum(compute_account_balance(session, acc, end) for acc in accounts)
 
     rec_ref = datetime.now().date().replace(day=1)
     rec_start = _shift_month(rec_ref, -5)
     rec_end = _shift_month(rec_ref, 1) - timedelta(days=1)
-    recs = compute_recurrents(session, rec_start, rec_end)
+    recs = compute_recurrents(session, rec_start, rec_end, account_ids=account_ids)
     recurrent_total = sum(
         abs(r['average_amount']) for r in recs if r['average_amount'] < 0
     )
@@ -925,6 +927,7 @@ def compute_recurrents(
     start,
     end,
     *,
+    account_ids=None,
     similarity_threshold=SIMILARITY_THRESHOLD,
     amount_tolerance=AMOUNT_TOLERANCE,
 ):
@@ -938,12 +941,14 @@ def compute_recurrents(
     average are discarded.  The former rule restricting the day-of-month spread
     was removed to allow for more flexible detection.
     """
-    rows = (
+    query = (
         session.query(models.Transaction)
         .filter(models.Transaction.date >= start)
         .filter(models.Transaction.date <= end)
-        .all()
     )
+    if account_ids:
+        query = query.filter(models.Transaction.bank_account_id.in_(account_ids))
+    rows = query.all()
 
     groups = {}
     for tx in rows:
