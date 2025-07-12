@@ -1,0 +1,3061 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tresoperso</title>
+    <link rel="stylesheet" href="base.css">
+    <link rel="stylesheet" id="theme-link" href="light.css">
+    <script src="libs/chart.js"></script>
+    <script src="libs/plotly-2.24.2.min.js"></script>
+</head>
+<body>
+    <form id="login-form">
+        <input type="text" id="username" placeholder="Utilisateur" required />
+        <input type="password" id="password" placeholder="Mot de passe" required />
+        <button type="submit">Connexion</button>
+    </form>
+    <div id="app" style="display:none;">
+        <nav id="navbar">
+            <ul class="menu">
+                <li class="logo"><img src="tresoperso-logo.png" alt="Tresoperso" /></li>
+                <li class="open">
+                    <div class="menu-header">Transactions</div>
+                    <ul class="submenu">
+                        <li><button data-target="transactions-section">Transactions</button></li>
+                        <li><button data-target="accounts-section">Comptes</button></li>
+                    </ul>
+                </li>
+                <li><button data-target="dashboard-section">Tableau de bord</button></li>
+                <li>
+                    <div class="menu-header">Analyses</div>
+                    <ul class="submenu">
+                        <li><button data-target="stats-section">Statistiques</button></li>
+                        <li><button data-target="recurrents-section">Flux de trésorerie</button></li>
+                        <li><button data-target="projection-section">Projections</button></li>
+                    </ul>
+                </li>
+                <li>
+                    <div class="menu-header">Paramètres</div>
+                    <ul class="submenu">
+                        <li><button data-target="settings-section">Paramètres</button></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+        <div id="content">
+            <section id="dashboard-section" style="display:none;">
+                <h1>Transactions hors moyenne <span id="dashboard-info" class="info-icon">?</span></h1>
+                <label for="dashboard-threshold">Coeff de tolérance&nbsp;:</label>
+                <input type="number" id="dashboard-threshold" step="0.1" value="1.5" style="width:4em;" />
+                <label for="dashboard-months" style="margin-left:1em;">Moyenne calculée sur x&nbsp;mois&nbsp;:</label>
+                <input type="number" id="dashboard-months" step="1" min="1" value="3" style="width:3em;" />
+                <label style="margin-left:1em;"><input type="checkbox" id="dashboard-favorites-only" /> Analyser uniquement les transactions favorites</label>
+                <div id="dashboard-content">Chargement...</div>
+                <canvas id="dashboardChart" width="400" height="200"></canvas>
+            </section>
+            <section id="transactions-section">
+
+                <div class="transactions-header">
+                    <h1>Transactions</h1>
+                    <div id="account-controls">
+                        <label for="account-select">Compte :</label>
+                        <select id="account-select">
+                            <option value="">(Tous)</option>
+                            <option value="none">(Aucun)</option>
+                        </select>
+                        <span id="account-info"></span>
+                    </div>
+                    <form id="balance-form" style="margin-top:0.5em;">
+                        <input type="date" id="balance-date" />
+                        <input type="number" step="0.01" id="balance-amount" placeholder="Solde" />
+                        <button type="submit">Enregistrer</button>
+                        <span id="balance-form-msg" style="margin-left:0.5em;"></span>
+                    </form>
+                </div>
+                <table id="transactions-table">
+                    <thead>
+                        <tr class="filter-row">
+                            <th><select id="filter-favorite">
+                                <option value="">(Tous)</option>
+                                <option value="true">Oui</option>
+                                <option value="false">Non</option>
+                            </select></th>
+                            <th></th>
+                            <th class="stack">
+                                <input type="date" id="filter-start-date" />
+                                <input type="date" id="filter-end-date" />
+                                <select id="filter-period">
+                                    <option value="">(Période)</option>
+                                    <option value="current-week">Semaine en cours</option>
+                                    <option value="previous-week">Semaine précédente</option>
+                                    <option value="current-month">Mois en cours</option>
+                                    <option value="previous-month">Mois précédent</option>
+                                    <option value="ytd">Année en cours</option>
+                                    <option value="last-6-months">6 derniers mois</option>
+                                    <option value="previous-year">Année précédente</option>
+                                    <option value="all">Tout</option>
+                                </select>
+                            </th>
+                            <th><select id="filter-type"><option value="">(Tous)</option></select></th>
+                            <th><select id="filter-payment"><option value="">(Tous)</option></select></th>
+                            <th><input type="text" id="filter-label" placeholder="Libellé" /></th>
+                            <th class="stack">
+                                <input type="number" id="filter-min-amount" placeholder="Min" style="width:5em;" />
+                                <input type="number" id="filter-max-amount" placeholder="Max" style="width:5em;" />
+                                <select id="filter-amount-order">
+                                    <option value="">(Date)</option>
+                                    <option value="asc">Croissant</option>
+                                    <option value="desc">Décroissant</option>
+                                </select>
+                            </th>
+                            <th><select id="filter-category"><option value="">(Toutes)</option></select></th>
+                            <th><select id="filter-subcategory"><option value="">(Toutes)</option></select></th>
+                            <th></th>
+                            <th><select id="filter-reconciled">
+                                <option value="">(Tous)</option>
+                                <option value="true">Oui</option>
+                                <option value="false">Non</option>
+                            </select></th>
+                            <th><select id="filter-toanalyze">
+                                <option value="">(Tous)</option>
+                                <option value="true">Oui</option>
+                                <option value="false">Non</option>
+                            </select></th>
+                        </tr>
+                        <tr>
+                            <th>★</th>
+                            <th>Filtre</th>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Moyen de paiement</th>
+                            <th>Libellé</th>
+                            <th>Montant</th>
+                            <th>Catégorie</th>
+                            <th>Sous-catégorie</th>
+                            <th>Règle</th>
+                            <th>Pointée <button id="toggle-all-reconciled" class="toggle-all-btn">✓</button></th>
+                            <th>A analyser <button id="toggle-all-toanalyze" class="toggle-all-btn">✓</button></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+
+            <section id="accounts-section" style="display:none;">
+                <h1>Comptes</h1>
+                <form id="upload-form">
+                    <input type="file" id="csv-file" name="file" accept=".csv" required />
+                    <button type="submit">Importer CSV</button>
+                </form>
+                <table id="accounts-table">
+                    <thead><tr><th>Compte</th><th>Actions</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+
+            <section id="stats-section" style="display:none;">
+                <h1>Statistiques mensuelles</h1>
+                <select id="stats-period">
+                    <option value="current-week">Semaine en cours</option>
+                    <option value="previous-week">Semaine précédente</option>
+                    <option value="current-month" selected>Mois en cours</option>
+                    <option value="previous-month">Mois précédent</option>
+                    <option value="ytd">Année en cours</option>
+                    <option value="last-6-months">6 derniers mois</option>
+                    <option value="previous-year">Année précédente</option>
+                    <option value="all">Tout</option>
+                </select>
+                <canvas id="statsChart" width="400" height="200"></canvas>
+                <table id="category-charts">
+                    <tr>
+                        <td><canvas id="incomeChart"></canvas></td>
+                        <td><canvas id="expenseChart"></canvas></td>
+                    </tr>
+                </table>
+                <div id="category-no-data" style="display:none;">No data</div>
+                <div id="sankeyChart" style="width:90vw;height:300px;margin:1em 0;"></div>
+                <div id="financialSankey"></div>
+            </section>
+
+            <section id="recurrents-section" style="display:none;">
+                <h1>Flux de trésorerie</h1>
+                <div id="recurrents-accounts"></div>
+                <div id="recurrent-month-container">
+                    <input type="month" id="recurrent-month">
+                </div>
+                <div id="recurrents-header">
+                    <button id="btn-recurrent" class="selected"></button>
+                    <button id="btn-income"></button>
+                    <button id="btn-expense"></button>
+                    <button id="btn-balance"></button>
+                </div>
+                <div id="recurrents-controls">
+                    <button id="recurrents-btn-calendar" class="selected">Calendrier</button>
+                    <button id="recurrents-btn-list">Liste/anneau</button>
+                </div>
+                <div id="recurrents-calendar-view">
+                    <div id="recurrents-calendar"></div>
+                    <div id="recurrents-sidebar"></div>
+                </div>
+                <div id="recurrents-list-view" style="display:none;">
+                    <canvas id="recurrents-donut"></canvas>
+                    <table id="recurrents-table">
+                        <thead>
+                            <tr><th></th><th>Libellé</th><th>Montant</th><th>Fréquence</th></tr>
+                        </thead>
+                        <tbody id="recurrents-items"></tbody>
+                    </table>
+                </div>
+                <div id="recurrents-no-data" style="display:none;">Aucune transaction récurrente trouvée selon les critères de similarité ou de montant.</div>
+                <div id="income-category-view" style="display:none;">
+                    <table id="income-category-table" class="thin-grid">
+                        <thead><tr><th>Catégorie</th><th>Total</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div id="expense-category-view" style="display:none;">
+                    <table id="expense-category-table" class="thin-grid">
+                        <thead><tr><th>Catégorie</th><th>Total</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="projection-section" style="display:none;">
+                <h1>Projection</h1>
+                <div id="projection-accounts"></div>
+                <h2 class="section-title">Dépenses passées</h2>
+                <p id="projection-cat-period"></p>
+                <table id="projection-cat-table">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+                <h2 class="section-title">Prévisions</h2>
+                <p id="projection-future-period"></p>
+                <div id="projection-mode">
+                    <label><input type="radio" name="projection-mode" value="average" checked> valeurs moyennes</label>
+                    <label><input type="radio" name="projection-mode" value="forecast"> valeurs selon régression linéaire</label>
+                </div>
+                <table id="projection-future-table">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+                <div id="projection-reset-controls">
+                    <span class="reset-label">Rechargement des valeurs calculées&nbsp;:</span>
+                    <button id="reset-future-row">↺ Ligne</button>
+                    <button id="reset-future-column">↺ Colonne</button>
+                    <button id="reset-future-table">↺ Tableau</button>
+                    <button id="clear-custom-rows">Supprimer lignes perso</button>
+                </div>
+                <canvas id="projectionChart" width="400" height="200"></canvas>
+            </section>
+
+            <section id="settings-section" style="display:none;">
+                <div id="catsubs-container">
+                    <div class="settings-col">
+                        <h1>Catégories</h1>
+                        <form id="category-form">
+                            <input type="hidden" id="category-id" />
+                            <input type="text" id="category-name" placeholder="Nom" required />
+                            <input type="color" id="category-color" value="#000000" />
+                            <button type="submit">Enregistrer</button>
+                        </form>
+                        <table id="categories-table">
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="settings-col">
+                        <h2 class="section-title">Sous-catégories</h2>
+                        <form id="subcategory-form">
+                            <input type="hidden" id="subcategory-id" />
+                            <input type="text" id="subcategory-name" placeholder="Nom" required />
+                            <select id="subcategory-category"></select>
+                            <input type="color" id="subcategory-color" value="#000000" />
+                            <button type="submit">Enregistrer</button>
+                        </form>
+                        <ul id="subcategories-list" style="display:none;"></ul>
+                    </div>
+                </div>
+
+                <h1 style="display:none;">Règles</h1>
+                <form id="rule-form" style="display:none;">
+                    <input type="hidden" id="rule-id" />
+                    <input type="text" id="rule-pattern" placeholder="Mot-clé" required />
+                    <select id="rule-category"></select>
+                    <select id="rule-subcategory">
+                        <option value="">(Aucune)</option>
+                    </select>
+                    <button type="submit">Enregistrer</button>
+                </form>
+                <ul id="rules-list" style="display:none;"></ul>
+                <h1>Préférences d'affichage</h1>
+                <label for="theme-select">Thème :</label>
+                <select id="theme-select">
+                    <option value="light">Clair</option>
+                    <option value="dark">Sombre</option>
+                    <option value="flat-light">Flat clair</option>
+                    <option value="flat-dark">Flat sombre</option>
+                    <option value="luxury-light">Luxe clair</option>
+                    <option value="luxury-dark">Luxe sombre</option>
+                    <option value="magazine-light">Magazine clair</option>
+                    <option value="magazine-dark">Magazine sombre</option>
+                </select>
+                <label for="font-select">Police :</label>
+                <select id="font-select">
+                    <option value="roboto">Roboto</option>
+                    <option value="arial">Arial</option>
+                    <option value="geneva">Geneva</option>
+                </select>
+                <div>
+                    <label><input type="checkbox" id="hide-amounts"> Masquer montants</label>
+                </div>
+
+                <h1>RESET</h1>
+                <button id="reset-transactions">Effacer les transactions</button>
+            </section>
+        </div>
+
+        <div id="category-overlay" class="overlay">
+            <div class="popup">
+                <select id="popup-category-select"></select>
+                <button id="popup-category-save">OK</button>
+            </div>
+        </div>
+        <div id="subcategory-overlay" class="overlay">
+            <div class="popup">
+                <select id="popup-subcategory-select"></select>
+                <button id="popup-subcategory-save">OK</button>
+            </div>
+        </div>
+        <div id="duplicate-overlay" class="overlay">
+            <div class="popup">
+                <form id="duplicate-form">
+                    <h3>Doublons détectés</h3>
+                    <ul id="duplicate-list"></ul>
+                    <button type="submit">Insérer la sélection</button>
+                </form>
+            </div>
+        </div>
+        <div id="rule-overlay" class="overlay">
+            <div class="popup">
+                <div id="rule-label-checkboxes"></div>
+                <select id="rule-overlay-category"></select>
+                <select id="rule-overlay-subcategory"></select>
+                <button id="rule-overlay-save">OK</button>
+            </div>
+        </div>
+        <div id="fav-filter-overlay" class="overlay">
+            <div class="popup">
+                <div id="fav-filter-label-checkboxes"></div>
+                <select id="fav-filter-overlay-category"></select>
+                <select id="fav-filter-overlay-subcategory"></select>
+                <button id="fav-filter-overlay-save">OK</button>
+            </div>
+        </div>
+        <div id="manage-subcats-overlay" class="overlay">
+            <div class="popup">
+                <table id="manage-subcats-table">
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        <div id="delete-error-overlay" class="overlay">
+            <div class="popup">
+                <h3>Sous-catégories liées</h3>
+                <ul id="delete-error-subcat-list"></ul>
+                <h3>Transactions liées</h3>
+                <ul id="delete-error-list"></ul>
+                <button id="delete-error-close">Fermer</button>
+            </div>
+        </div>
+        <div id="recurrents-overlay" class="overlay">
+            <div class="popup">
+                <h3 id="recurrents-title"></h3>
+                <ul id="recurrents-list"></ul>
+                <button id="recurrents-close">Fermer</button>
+            </div>
+        </div>
+        <div id="projection-details-overlay" class="overlay">
+            <div class="popup">
+                <h3 id="projection-details-title"></h3>
+                <table id="projection-details-table">
+                    <thead><tr><th>Date</th><th>Libellé</th><th>Montant</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <button id="projection-details-close">Fermer</button>
+            </div>
+        </div>
+        <div id="favorite-info-overlay" class="overlay">
+            <div class="popup">
+                <p>Ce tableau regroupe par catégorie les éléments marqués comme favoris (filtres, catégories ou sous-catégories) avec leur total du mois en cours et la moyenne des six derniers mois.</p>
+                <button id="favorite-info-close">Fermer</button>
+            </div>
+        </div>
+        <div id="dashboard-info-overlay" class="overlay">
+            <div class="popup">
+                <p>Les transactions listées dépassent la moyenne des x derniers mois multipliée par le coefficient de tolérance.</p>
+                <button id="dashboard-info-close">Fermer</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Global defaults for all charts
+        Chart.defaults.color = '#eeeeee';
+        Chart.defaults.font.size = 13;
+
+        let categoriesData = [];
+        let subcategoriesData = [];
+        let categoryOptions = [];
+        let accountsData = [];
+        let rulesData = [];
+        let selectedAccountId = '';
+        let recurrentsData = [];
+        let recurrentsChart = null;
+        let recurrentsAccountIds = [];
+        let projectionData = [];
+        let projectionFutureTotals = [];
+        let projectionFutureMonths = [];
+        let projectionAccountIds = [];
+        let projectionStartBalance = 0;
+        let activeFutureCell = null;
+
+        function showLoginForm() {
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
+        }
+
+        function handleUnauthorized(resp) {
+            if (resp.status === 401) {
+                alert('Session expirée, veuillez vous reconnecter.');
+                showLoginForm();
+                return true;
+            }
+            return false;
+        }
+
+        function findCategory(id) {
+            return categoriesData.find(c => String(c.id) === String(id));
+        }
+
+        function findSubcategory(id) {
+            return subcategoriesData.find(s => String(s.id) === String(id));
+        }
+
+        function normalizeName(name) {
+            return (name || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-zA-Z0-9]/g, '')
+                .toLowerCase();
+        }
+
+        function findCategoryByName(name) {
+            const norm = normalizeName(name);
+            return categoriesData.find(c => normalizeName(c.name) === norm);
+        }
+
+        async function fetchCategoryOptions() {
+            const resp = await fetch('/category-options');
+            if (handleUnauthorized(resp) || !resp.ok) return;
+            categoryOptions = await resp.json();
+            populateCategorySelects();
+        }
+
+        async function refreshCategoryData() {
+            await fetchCategories();
+            await fetchSubcategories();
+            await fetchCategoryOptions();
+        }
+
+        function populateCategorySelects() {
+            const catSelectIds = [
+                'popup-category-select',
+                'rule-category',
+                'rule-overlay-category',
+                'subcategory-category',
+                'filter-category',
+                'fav-filter-overlay-category'
+            ];
+            const subSelectIds = [
+                'popup-subcategory-select',
+                'rule-subcategory',
+                'rule-overlay-subcategory',
+                'filter-subcategory',
+                'fav-filter-overlay-subcategory'
+            ];
+
+           catSelectIds.forEach(id => {
+                const sel = document.getElementById(id);
+                if (!sel) return;
+                if (id === 'filter-category') {
+                    sel.innerHTML = '<option value="">(Toutes)</option><option value="none">(Aucune)</option>';
+                } else {
+                    sel.innerHTML = '<option value="">(Aucune)</option>';
+                }
+            });
+
+            subSelectIds.forEach(id => {
+                const sel = document.getElementById(id);
+                if (!sel) return;
+                const noneText = id === 'filter-subcategory' ? '(Toutes)' : '(Aucune)';
+                sel.innerHTML = `<option value="">${noneText}</option>`;
+            });
+
+            categoryOptions.forEach(cat => {
+                catSelectIds.forEach(id => {
+                    const sel = document.getElementById(id);
+                    if (!sel) return;
+                    const opt = document.createElement('option');
+                    opt.value = cat.id;
+                    opt.textContent = cat.name;
+                    sel.appendChild(opt.cloneNode(true));
+                });
+                (cat.subcategories || []).forEach(sub => {
+                    subSelectIds.forEach(id => {
+                        const sel = document.getElementById(id);
+                        if (!sel) return;
+                        const opt = document.createElement('option');
+                        opt.value = sub.id;
+                        opt.textContent = `${cat.name} - ${sub.name}`;
+                        sel.appendChild(opt.cloneNode(true));
+                    });
+                });
+            });
+
+            const subSelectCat = document.getElementById('subcategory-category');
+            if (subSelectCat) {
+                subSelectCat.onchange = () => {
+                    const cat = findCategory(subSelectCat.value);
+                    const colorInput = document.getElementById('subcategory-color');
+                    if (cat && colorInput) {
+                        colorInput.value = cat.color || '#000000';
+                    }
+                };
+                if (subSelectCat.value) subSelectCat.onchange();
+            }
+        }
+
+        function populateSubPopup(catId) {
+            const sel = document.getElementById('popup-subcategory-select');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">(Aucune)</option>';
+            categoryOptions.forEach(cat => {
+                (cat.subcategories || []).forEach(sub => {
+                    if (!catId || String(cat.id) === String(catId)) {
+                        const opt = document.createElement('option');
+                        opt.value = sub.id;
+                        opt.textContent = sub.name;
+                        sel.appendChild(opt);
+                    }
+                });
+            });
+        }
+
+        function updateSubcategories(catId, selectId, noneText) {
+            const sel = document.getElementById(selectId);
+            if (!sel) return;
+            sel.innerHTML = `<option value="">${noneText}</option>`;
+            categoryOptions.forEach(cat => {
+                (cat.subcategories || []).forEach(sub => {
+                    if (!catId || String(cat.id) === String(catId)) {
+                        const opt = document.createElement('option');
+                        opt.value = sub.id;
+                        opt.textContent = catId ? sub.name : `${cat.name} - ${sub.name}`;
+                        sel.appendChild(opt);
+                    }
+                });
+            });
+        }
+
+        function formatAmount(v) {
+            if (localStorage.getItem('hideAmounts') === 'true') {
+                return '•••';
+            }
+            const num = typeof v === 'string' ? parseFloat(v) : v;
+            return (num || 0)
+                .toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+                .replace(/,/g, ' ');
+        }
+
+        function parseAmount(str) {
+            return parseFloat(String(str).replace(/\s+/g, '').replace(',', '.')) || 0;
+        }
+
+        function getChartOptions(hide, withScale = true) {
+            const opts = {
+                plugins: {
+                    tooltip: {
+                        enabled: !hide,
+                        callbacks: {
+                            label: ctx => formatAmount(ctx.parsed.y ?? ctx.parsed)
+                        }
+                    }
+                }
+            };
+            if (withScale) {
+                opts.scales = {
+                    y: {
+                        ticks: {
+                            display: !hide,
+                            callback: val => formatAmount(val)
+                        }
+                    }
+                };
+            }
+            return opts;
+        }
+
+        function formatDate(dateStr) {
+            const [y, m, d] = dateStr.split('-');
+            return `${d}/${m}/${y}`;
+        }
+
+        function getPeriodDates(option) {
+            const today = new Date();
+            let start = null;
+            let end = null;
+            const day = today.getDay();
+            switch (option) {
+                case 'current-week':
+                    start = new Date(today);
+                    start.setDate(today.getDate() - ((day + 6) % 7));
+                    end = new Date(start);
+                    end.setDate(start.getDate() + 6);
+                    break;
+                case 'previous-week':
+                    end = new Date(today);
+                    end.setDate(today.getDate() - ((day + 6) % 7) - 1);
+                    start = new Date(end);
+                    start.setDate(end.getDate() - 6);
+                    break;
+                case 'current-month':
+                    start = new Date(today.getFullYear(), today.getMonth(), 1);
+                    end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                    break;
+                case 'previous-month':
+                    start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    end = new Date(today.getFullYear(), today.getMonth(), 0);
+                    break;
+                case 'ytd':
+                    start = new Date(today.getFullYear(), 0, 1);
+                    end = new Date(today.getFullYear(), 11, 31);
+                    break;
+                case 'last-6-months':
+                    start = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+                    end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                    break;
+                case 'previous-year':
+                    start = new Date(today.getFullYear() - 1, 0, 1);
+                    end = new Date(today.getFullYear() - 1, 11, 31);
+                    break;
+                default:
+                    start = null;
+                    end = null;
+            }
+            // Format dates using local timezone to avoid day shifts
+            const fmt = d => d.toLocaleDateString('fr-CA');
+            return {
+                start: start ? fmt(start) : '',
+                end: end ? fmt(end) : ''
+            };
+        }
+
+        function updateAccountDropdown() {
+            const select = document.getElementById('account-select');
+            select.innerHTML = '<option value="">(Tous)</option><option value="none">(Aucun)</option>';
+            accountsData.forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a.id;
+                opt.textContent = `${a.account_type} ${a.number}`.trim();
+                select.appendChild(opt);
+            });
+            select.value = selectedAccountId;
+        }
+
+        function populateProjectionAccounts() {
+            const container = document.getElementById('projection-accounts');
+            if (!container) return;
+            container.innerHTML = '';
+            accountsData.forEach(a => {
+                const lbl = document.createElement('label');
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.value = a.id;
+                cb.checked = !projectionAccountIds.length || projectionAccountIds.includes(String(a.id));
+                cb.addEventListener('change', () => {
+                    projectionAccountIds = Array.from(container.querySelectorAll('input:checked')).map(c => c.value);
+                    fetchProjection();
+                    fetchProjectionCategories();
+                    fetchProjectionFuture();
+                });
+                lbl.appendChild(cb);
+                lbl.append(' ' + `${a.account_type} ${a.number}`.trim());
+                container.appendChild(lbl);
+            });
+        }
+
+        function populateRecurrentsAccounts() {
+            const container = document.getElementById('recurrents-accounts');
+            if (!container) return;
+            container.innerHTML = '';
+            accountsData.forEach(a => {
+                const lbl = document.createElement('label');
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.value = a.id;
+                cb.checked = !recurrentsAccountIds.length || recurrentsAccountIds.includes(String(a.id));
+                cb.addEventListener('change', () => {
+                    recurrentsAccountIds = Array.from(container.querySelectorAll('input:checked')).map(c => c.value);
+                    fetchRecurrents();
+                    updateRecurrentsTotals();
+                });
+                lbl.appendChild(cb);
+                lbl.append(' ' + `${a.account_type} ${a.number}`.trim());
+                container.appendChild(lbl);
+            });
+        }
+
+        function displayAccountInfo() {
+            const info = document.getElementById('account-info');
+            const acc = accountsData.find(a => String(a.id) === String(selectedAccountId));
+            if (acc) {
+                const date = acc.export_date ? ` - export ${formatDate(acc.export_date)}` : '';
+                info.textContent = `${acc.account_type} ${acc.number}${date}`.trim();
+            } else if (selectedAccountId === 'none') {
+                info.textContent = 'Pas de référence de compte';
+            } else {
+                info.textContent = '';
+            }
+        }
+
+        async function populateAccountsTable() {
+            const tbody = document.querySelector('#accounts-table tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            accountsData.forEach(a => {
+                const tr = document.createElement('tr');
+                const infoTd = document.createElement('td');
+                const date = a.export_date ? ` - export ${formatDate(a.export_date)}` : '';
+                infoTd.textContent = `${a.account_type} ${a.number}${date}`.trim();
+                tr.appendChild(infoTd);
+
+                const actionTd = document.createElement('td');
+                const upd = document.createElement('button');
+                upd.textContent = 'Mettre à jour';
+                upd.onclick = () => {
+                    selectedAccountId = a.id;
+                    updateAccountDropdown();
+                    displayAccountInfo();
+                    fetchBalanceInfo();
+                    const fi = document.getElementById('csv-file');
+                    if (fi) fi.click();
+                };
+                const del = document.createElement('button');
+                del.textContent = 'Supprimer';
+                del.onclick = async () => {
+                    if (!confirm('Supprimer ce compte ?')) return;
+                    await deleteAccount(a.id);
+                };
+                actionTd.appendChild(upd);
+                actionTd.append(' ', del);
+                tr.appendChild(actionTd);
+
+                tbody.appendChild(tr);
+            });
+
+            const resp = await fetch('/transactions/unassigned/count');
+            if (!handleUnauthorized(resp) && resp.ok) {
+                const data = await resp.json();
+                if (data.count) {
+                    const noneTr = document.createElement('tr');
+                    const noneInfo = document.createElement('td');
+                    noneInfo.textContent = 'Pas de référence de compte';
+                    noneTr.appendChild(noneInfo);
+
+                    const noneAction = document.createElement('td');
+                    const noneUpd = document.createElement('button');
+                    noneUpd.textContent = 'Mettre à jour';
+                    noneUpd.onclick = () => {
+                        selectedAccountId = 'none';
+                        updateAccountDropdown();
+                        displayAccountInfo();
+                        fetchBalanceInfo();
+                    };
+                    const noneDel = document.createElement('button');
+                    noneDel.textContent = 'Supprimer';
+                    noneDel.onclick = async () => {
+                        if (!confirm('Supprimer ces transactions ?')) return;
+                        await deleteUnassignedTransactions();
+                    };
+                    noneAction.appendChild(noneUpd);
+                    noneAction.append(' ', noneDel);
+                    noneTr.appendChild(noneAction);
+                    tbody.appendChild(noneTr);
+                }
+            }
+            adjustLabelColumns();
+        }
+
+        function adjustLabelColumns() {
+            const table = document.getElementById('transactions-table');
+            if (!table) return;
+            table.classList.remove('long-label');
+            const cells = table.querySelectorAll('tbody td:nth-child(6)');
+            for (const td of cells) {
+                const lh = parseFloat(getComputedStyle(td).lineHeight);
+                const lines = Math.round(td.getBoundingClientRect().height / lh);
+                if (lines >= 6) {
+                    table.classList.add('long-label');
+                    break;
+                }
+            }
+        }
+
+        async function fetchAccounts() {
+            const resp = await fetch('/accounts');
+            if (handleUnauthorized(resp) || !resp.ok) return;
+            accountsData = await resp.json();
+            updateAccountDropdown();
+            populateProjectionAccounts();
+            populateRecurrentsAccounts();
+            await populateAccountsTable();
+        }
+
+        async function createAccount(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            const resp = await fetch('/import', { method: 'POST', body: formData });
+            const data = await resp.json().catch(() => ({}));
+            if (resp.ok) {
+                if (data.account) {
+                    selectedAccountId = data.account.id;
+                }
+                await fetchAccounts();
+                displayAccountInfo();
+                fetchBalanceInfo();
+                if (data.duplicates && data.duplicates.length) {
+                    showDuplicates(data.duplicates, data.account ? data.account.id : '');
+                } else {
+                    fetchTransactions();
+                    fetchDashboard();
+                    fetchStats();
+                    fetchProjection();
+                    fetchProjectionCategories();
+                    fetchProjectionFuture();
+                    fetchCategoryStats();
+                    fetchSankeyStats();
+                }
+            } else {
+                if (data.errors) {
+                    alert(data.errors.join('\n'));
+                } else {
+                    alert(data.error || 'Erreur import');
+                }
+            }
+        }
+
+        async function deleteAccount(id) {
+            const resp = await fetch(`/accounts/${id}`, { method: 'DELETE' });
+            if (resp.ok) {
+                if (String(selectedAccountId) === String(id)) {
+                    selectedAccountId = '';
+                }
+                await fetchAccounts();
+                displayAccountInfo();
+                fetchBalanceInfo();
+                fetchTransactions();
+                fetchDashboard();
+                fetchStats();
+                fetchProjection();
+                fetchProjectionCategories();
+                fetchProjectionFuture();
+                fetchCategoryStats();
+                fetchSankeyStats();
+            }
+        }
+
+        async function deleteUnassignedTransactions() {
+            const resp = await fetch('/transactions/unassigned', { method: 'DELETE' });
+            if (resp.ok) {
+                if (selectedAccountId === 'none') {
+                    selectedAccountId = 'none';
+                }
+                await fetchAccounts();
+                displayAccountInfo();
+                fetchBalanceInfo();
+                fetchTransactions();
+                fetchDashboard();
+                fetchStats();
+                fetchProjection();
+                fetchProjectionCategories();
+                fetchProjectionFuture();
+                fetchCategoryStats();
+                fetchSankeyStats();
+            }
+        }
+
+        async function fetchBalanceInfo() {
+            const dateInput = document.getElementById('balance-date');
+            const amtInput = document.getElementById('balance-amount');
+            if (!selectedAccountId || selectedAccountId === 'none') {
+                dateInput.value = '';
+                amtInput.value = '';
+                return;
+            }
+            const resp = await fetch(`/accounts/${selectedAccountId}/balance`);
+            if (handleUnauthorized(resp) || !resp.ok) return;
+            const data = await resp.json();
+            dateInput.value = data.balance_date || '';
+            amtInput.value = data.initial_balance != null ? data.initial_balance : '';
+        }
+
+        async function fetchTransactions() {
+            const params = new URLSearchParams();
+            if (selectedAccountId && selectedAccountId !== 'none') {
+                params.set('account_id', selectedAccountId);
+            } else if (selectedAccountId === 'none') {
+                params.set('account_none', 'true');
+            }
+            let start = document.getElementById('filter-start-date').value;
+            let end = document.getElementById('filter-end-date').value;
+            const period = document.getElementById('filter-period').value;
+            if (period) {
+                const d = getPeriodDates(period);
+                start = d.start;
+                end = d.end;
+            }
+            const txType = document.getElementById('filter-type').value.trim();
+            const pay = document.getElementById('filter-payment').value.trim();
+            const label = document.getElementById('filter-label').value.trim();
+            const minAmt = document.getElementById('filter-min-amount').value;
+            const maxAmt = document.getElementById('filter-max-amount').value;
+            const amtOrder = document.getElementById('filter-amount-order').value;
+            const cat = document.getElementById('filter-category').value;
+            const sub = document.getElementById('filter-subcategory').value;
+            const fav = document.getElementById('filter-favorite').value;
+            const rec = document.getElementById('filter-reconciled').value;
+            const ana = document.getElementById('filter-toanalyze').value;
+            if (start) params.set('start_date', start);
+            if (end) params.set('end_date', end);
+            if (txType) params.set('type', txType);
+            if (pay) params.set('payment_method', pay);
+            if (label) params.set('label', label);
+            if (minAmt) params.set('min_amount', minAmt);
+            if (maxAmt) params.set('max_amount', maxAmt);
+            if (cat === 'none') {
+                params.set('category_none', 'true');
+            } else if (cat) {
+                params.set('category_id', cat);
+            }
+            if (sub) params.set('subcategory', sub);
+            if (fav === 'true' || fav === 'false') params.set('favorite', fav);
+            if (rec === 'true' || rec === 'false') params.set('reconciled', rec);
+            if (ana === 'true' || ana === 'false') params.set('to_analyze', ana);
+            if (amtOrder === 'asc' || amtOrder === 'desc') {
+                params.set('sort_by', 'amount');
+                params.set('order', amtOrder);
+            }
+            const url = '/transactions' + (params.toString() ? `?${params.toString()}` : '');
+            const resp = await fetch(url);
+            if (handleUnauthorized(resp) || !resp.ok) return;
+            const data = await resp.json();
+            displayAccountInfo();
+            const typeSel = document.getElementById('filter-type');
+            const paySel = document.getElementById('filter-payment');
+            const currentType = typeSel.value;
+            const currentPay = paySel.value;
+            const types = [...new Set(data.map(t => t.type).filter(v => v))];
+            const pays = [...new Set(data.map(t => t.payment_method).filter(v => v))];
+            typeSel.innerHTML = '<option value="">(Tous)</option>';
+            types.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v;
+                opt.textContent = v;
+                typeSel.appendChild(opt);
+            });
+            if (currentType) typeSel.value = currentType;
+            paySel.innerHTML = '<option value="">(Tous)</option>';
+            pays.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v;
+                opt.textContent = v;
+                paySel.appendChild(opt);
+            });
+            if (currentPay) paySel.value = currentPay;
+            const tbody = document.querySelector('#transactions-table tbody');
+            tbody.innerHTML = '';
+            data.forEach(t => {
+                const tr = document.createElement('tr');
+                const type = t.type || '';
+                const pay = t.payment_method || '';
+
+                const favCell = document.createElement('td');
+                const favBtn = document.createElement('button');
+                favBtn.className = 'tx-fav-btn' + (t.favorite ? ' selected' : '');
+                favBtn.textContent = t.favorite ? '★' : '☆';
+                favBtn.addEventListener('click', async () => {
+                    await fetch('/transactions/' + t.id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({favorite: !t.favorite})});
+                    fetchTransactions();
+                    fetchDashboard();
+                });
+                favCell.appendChild(favBtn);
+                tr.appendChild(favCell);
+
+                const filterCell = document.createElement('td');
+                const filterBtn = document.createElement('button');
+                filterBtn.className = 'tx-filter-btn';
+                filterBtn.textContent = '➕';
+                filterBtn.dataset.label = t.label;
+                filterBtn.dataset.category = t.category_id || '';
+                filterBtn.dataset.subcategory = t.subcategory_id || '';
+                filterCell.appendChild(filterBtn);
+                tr.appendChild(filterCell);
+
+                const dateCell = document.createElement('td');
+                dateCell.textContent = formatDate(t.date);
+                tr.appendChild(dateCell);
+
+                const typeCell = document.createElement('td');
+                typeCell.textContent = type;
+                tr.appendChild(typeCell);
+
+                const payCell = document.createElement('td');
+                payCell.textContent = pay;
+                tr.appendChild(payCell);
+
+                const labelCell = document.createElement('td');
+                labelCell.textContent = t.label;
+                tr.appendChild(labelCell);
+
+                const amountCell = document.createElement('td');
+                amountCell.className = 'amount';
+                amountCell.textContent = formatAmount(t.amount);
+                tr.appendChild(amountCell);
+
+                const catCell = document.createElement('td');
+                const catBtn = document.createElement('button');
+                catBtn.className = 'tx-cat-btn';
+                catBtn.dataset.id = t.id;
+                catBtn.dataset.current = t.category_id || '';
+                if (t.category) {
+                    catBtn.textContent = t.category;
+                    catBtn.style.color = t.category_color || '';
+                } else {
+                    catBtn.textContent = '(Aucune)';
+                    catBtn.style.color = '';
+                }
+                catCell.appendChild(catBtn);
+                tr.appendChild(catCell);
+
+                const subCell = document.createElement('td');
+                const subBtn = document.createElement('button');
+                subBtn.className = 'tx-sub-btn';
+                subBtn.dataset.id = t.id;
+                subBtn.dataset.current = t.subcategory_id || '';
+                subBtn.dataset.categoryId = t.category_id || '';
+                if (t.subcategory) {
+                    subBtn.textContent = t.subcategory;
+                    subBtn.style.color = t.subcategory_color || '';
+                } else {
+                    subBtn.textContent = '(Aucune)';
+                    subBtn.style.color = '';
+                }
+                subCell.appendChild(subBtn);
+                tr.appendChild(subCell);
+
+                const ruleCell = document.createElement('td');
+                const ruleBtn = document.createElement('button');
+                ruleBtn.className = 'tx-rule-btn';
+                ruleBtn.textContent = '⚙️';
+                ruleBtn.dataset.label = t.label;
+                ruleBtn.dataset.category = t.category_id || '';
+                ruleBtn.dataset.subcategory = t.subcategory_id || '';
+                ruleCell.appendChild(ruleBtn);
+                tr.appendChild(ruleCell);
+
+                const recCell = document.createElement('td');
+                const recBox = document.createElement('input');
+                recBox.type = 'checkbox';
+                recBox.checked = t.reconciled;
+                recBox.dataset.id = t.id;
+                recBox.className = 'reconciled-checkbox';
+                recBox.addEventListener('change', async () => {
+                    await fetch('/transactions/' + t.id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({reconciled: recBox.checked})});
+                    fetchTransactions();
+                });
+                recCell.appendChild(recBox);
+                tr.appendChild(recCell);
+
+                const analyzeCell = document.createElement('td');
+                const analyzeBox = document.createElement('input');
+                analyzeBox.type = 'checkbox';
+                analyzeBox.checked = t.to_analyze;
+                analyzeBox.dataset.id = t.id;
+                analyzeBox.className = 'to-analyze-checkbox';
+                analyzeBox.addEventListener('change', async () => {
+                    await fetch('/transactions/' + t.id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({to_analyze: analyzeBox.checked})});
+                    fetchTransactions();
+                    fetchProjectionCategories();
+                });
+                analyzeCell.appendChild(analyzeBox);
+                tr.appendChild(analyzeCell);
+
+                tbody.appendChild(tr);
+            });
+            adjustLabelColumns();
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resp = await fetch('/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username, password })
+            });
+            if (resp.ok) {
+                await fetchAccounts();
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                displayAccountInfo();
+                fetchBalanceInfo();
+                fetchTransactions();
+                await refreshCategoryData();
+                fetchRules();
+                fetchDashboard();
+                fetchStats();
+                fetchProjection();
+                fetchProjectionCategories();
+                fetchProjectionFuture();
+                fetchCategoryStats();
+                fetchSankeyStats();
+            } else {
+                alert('Connexion échouée');
+            }
+        });
+
+        document.getElementById('csv-file').addEventListener('change', () => {
+            if (document.getElementById('csv-file').files.length) {
+                document.getElementById('upload-form').requestSubmit();
+            }
+        });
+
+        document.getElementById('upload-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const fileInput = document.getElementById('csv-file');
+            if (!fileInput.files.length) return;
+            await createAccount(fileInput.files[0]);
+            fileInput.value = '';
+        });
+
+        async function fetchCategories() {
+            const resp = await fetch('/categories');
+            if (handleUnauthorized(resp) || !resp.ok) return;
+            const data = await resp.json();
+            categoriesData = data;
+            const tbody = document.querySelector('#categories-table tbody');
+            tbody.innerHTML = '';
+            data.forEach(c => {
+                const tr = document.createElement('tr');
+                const colorTd = document.createElement('td');
+                const colorSpan = document.createElement('span');
+                colorSpan.style.display = 'inline-block';
+                colorSpan.style.width = '12px';
+                colorSpan.style.height = '12px';
+                colorSpan.style.background = c.color;
+                colorTd.appendChild(colorSpan);
+                tr.appendChild(colorTd);
+
+                const nameTd = document.createElement('td');
+                nameTd.textContent = c.name;
+                tr.appendChild(nameTd);
+
+                const favTd = document.createElement('td');
+                const fav = document.createElement('button');
+                fav.className = 'tx-fav-btn' + (c.favorite ? ' selected' : '');
+                fav.textContent = c.favorite ? '★' : '☆';
+                fav.onclick = async () => {
+                    const resp = await fetch('/categories/' + c.id, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ favorite: !c.favorite })
+                    });
+                    if (resp.ok) {
+                        fav.classList.toggle('selected');
+                        fetchDashboard();
+                    }
+                    await refreshCategoryData();
+                };
+                favTd.appendChild(fav);
+                tr.appendChild(favTd);
+
+                const editTd = document.createElement('td');
+                const edit = document.createElement('button');
+                edit.textContent = 'Éditer';
+                edit.onclick = () => {
+                    document.getElementById('category-id').value = c.id;
+                    document.getElementById('category-name').value = c.name;
+                    document.getElementById('category-color').value = c.color || '#000000';
+                };
+                editTd.appendChild(edit);
+                tr.appendChild(editTd);
+
+                const delTd = document.createElement('td');
+                const del = document.createElement('button');
+                del.textContent = 'Supprimer';
+                del.onclick = async () => {
+                    const resp = await fetch('/categories/' + c.id, { method: 'DELETE' });
+                    const data = await resp.json().catch(() => ({}));
+                    if (resp.ok) {
+                        await refreshCategoryData();
+                        fetchRules();
+                    } else {
+                        if ((data.transactions && data.transactions.length) ||
+                            (data.subcategories && data.subcategories.length)) {
+                            showDeleteError(data.transactions || [], data.subcategories || []);
+                        } else {
+                            alert(data.error || 'Suppression échouée');
+                        }
+                    }
+                };
+                delTd.appendChild(del);
+                tr.appendChild(delTd);
+
+                const subTd = document.createElement('td');
+                const subBtn = document.createElement('button');
+                subBtn.textContent = 'Sous-catégorie';
+                subBtn.onclick = () => {
+                    document.getElementById('subcategory-category').value = c.id;
+                    document.getElementById('subcategory-id').value = '';
+                    document.getElementById('subcategory-name').value = '';
+                    document.getElementById('subcategory-color').value = c.color || '#000000';
+                    showManageSubcats(c.id);
+                };
+                subTd.appendChild(subBtn);
+                tr.appendChild(subTd);
+
+                tbody.appendChild(tr);
+
+            });
+            populateCategorySelects();
+        }
+
+        async function fetchSubcategories() {
+            const resp = await fetch('/subcategories');
+            if (handleUnauthorized(resp) || !resp.ok) return;
+            const data = await resp.json();
+            subcategoriesData = data;
+            const list = document.getElementById('subcategories-list');
+            list.innerHTML = '';
+            data.forEach(s => {
+                const li = document.createElement('li');
+                li.appendChild(document.createTextNode(`${s.category} → `));
+                const colorSpan = document.createElement('span');
+                colorSpan.style.display = 'inline-block';
+                colorSpan.style.width = '12px';
+                colorSpan.style.height = '12px';
+                colorSpan.style.background = s.color;
+                colorSpan.style.marginRight = '4px';
+                li.appendChild(colorSpan);
+                li.appendChild(document.createTextNode(s.name));
+
+                const fav = document.createElement('button');
+                fav.className = 'tx-fav-btn' + (s.favorite ? ' selected' : '');
+                fav.textContent = s.favorite ? '★' : '☆';
+                fav.onclick = async () => {
+                    const resp = await fetch('/subcategories/' + s.id, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ favorite: !s.favorite })
+                    });
+                    if (resp.ok) {
+                        fav.classList.toggle('selected');
+                        fetchDashboard();
+                    }
+                    await refreshCategoryData();
+                };
+
+                const edit = document.createElement('button');
+                edit.textContent = 'Éditer';
+                edit.onclick = () => {
+                    document.getElementById('subcategory-id').value = s.id;
+                    document.getElementById('subcategory-name').value = s.name;
+                    document.getElementById('subcategory-category').value = s.category_id;
+                    document.getElementById('subcategory-color').value = s.color || '#000000';
+                };
+                const del = document.createElement('button');
+                del.textContent = 'Supprimer';
+                del.onclick = async () => {
+                    await fetch('/subcategories/' + s.id, { method: 'DELETE' });
+                    await refreshCategoryData();
+                };
+                li.append(' ', fav, ' ', edit, ' ', del);
+                list.appendChild(li);
+
+            });
+            populateCategorySelects();
+        }
+
+        async function fetchRules() {
+            const resp = await fetch('/rules');
+            if (handleUnauthorized(resp) || !resp.ok) return;
+            const data = await resp.json();
+            rulesData = data;
+            const list = document.getElementById('rules-list');
+            list.innerHTML = '';
+            data.forEach(r => {
+                const li = document.createElement('li');
+                const cat = r.category || '';
+                const sub = r.subcategory ? ' / ' + r.subcategory : '';
+                li.textContent = `${r.pattern} → ${cat}${sub}`;
+                const edit = document.createElement('button');
+                edit.textContent = 'Éditer';
+                edit.onclick = () => {
+                    document.getElementById('rule-id').value = r.id;
+                    document.getElementById('rule-pattern').value = r.pattern;
+                    document.getElementById('rule-category').value = r.category_id;
+                    document.getElementById('rule-subcategory').value = r.subcategory_id || '';
+                };
+                const del = document.createElement('button');
+                del.textContent = 'Supprimer';
+                del.onclick = async () => {
+                    await fetch('/rules/' + r.id, { method: 'DELETE' });
+                    fetchRules();
+                };
+                li.append(' ', edit, ' ', del);
+                list.appendChild(li);
+            });
+        }
+
+       document.getElementById('category-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = document.getElementById('category-id').value;
+            const name = document.getElementById('category-name').value;
+            const color = document.getElementById('category-color').value;
+            if (id) {
+                await fetch('/categories/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name, color }) });
+            } else {
+                await fetch('/categories', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name, color }) });
+            }
+            document.getElementById('category-id').value = '';
+            document.getElementById('category-name').value = '';
+            document.getElementById('category-color').value = '#000000';
+            await refreshCategoryData();
+            fetchRules();
+        });
+
+        document.getElementById('subcategory-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = document.getElementById('subcategory-id').value;
+            const name = document.getElementById('subcategory-name').value;
+            const category_id = document.getElementById('subcategory-category').value;
+            const color = document.getElementById('subcategory-color').value;
+            const payload = { name, category_id, color };
+            if (id) {
+                await fetch('/subcategories/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            } else {
+                await fetch('/subcategories', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            }
+            document.getElementById('subcategory-id').value = '';
+            document.getElementById('subcategory-name').value = '';
+            document.getElementById('subcategory-color').value = '#000000';
+            await refreshCategoryData();
+        });
+
+        document.getElementById('rule-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = document.getElementById('rule-id').value;
+            let pattern = document.getElementById('rule-pattern').value;
+            pattern = pattern.trim().replace(/\s+/g, ' ');
+            const category_id = document.getElementById('rule-category').value;
+            const subcategory_id = document.getElementById('rule-subcategory').value;
+            const payload = { pattern, category_id, subcategory_id };
+            if (id) {
+                await fetch('/rules/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            } else {
+                await fetch('/rules', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            }
+            document.getElementById('rule-id').value = '';
+            document.getElementById('rule-pattern').value = '';
+            document.getElementById('rule-subcategory').value = '';
+            fetchRules();
+        });
+
+        let dashboardChart;
+        let statsChart;
+        let projChart;
+        let incomeChart;
+        let expenseChart;
+
+        async function fetchStats() {
+            const period = document.getElementById('stats-period').value;
+            const { start, end } = getPeriodDates(period);
+            const params = new URLSearchParams();
+            if (start) params.set('start_date', start);
+            if (end) params.set('end_date', end);
+            const url = '/stats' + (params.toString() ? `?${params.toString()}` : '');
+            const resp = await fetch(url);
+            if (handleUnauthorized(resp) || !resp.ok) return;
+            const data = await resp.json();
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            if (statsChart) statsChart.destroy();
+            const hide = localStorage.getItem('hideAmounts') === 'true';
+            statsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.month),
+                    datasets: [{
+                        label: 'Total mensuel',
+                        data: data.map(d => d.total),
+                        backgroundColor: 'rgba(75, 192, 192, 0.5)'
+                    }]
+                },
+                options: getChartOptions(hide)
+            });
+        }
+
+        async function fetchCategoryStats() {
+            const period = document.getElementById('stats-period').value;
+            const { start, end } = getPeriodDates(period);
+            const params = new URLSearchParams();
+            if (start) params.set('start_date', start);
+            if (end) params.set('end_date', end);
+            const url = '/stats/categories' + (params.toString() ? `?${params.toString()}` : '');
+            const resp = await fetch(url);
+            if (handleUnauthorized(resp) || !resp.ok) return;
+            const data = await resp.json();
+            const incLabels = [], incData = [], incColors = [];
+            const expLabels = [], expData = [], expColors = [];
+            data.forEach(d => {
+                if (d.positive > 0) {
+                    incLabels.push(d.name);
+                    incData.push(d.positive);
+                    incColors.push(d.color || 'gray');
+                }
+                if (Math.abs(d.negative) > 0) {
+                    expLabels.push(d.name);
+                    expData.push(Math.abs(d.negative));
+                    expColors.push(d.color || 'gray');
+                }
+            });
+            const chartsDiv = document.getElementById('category-charts');
+            const emptyNotice = document.getElementById('category-no-data');
+            if (incData.length === 0 && expData.length === 0) {
+                if (incomeChart) { incomeChart.destroy(); incomeChart = null; }
+                if (expenseChart) { expenseChart.destroy(); expenseChart = null; }
+                chartsDiv.style.display = 'none';
+                emptyNotice.style.display = 'block';
+                return;
+            }
+            chartsDiv.style.display = 'table';
+            emptyNotice.style.display = 'none';
+            const ictx = document.getElementById('incomeChart').getContext('2d');
+            if (incomeChart) incomeChart.destroy();
+            const hide = localStorage.getItem('hideAmounts') === 'true';
+            incomeChart = new Chart(ictx, {
+                type: 'doughnut',
+                data: {
+                    labels: incLabels,
+                    datasets: [{ data: incData, backgroundColor: incColors }]
+                },
+                options: getChartOptions(hide, false)
+            });
+            const ectx = document.getElementById('expenseChart').getContext('2d');
+            if (expenseChart) expenseChart.destroy();
+            expenseChart = new Chart(ectx, {
+                type: 'doughnut',
+                data: {
+                    labels: expLabels,
+                    datasets: [{ data: expData, backgroundColor: expColors }]
+                },
+                options: getChartOptions(hide, false)
+            });
+        }
+
+        async function fetchSankeyStats() {
+            const period = document.getElementById('stats-period').value;
+            const { start, end } = getPeriodDates(period);
+            const params = new URLSearchParams();
+            if (start) params.set('start_date', start);
+            if (end) params.set('end_date', end);
+            const url = '/stats/sankey' + (params.toString() ? `?${params.toString()}` : '');
+            const resp = await fetch(url);
+            if (handleUnauthorized(resp) || !resp.ok) return;
+            const data = await resp.json();
+
+            const positives = {};
+            const negatives = {};
+            data.forEach(d => {
+                if (d.sign > 0) {
+                    positives[d.source] = (positives[d.source] || 0) + d.value;
+                } else {
+                    negatives[d.source] = (negatives[d.source] || 0) + d.value;
+                }
+            });
+
+            const posNames = Object.keys(positives);
+            const negNames = Object.keys(negatives);
+            const nodes = [...posNames, 'Total', ...negNames];
+            const nodeX = nodes.map(n => n === 'Total' ? 0.5 : (posNames.includes(n) ? 0 : 1));
+            const index = Object.fromEntries(nodes.map((n, i) => [n, i]));
+
+            const links = [];
+            posNames.forEach(n => {
+                links.push({ source: index[n], target: index['Total'], value: positives[n], color: 'green' });
+            });
+            negNames.forEach(n => {
+                links.push({ source: index['Total'], target: index[n], value: negatives[n], color: 'red' });
+            });
+
+            Plotly.newPlot('sankeyChart', [{
+                type: 'sankey',
+                node: { label: nodes, x: nodeX },
+                link: {
+                    source: links.map(l => l.source),
+                    target: links.map(l => l.target),
+                    value: links.map(l => l.value),
+                    color: links.map(l => l.color),
+                    hovertemplate: '€%{value:.0f}<extra></extra>'
+                }
+            }], { margin: { t: 20 }, hovermode: 'x' });
+        }
+
+        async function fetchDashboard() {
+            let threshold = 1.5;
+            if (dashboardThresholdInput) {
+                threshold = parseFloat(dashboardThresholdInput.value) || 1.5;
+            }
+            let months = 3;
+            if (dashboardMonthsInput) {
+                months = parseInt(dashboardMonthsInput.value) || 3;
+            }
+            const favOnly = dashboardFavOnlyInput && dashboardFavOnlyInput.checked;
+            const params = new URLSearchParams({ threshold, months, favorites_only: favOnly });
+            const resp = await fetch('/dashboard?' + params.toString());
+            if (handleUnauthorized(resp) || !resp.ok) return;
+            const data = await resp.json();
+            const container = document.getElementById('dashboard-content');
+            container.innerHTML = `<p>Favoris: ${data.favorite_count} | Total 30j: ${formatAmount(data.recent_total)} | Solde: ${formatAmount(data.balance_total)}</p>`;
+            const modeP = document.createElement('p');
+            modeP.textContent = data.favorites_only ? 'Filtre\u202f: Favorites uniquement' : 'Filtre\u202f: Toutes les transactions';
+            container.appendChild(modeP);
+            if (data.alerts && data.alerts.length) {
+                const table = document.createElement('table');
+                table.innerHTML = '<thead><tr><th>Date</th><th>Libellé</th><th>Montant</th><th>Catégorie</th><th>Raison</th></tr></thead><tbody></tbody>';
+                const tbody = table.querySelector('tbody');
+                data.alerts.forEach(a => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${formatDate(a.date)}</td><td>${a.label}</td><td class="amount">${formatAmount(a.amount)}</td><td>${a.category}</td><td>${a.reason}</td>`;
+                    tbody.appendChild(tr);
+                });
+                container.appendChild(table);
+            }
+            if (data.favorite_summaries && data.favorite_summaries.length) {
+                const title = document.createElement('h2');
+                title.className = 'section-title';
+                title.innerHTML = 'Favoris par catégorie <span id="favorite-info" class="info-icon">?</span>';
+                container.appendChild(title);
+                const table = document.createElement('table');
+                table.innerHTML = '<thead><tr><th>Catégorie</th><th>Favoris</th></tr></thead><tbody></tbody>';
+                const tbody = table.querySelector('tbody');
+                data.favorite_summaries.forEach(group => {
+                    const tr = document.createElement('tr');
+                    const tdCat = document.createElement('td');
+                    tdCat.textContent = group.category;
+                    const tdFav = document.createElement('td');
+                    if (group.items && group.items.length) {
+                        const inner = document.createElement('table');
+                        inner.innerHTML = '<thead><tr><th>Favori</th><th>Mois en cours</th><th>Moy. 6 mois</th></tr></thead><tbody></tbody>';
+                        const innerBody = inner.querySelector('tbody');
+                        group.items.forEach(f => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `<td>${f.name}</td><td>${formatAmount(f.current_total)}</td><td>${formatAmount(f.six_month_avg)}</td>`;
+                            innerBody.appendChild(row);
+                        });
+                        tdFav.appendChild(inner);
+                    }
+                    tr.appendChild(tdCat);
+                    tr.appendChild(tdFav);
+                    tbody.appendChild(tr);
+                });
+                container.appendChild(table);
+                const infoIcon = document.getElementById('favorite-info');
+                if (infoIcon) {
+                    infoIcon.addEventListener('click', () => {
+                        document.getElementById('favorite-info-overlay').style.display = 'flex';
+                    });
+                }
+            }
+            const ctx = document.getElementById('dashboardChart').getContext('2d');
+            if (dashboardChart) dashboardChart.destroy();
+            const hide = localStorage.getItem('hideAmounts') === 'true';
+            dashboardChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['30 derniers jours'],
+                    datasets: [{
+                        label: 'Total',
+                        data: [data.recent_total],
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)'
+                    }]
+                },
+                options: getChartOptions(hide)
+            });
+        }
+
+        function drawProjectionChart() {
+            const labels = [];
+            const values = [];
+            projectionData.forEach(d => {
+                labels.push(d.month);
+                values.push(parseFloat(d.total) || 0);
+            });
+            projectionFutureTotals.forEach(d => {
+                labels.push(d.month);
+                values.push(parseFloat(d.total) || 0);
+            });
+            const ctx = document.getElementById('projectionChart').getContext('2d');
+            if (projChart) projChart.destroy();
+            const hide = localStorage.getItem('hideAmounts') === 'true';
+            projChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Projection',
+                        data: values,
+                        fill: false,
+                        borderColor: 'rgba(153, 102, 255, 1)'
+                    }]
+                },
+                options: getChartOptions(hide)
+            });
+        }
+
+        function updateFutureTotals() {
+            const table = document.getElementById('projection-future-table');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr:not(.total-row):not(.group-header)'));
+            const totals = [];
+            rows.forEach(tr => {
+                tr.querySelectorAll('td.amount').forEach((td, idx) => {
+                    const val = parseAmount(td.textContent);
+                    totals[idx] = (totals[idx] || 0) + val;
+                });
+            });
+            const totalRow = tbody.querySelector('tr.total-row');
+            totals.forEach((v, idx) => {
+                const cell = totalRow.children[idx + 1];
+                if (cell) cell.textContent = formatAmount(v);
+            });
+            projectionFutureTotals = projectionFutureMonths.map((m, idx) => ({ month: m, total: totals[idx] || 0 }));
+            updateMonthBalanceRow();
+        }
+
+        function updateMonthBalanceRow() {
+            const tbody = document.getElementById('projection-future-table').querySelector('tbody');
+            const existing = tbody.querySelector('tr.month-balance-row');
+            if (existing) existing.remove();
+            const row = document.createElement('tr');
+            row.className = 'total-row month-balance-row';
+            const first = document.createElement('td');
+            first.textContent = 'Solde du mois';
+            row.appendChild(first);
+            projectionFutureTotals.forEach(t => {
+                const td = document.createElement('td');
+                td.textContent = formatAmount(t.total || 0);
+                td.className = 'amount';
+                row.appendChild(td);
+            });
+            const bal = tbody.querySelector('tr.balance-row');
+            if (bal) tbody.insertBefore(row, bal); else tbody.appendChild(row);
+        }
+
+        async function fetchStartBalance() {
+            const params = new URLSearchParams();
+            if (projectionAccountIds.length) params.set('account_ids', projectionAccountIds.join(','));
+            const resp = await fetch('/balance' + (params.toString() ? `?${params.toString()}` : ''));
+            if (handleUnauthorized(resp) || !resp.ok) return 0;
+            const data = await resp.json();
+            return parseFloat(data.balance) || 0;
+        }
+
+        async function updateBalanceRow() {
+            const tbody = document.getElementById('projection-future-table').querySelector('tbody');
+            const existing = tbody.querySelector('tr.balance-row');
+            if (existing) existing.remove();
+            const totals = projectionFutureTotals.map(t => t.total || 0);
+            if (!Number.isFinite(projectionStartBalance)) {
+                projectionStartBalance = await fetchStartBalance();
+            }
+            let running = projectionStartBalance;
+            const row = document.createElement('tr');
+            row.className = 'total-row balance-row';
+            const first = document.createElement('td');
+            first.textContent = 'Solde';
+            row.appendChild(first);
+            totals.forEach(total => {
+                running += total;
+                const td = document.createElement('td');
+                td.textContent = formatAmount(running);
+                td.className = 'amount';
+                row.appendChild(td);
+            });
+            tbody.appendChild(row);
+        }
+
+        async function saveFutureTable() {
+            const rows = [];
+            document.querySelectorAll('#projection-future-table tbody tr').forEach(tr => {
+                if (tr.classList.contains('total-row') || tr.classList.contains('group-header') || tr.classList.contains('add-row')) return;
+                const catCell = tr.children[0];
+                let category = catCell.textContent.replace('×', '').trim();
+                const sign = tr.dataset.sign || 'expense';
+                const custom = tr.dataset.custom === 'true';
+                const values = Array.from(tr.querySelectorAll('td.amount .cell-value')).map(span => parseAmount(span.textContent));
+                rows.push({category, sign, values, custom});
+            });
+            const data = {rows, account_ids: projectionAccountIds};
+            await fetch('/projection/future', {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+        }
+
+        async function loadFutureTable() {
+            const params = new URLSearchParams();
+            if (projectionAccountIds.length) params.set('account_ids', projectionAccountIds.join(','));
+            const resp = await fetch('/projection/future' + (params.toString() ? `?${params.toString()}` : ''));
+            if (handleUnauthorized(resp) || !resp.ok) return null;
+            const data = await resp.json();
+            if (data && Array.isArray(data.rows)) {
+                const filteredRows = data.rows.filter(r => r.category !== 'Ajouter ligne');
+                data.rows = filteredRows;
+                return data;
+            }
+            return null;
+        }
+
+        async function clearSavedFutureTable() {
+            const params = new URLSearchParams();
+            if (projectionAccountIds.length) params.set('account_ids', projectionAccountIds.join(','));
+            await fetch('/projection/future' + (params.toString() ? `?${params.toString()}` : ''), { method: 'DELETE' });
+        }
+
+        async function fetchProjection() {
+            const params = new URLSearchParams();
+            if (projectionAccountIds.length) params.set('account_ids', projectionAccountIds.join(','));
+            const resp = await fetch('/projection' + (params.toString() ? `?${params.toString()}` : ''));
+            if (handleUnauthorized(resp) || !resp.ok) return;
+            projectionData = await resp.json();
+            drawProjectionChart();
+        }
+
+        document.getElementById('projection-future-table').addEventListener('input', () => {
+            updateFutureTotals();
+            updateBalanceRow();
+            drawProjectionChart();
+            saveFutureTable();
+        });
+
+        async function fetchProjectionCategories() {
+            const params = new URLSearchParams();
+            if (projectionAccountIds.length) params.set('account_ids', projectionAccountIds.join(','));
+            const resp = await fetch('/projection/categories' + (params.toString() ? `?${params.toString()}` : ''));
+            if (handleUnauthorized(resp) || !resp.ok) return;
+            const data = await resp.json();
+            document.getElementById('projection-cat-period').textContent = data.period;
+            const table = document.getElementById('projection-cat-table');
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+            const headRow = document.createElement('tr');
+            headRow.innerHTML = '<th>Catégorie</th>';
+            data.months.forEach(m => {
+                const th = document.createElement('th');
+                th.textContent = m;
+                headRow.appendChild(th);
+            });
+            thead.appendChild(headRow);
+
+            const totals = new Array(data.months.length).fill(0);
+            data.rows.forEach(r => {
+                r.values.forEach((v, idx) => { totals[idx] += v; });
+            });
+
+            const totalRow = document.createElement('tr');
+            totalRow.className = 'total-row';
+            totalRow.innerHTML = '<td>Total</td>';
+            totals.forEach(v => {
+                const td = document.createElement('td');
+                td.textContent = formatAmount(v);
+                td.className = 'amount';
+                totalRow.appendChild(td);
+            });
+            tbody.appendChild(totalRow);
+
+            data.rows.forEach(r => {
+                const tr = document.createElement('tr');
+                const tdCat = document.createElement('td');
+                tdCat.textContent = r.category;
+                tr.appendChild(tdCat);
+                r.values.forEach((v, idx) => {
+                    const td = document.createElement('td');
+                    td.textContent = formatAmount(v);
+                    td.className = 'amount';
+                    td.dataset.month = data.months[idx];
+                    td.dataset.category = r.category;
+                    td.addEventListener('click', () => showProjectionDetails(r.category, data.months[idx]));
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function fetchProjectionFuture() {
+            const mode = document.querySelector('input[name="projection-mode"]:checked')?.value || 'average';
+            const params = new URLSearchParams();
+            if (projectionAccountIds.length) params.set('account_ids', projectionAccountIds.join(','));
+            projectionStartBalance = NaN;
+            if (mode === 'forecast') {
+                const resp = await fetch('/projection/categories/forecast' + (params.toString() ? `?${params.toString()}` : ''));
+                if (handleUnauthorized(resp) || !resp.ok) return;
+                const data = await resp.json();
+                await buildFutureTable(data.months, data.rows, data.period);
+            } else {
+                const [avgResp, fResp] = await Promise.all([
+                    fetch('/projection/categories/average' + (params.toString() ? `?${params.toString()}` : '')),
+                    fetch('/projection/categories/forecast' + (params.toString() ? `?${params.toString()}` : '')),
+                ]);
+                if (handleUnauthorized(avgResp) || handleUnauthorized(fResp) || !avgResp.ok || !fResp.ok) return;
+                const avgs = await avgResp.json();
+                const fData = await fResp.json();
+                const rows = avgs.map(a => ({
+                    category: a.category,
+                    values: fData.months.map(() => a.average),
+                }));
+                await buildFutureTable(fData.months, rows, fData.period);
+            }
+        }
+
+        async function buildFutureTable(months, rows, period) {
+            document.getElementById('projection-future-period').textContent = period;
+            const table = document.getElementById('projection-future-table');
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+            const headRow = document.createElement('tr');
+            headRow.innerHTML = '<th>Catégorie</th>';
+            months.forEach(m => {
+                const th = document.createElement('th');
+                th.textContent = m;
+                headRow.appendChild(th);
+            });
+            thead.appendChild(headRow);
+
+            projectionFutureMonths = months.slice();
+
+            const saved = await loadFutureTable();
+            if (saved && Array.isArray(saved.rows) && saved.rows.length) {
+                rows = saved.rows;
+            }
+
+            function createEditableRow(r, sign) {
+                const tr = document.createElement('tr');
+                tr.dataset.sign = sign;
+                if (r.custom) tr.dataset.custom = 'true';
+                const tdCat = document.createElement('td');
+                tdCat.textContent = r.category || '';
+                if (r.custom) {
+                    tdCat.contentEditable = 'true';
+                    const del = document.createElement('span');
+                    del.className = 'remove-row';
+                    del.textContent = '×';
+                    del.title = 'Supprimer';
+                    del.addEventListener('click', () => {
+                        tr.remove();
+                        updateFutureTotals();
+                        updateBalanceRow();
+                        drawProjectionChart();
+                        saveFutureTable();
+                    });
+                    tdCat.appendChild(del);
+                    tdCat.addEventListener('blur', saveFutureTable);
+                }
+                tr.appendChild(tdCat);
+                for (let i=0;i<months.length;i++) {
+                    const orig = r.values[i] || 0;
+                    const td = document.createElement('td');
+                    td.className = 'amount editable-cell ' + (sign === 'income' ? 'income-cell' : 'expense-cell');
+                    td.dataset.original = orig;
+                    const valSpan = document.createElement('span');
+                    valSpan.className = 'cell-value';
+                    valSpan.contentEditable = 'true';
+                    valSpan.textContent = formatAmount(orig);
+                    valSpan.addEventListener('focus', () => { activeFutureCell = td; });
+                    valSpan.addEventListener('blur', () => {
+                        valSpan.textContent = formatAmount(parseAmount(valSpan.textContent));
+                        updateFutureTotals();
+                        updateBalanceRow();
+                        drawProjectionChart();
+                        saveFutureTable();
+                    });
+                    const reset = document.createElement('span');
+                    reset.className = 'reset-cell';
+                    reset.textContent = '\u21BA';
+                    reset.title = 'Réinitialiser';
+                    reset.addEventListener('click', (e) => {
+                        valSpan.textContent = formatAmount(td.dataset.original);
+                        updateFutureTotals();
+                        updateBalanceRow();
+                        drawProjectionChart();
+                        saveFutureTable();
+                        e.stopPropagation();
+                    });
+                    td.appendChild(valSpan);
+                    td.appendChild(reset);
+                    tr.appendChild(td);
+                }
+                return tr;
+            }
+
+            const totals = new Array(months.length).fill(0);
+            rows.forEach(r => {
+                r.values.forEach((v, idx) => { totals[idx] += v; });
+            });
+
+            const totalRow = document.createElement('tr');
+            totalRow.className = 'total-row';
+            totalRow.innerHTML = '<td>Total</td>';
+            totals.forEach(v => {
+                const td = document.createElement('td');
+                td.textContent = formatAmount(v);
+                td.className = 'amount';
+                totalRow.appendChild(td);
+            });
+            tbody.appendChild(totalRow);
+
+            const incomes = [];
+            const expenses = [];
+            rows.forEach(r => {
+                const sign = r.sign || (r.values.reduce((a,b)=>a+b,0) >= 0 ? 'income' : 'expense');
+                r.__sign = sign;
+                (sign === 'income' ? incomes : expenses).push(r);
+            });
+
+            function appendGroup(label, groupRows, sign) {
+                if (!groupRows.length) return;
+                const header = document.createElement('tr');
+                header.className = 'group-header';
+                const td = document.createElement('td');
+                td.colSpan = months.length + 1;
+                td.textContent = label;
+                header.appendChild(td);
+                tbody.appendChild(header);
+                groupRows.forEach(r => {
+                    const tr = createEditableRow(r, sign);
+                    tbody.appendChild(tr);
+                });
+                const addRow = document.createElement('tr');
+                addRow.className = 'add-row';
+                const addTd = document.createElement('td');
+                addTd.colSpan = months.length + 1;
+                const btn = document.createElement('button');
+                btn.textContent = 'Ajouter ligne';
+                btn.addEventListener('click', () => {
+                    const tr = createEditableRow({category:'', values:new Array(months.length).fill(0), custom:true}, sign);
+                    tbody.insertBefore(tr, addRow);
+                    saveFutureTable();
+                });
+                addTd.appendChild(btn);
+                addRow.appendChild(addTd);
+                tbody.appendChild(addRow);
+            }
+
+            appendGroup('Recettes', incomes, 'income');
+            appendGroup('Dépenses', expenses, 'expense');
+            updateFutureTotals();
+            await updateBalanceRow();
+            drawProjectionChart();
+            saveFutureTable();
+        }
+
+        function resetFutureRow() {
+            if (!activeFutureCell) return;
+            activeFutureCell.parentElement.querySelectorAll('td[data-original]').forEach(td => {
+                const span = td.querySelector('.cell-value');
+                if (span) span.textContent = formatAmount(td.dataset.original);
+            });
+            updateFutureTotals();
+            updateBalanceRow();
+            drawProjectionChart();
+            saveFutureTable();
+        }
+
+        function resetFutureColumn() {
+            if (!activeFutureCell) return;
+            const idx = activeFutureCell.cellIndex;
+            document.querySelectorAll('#projection-future-table tbody tr').forEach(tr => {
+                const td = tr.children[idx];
+                if (td && td.dataset.original !== undefined) {
+                    const span = td.querySelector('.cell-value');
+                    if (span) span.textContent = formatAmount(td.dataset.original);
+                }
+            });
+            updateFutureTotals();
+            updateBalanceRow();
+            drawProjectionChart();
+            saveFutureTable();
+        }
+
+        function resetFutureTable() {
+            document.querySelectorAll('#projection-future-table tbody td[data-original]').forEach(td => {
+                const span = td.querySelector('.cell-value');
+                if (span) span.textContent = formatAmount(td.dataset.original);
+            });
+            document.querySelectorAll('#projection-future-table tbody tr[data-custom="true"]').forEach(tr => tr.remove());
+            clearSavedFutureTable();
+            updateFutureTotals();
+            updateBalanceRow();
+            drawProjectionChart();
+            saveFutureTable();
+        }
+
+        async function fetchRecurrents() {
+            const monthInput = document.getElementById('recurrent-month');
+            let month = monthInput && monthInput.value;
+            if (!month) {
+                const now = new Date();
+                month = now.toISOString().slice(0,7);
+                if (monthInput) monthInput.value = month;
+            }
+            const [y, m] = month.split('-').map(Number);
+            const container = document.getElementById('recurrents-calendar');
+            if (!container) return;
+
+            // Build calendar grid
+            container.innerHTML = '';
+            const daysInMonth = new Date(y, m, 0).getDate();
+            for (let i=1;i<=daysInMonth;i++) {
+                const div = document.createElement('div');
+                div.className = 'day';
+                div.textContent = i;
+                div.dataset.day = i;
+                div.addEventListener('mouseenter', () => showSidebarDay(i));
+                container.appendChild(div);
+            }
+
+            // Fetch recurring transactions
+            const params = new URLSearchParams({ month });
+            if (recurrentsAccountIds.length) params.set('account_ids', recurrentsAccountIds.join(','));
+            const resp = await fetch(`/stats/recurrents?${params.toString()}`);
+            if (handleUnauthorized(resp) || !resp.ok) return;
+            const data = await resp.json();
+            const noDataMsg = document.getElementById('recurrents-no-data');
+            const calView = document.getElementById('recurrents-calendar-view');
+            const listView = document.getElementById('recurrents-list-view');
+            if (!Array.isArray(data) || data.length === 0) {
+                recurrentsData = [];
+                if (noDataMsg) {
+                    noDataMsg.textContent = data.message || 'Aucune transaction récurrente trouvée selon les critères de similarité ou de montant.';
+                    noDataMsg.style.display = 'block';
+                }
+                if (calView) calView.style.display = 'none';
+                if (listView) listView.style.display = 'none';
+                return;
+            }
+            recurrentsData = data;
+            if (noDataMsg) noDataMsg.style.display = 'none';
+            if (calView) calView.style.display = 'flex';
+            if (listView) listView.style.display = 'none';
+
+            // Place dots and populate sidebar
+            const sidebar = document.getElementById('recurrents-sidebar');
+            if (sidebar) sidebar.innerHTML = '';
+            recurrentsData.forEach(rec => {
+                const cell = container.querySelector(`div[data-day="${rec.day}"]`);
+                if (!cell) return;
+                const avg = rec.transactions.reduce((s,t) => s + t.amount, 0) / rec.transactions.length;
+                const dot = document.createElement('span');
+                dot.className = 'rec-dot';
+                dot.style.background = rec.category.color || 'gray';
+                dot.title = `${rec.category.name || ''} ${formatAmount(avg)}`;
+                dot.addEventListener('click', () => showRecurrent(rec));
+                cell.appendChild(dot);
+            });
+
+            populateRecurrentsList();
+            drawRecurrentsChart();
+            await updateRecurrentsTotals();
+        }
+
+        function showRecurrent(rec) {
+            const overlay = document.getElementById('recurrents-overlay');
+            const title = document.getElementById('recurrents-title');
+            const list = document.getElementById('recurrents-list');
+            if (!overlay || !title || !list) return;
+            title.textContent = rec.category.name || '';
+            list.innerHTML = '';
+            rec.transactions.forEach(t => {
+                const li = document.createElement('li');
+                li.textContent = `${formatDate(t.date)} - ${t.label} - ${formatAmount(t.amount)}`;
+                list.appendChild(li);
+            });
+            overlay.style.display = 'flex';
+        }
+
+        async function showProjectionDetails(catName, month) {
+            if (!projDetailsOverlay || !projDetailsTitle || !projDetailsTbody) return;
+            projDetailsTitle.textContent = `${catName} - ${month}`;
+            projDetailsTbody.innerHTML = '';
+            const [y, m] = month.split('-').map(Number);
+            const end = new Date(Date.UTC(y, m, 0)).toISOString().slice(0,10);
+            const cat = findCategoryByName(catName);
+            const params = new URLSearchParams({
+                start_date: month + '-01',
+                end_date: end,
+                sort_by: 'date',
+                order: 'asc'
+            });
+            params.append('to_analyze', 'true');
+            if (cat) {
+                params.append('category_id', cat.id);
+            } else if (normalizeName(catName) === normalizeName('Inconnu')) {
+                params.append('category_none', 'true');
+            }
+            if (projectionAccountIds.length === 1) {
+                params.append('account_id', projectionAccountIds[0]);
+            }
+            const resp = await fetch('/transactions?' + params.toString());
+            if (handleUnauthorized(resp) || !resp.ok) return;
+            const data = await resp.json();
+            data.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${formatDate(t.date)}</td><td>${t.label}</td><td class="amount">${formatAmount(t.amount)}</td>`;
+                projDetailsTbody.appendChild(tr);
+            });
+            projDetailsOverlay.style.display = 'flex';
+        }
+
+        function showSidebarDay(day) {
+            const sidebar = document.getElementById('recurrents-sidebar');
+            if (!sidebar) return;
+            sidebar.innerHTML = '';
+            recurrentsData.filter(r => r.day === day).forEach(rec => {
+                const div = document.createElement('div');
+                const avg = rec.transactions.reduce((s,t) => s + t.amount, 0) / rec.transactions.length;
+                div.textContent = `${rec.category.name || ''} ${formatAmount(avg)}`;
+                div.className = 'sidebar-item';
+                div.addEventListener('click', () => showRecurrent(rec));
+                sidebar.appendChild(div);
+            });
+        }
+
+        async function updateRecurrentsTotals() {
+            const btnIn = document.getElementById('btn-income');
+            const btnOut = document.getElementById('btn-expense');
+            const btnBal = document.getElementById('btn-balance');
+            const btnRec = document.getElementById('btn-recurrent');
+            const monthInput = document.getElementById('recurrent-month');
+            let month = monthInput && monthInput.value;
+            if (!month) {
+                const now = new Date();
+                month = now.toISOString().slice(0,7);
+                if (monthInput) monthInput.value = month;
+            }
+            const params = new URLSearchParams({ month });
+            if (recurrentsAccountIds.length) params.set('account_ids', recurrentsAccountIds.join(','));
+            const resp = await fetch(`/stats/recurrents/summary?${params.toString()}`);
+            if (handleUnauthorized(resp) || !resp.ok) return;
+            const data = await resp.json();
+            const hide = localStorage.getItem('hideAmounts') === 'true';
+            if (btnIn) btnIn.textContent = `Entrées\n${hide ? '•••' : formatAmount(data.positive)}`;
+            if (btnOut) btnOut.textContent = `Sorties\n${hide ? '•••' : formatAmount(data.negative)}`;
+            if (btnBal) btnBal.textContent = `Solde\n${hide ? '•••' : formatAmount(data.balance)}`;
+            if (btnRec) btnRec.textContent = `Récurrents\n${hide ? '•••' : formatAmount(data.recurrent)}`;
+        }
+
+        async function fetchMonthlyCategories(month) {
+            const [y, m] = month.split('-').map(Number);
+            const end = new Date(y, m, 0).toISOString().slice(0, 10);
+            const params = new URLSearchParams({ start_date: month + '-01', end_date: end });
+            const resp = await fetch('/stats/categories?' + params.toString());
+            if (handleUnauthorized(resp) || !resp.ok) return [];
+            return await resp.json();
+        }
+
+        async function showIncomeCategories() {
+            if (!btnIncome) return;
+            btnIncome.classList.add('selected');
+            btnExpense?.classList.remove('selected');
+            btnRecurrents?.classList.remove('selected');
+            btnBalance?.classList.remove('selected');
+            if (recurrentsControls) recurrentsControls.style.display = 'none';
+            if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'none';
+            if (recurrentsListView) recurrentsListView.style.display = 'none';
+            if (recurrentsNoData) recurrentsNoData.style.display = 'none';
+            if (expenseCatView) expenseCatView.style.display = 'none';
+            if (incomeCatView) incomeCatView.style.display = 'block';
+            const month = recurrentMonthInput?.value || new Date().toISOString().slice(0,7);
+            const rows = await fetchMonthlyCategories(month);
+            const tbody = incomeCatTable?.querySelector('tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const hide = localStorage.getItem('hideAmounts') === 'true';
+            rows.filter(r => r.positive > 0).forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${r.name}</td><td class="amount">${hide ? '•••' : formatAmount(r.positive)}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function showExpenseCategories() {
+            if (!btnExpense) return;
+            btnExpense.classList.add('selected');
+            btnIncome?.classList.remove('selected');
+            btnRecurrents?.classList.remove('selected');
+            btnBalance?.classList.remove('selected');
+            if (recurrentsControls) recurrentsControls.style.display = 'none';
+            if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'none';
+            if (recurrentsListView) recurrentsListView.style.display = 'none';
+            if (recurrentsNoData) recurrentsNoData.style.display = 'none';
+            if (incomeCatView) incomeCatView.style.display = 'none';
+            if (expenseCatView) expenseCatView.style.display = 'block';
+            const month = recurrentMonthInput?.value || new Date().toISOString().slice(0,7);
+            const rows = await fetchMonthlyCategories(month);
+            const tbody = expenseCatTable?.querySelector('tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const hide = localStorage.getItem('hideAmounts') === 'true';
+            rows.filter(r => Math.abs(r.negative) > 0).forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${r.name}</td><td class="amount">${hide ? '•••' : formatAmount(Math.abs(r.negative))}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function showRecurrentsView() {
+            btnRecurrents?.classList.add('selected');
+            btnIncome?.classList.remove('selected');
+            btnExpense?.classList.remove('selected');
+            btnBalance?.classList.remove('selected');
+            if (incomeCatView) incomeCatView.style.display = 'none';
+            if (expenseCatView) expenseCatView.style.display = 'none';
+            if (recurrentsControls) recurrentsControls.style.display = 'block';
+            if (recurrentsData.length === 0) {
+                if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'none';
+                if (recurrentsListView) recurrentsListView.style.display = 'none';
+            } else {
+                if (recurrentsBtnCalendar?.classList.contains('selected')) {
+                    if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'flex';
+                    if (recurrentsListView) recurrentsListView.style.display = 'none';
+                } else {
+                    if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'none';
+                    if (recurrentsListView) recurrentsListView.style.display = 'flex';
+                    recurrentsChart?.resize();
+                }
+            }
+        }
+
+        function showBalanceOnly() {
+            btnBalance?.classList.add('selected');
+            btnIncome?.classList.remove('selected');
+            btnExpense?.classList.remove('selected');
+            btnRecurrents?.classList.remove('selected');
+            if (recurrentsControls) recurrentsControls.style.display = 'none';
+            if (incomeCatView) incomeCatView.style.display = 'none';
+            if (expenseCatView) expenseCatView.style.display = 'none';
+            if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'none';
+            if (recurrentsListView) recurrentsListView.style.display = 'none';
+            if (recurrentsNoData) recurrentsNoData.style.display = 'none';
+        }
+
+        function populateRecurrentsList() {
+            const tbody = document.getElementById('recurrents-items');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            recurrentsData.forEach(rec => {
+                const tr = document.createElement('tr');
+                tr.className = 'rec-item';
+                const dotTd = document.createElement('td');
+                const dot = document.createElement('span');
+                dot.className = 'rec-pastille';
+                dot.style.background = rec.category.color || 'gray';
+                dotTd.appendChild(dot);
+                tr.appendChild(dotTd);
+                const lblTd = document.createElement('td');
+                lblTd.className = 'label';
+                lblTd.textContent = rec.transactions[0].label;
+                tr.appendChild(lblTd);
+                const avg = rec.transactions.reduce((s,t)=>s+t.amount,0)/rec.transactions.length;
+                const amtTd = document.createElement('td');
+                amtTd.className = 'amount';
+                amtTd.textContent = formatAmount(avg);
+                tr.appendChild(amtTd);
+                const freqTd = document.createElement('td');
+                freqTd.className = 'frequency';
+                freqTd.textContent = guessFrequency(rec.transactions);
+                tr.appendChild(freqTd);
+                tr.addEventListener('click', () => showRecurrent(rec));
+                tbody.appendChild(tr);
+            });
+        }
+
+        function guessFrequency(txs) {
+            if (txs.length < 2) return `dernier: ${formatDate(txs[txs.length-1].date)}`;
+            const diffs = [];
+            for (let i=1;i<txs.length;i++) {
+                const d1 = new Date(txs[i-1].date);
+                const d2 = new Date(txs[i].date);
+                diffs.push((d2-d1)/(1000*3600*24));
+            }
+            const avg = diffs.reduce((a,b)=>a+b,0)/diffs.length;
+            if (avg>27 && avg<33) return 'mensuel';
+            if (avg>13 && avg<17) return 'bimensuel';
+            if (avg>6 && avg<8) return 'hebdo';
+            return `~${Math.round(avg)} j`;
+        }
+
+        function drawRecurrentsChart() {
+            const ctxEl = document.getElementById('recurrents-donut');
+            if (!ctxEl) return;
+            const ctx = ctxEl.getContext('2d');
+            const catTotals = {};
+            recurrentsData.forEach(r => {
+                const avg = r.transactions.reduce((s,t)=>s+t.amount,0)/r.transactions.length;
+                if (avg < 0) {
+                    const name = r.category.name || 'Inconnu';
+                    catTotals[name] = (catTotals[name]||0) + Math.abs(avg);
+                }
+            });
+            const labels = Object.keys(catTotals);
+            const data = Object.values(catTotals);
+            const colors = labels.map(l => (findCategoryNameColor(l)));
+            const hide = localStorage.getItem('hideAmounts') === 'true';
+            if (recurrentsChart) recurrentsChart.destroy();
+            recurrentsChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels, datasets: [{ data, backgroundColor: colors }] },
+                options: getChartOptions(hide, false)
+            });
+        }
+
+        function findCategoryNameColor(name) {
+            const c = categoriesData.find(cat => cat.name === name);
+            return c ? c.color || 'gray' : 'gray';
+        }
+
+        let currentCatBtn = null;
+        let currentSubBtn = null;
+        let currentRuleBtn = null;
+        let currentFilterBtn = null;
+        const catOverlay = document.getElementById('category-overlay');
+        const subOverlay = document.getElementById('subcategory-overlay');
+        const dupOverlay = document.getElementById('duplicate-overlay');
+        const ruleOverlay = document.getElementById('rule-overlay');
+        const favFilterOverlay = document.getElementById('fav-filter-overlay');
+        const manageSubcatsOverlay = document.getElementById('manage-subcats-overlay');
+        const delErrorOverlay = document.getElementById('delete-error-overlay');
+        const delErrorSubList = document.getElementById('delete-error-subcat-list');
+        const delErrorList = document.getElementById('delete-error-list');
+        const delErrorClose = document.getElementById('delete-error-close');
+        const recurrentsOverlay = document.getElementById('recurrents-overlay');
+        const recurrentsClose = document.getElementById('recurrents-close');
+        const recurrentsBtnCalendar = document.getElementById('recurrents-btn-calendar');
+        const recurrentsBtnList = document.getElementById('recurrents-btn-list');
+        const recurrentsCalendarView = document.getElementById('recurrents-calendar-view');
+        const recurrentsListView = document.getElementById('recurrents-list-view');
+        const incomeCatView = document.getElementById('income-category-view');
+        const expenseCatView = document.getElementById('expense-category-view');
+        const incomeCatTable = document.getElementById('income-category-table');
+        const expenseCatTable = document.getElementById('expense-category-table');
+        const recurrentsControls = document.getElementById('recurrents-controls');
+        const btnRecurrents = document.getElementById('btn-recurrent');
+        const btnIncome = document.getElementById('btn-income');
+        const btnExpense = document.getElementById('btn-expense');
+        const btnBalance = document.getElementById('btn-balance');
+        const recurrentsNoData = document.getElementById('recurrents-no-data');
+        let manageCatId = null;
+
+        const projDetailsOverlay = document.getElementById('projection-details-overlay');
+        const projDetailsTitle = document.getElementById('projection-details-title');
+        const projDetailsTbody = document.querySelector('#projection-details-table tbody');
+        const projDetailsClose = document.getElementById('projection-details-close');
+        const favoriteInfoOverlay = document.getElementById('favorite-info-overlay');
+        const favoriteInfoClose = document.getElementById('favorite-info-close');
+        const dashboardInfoOverlay = document.getElementById('dashboard-info-overlay');
+        const dashboardInfoClose = document.getElementById('dashboard-info-close');
+        const dashboardInfoIcon = document.getElementById('dashboard-info');
+        if (dashboardInfoIcon) {
+            dashboardInfoIcon.addEventListener('click', () => {
+                dashboardInfoOverlay.style.display = 'flex';
+            });
+        }
+
+        function showPopupAt(overlay, x, y) {
+            overlay.style.display = 'block';
+            overlay.style.alignItems = 'flex-start';
+            overlay.style.justifyContent = 'flex-start';
+            const popup = overlay.querySelector('.popup');
+            if (popup) {
+                popup.style.position = 'absolute';
+                popup.style.left = x + 'px';
+                popup.style.top = y + 'px';
+            }
+        }
+
+        function openSelect(id) {
+            const sel = document.getElementById(id);
+            if (sel) {
+                sel.focus();
+                sel.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+            }
+        }
+
+        function populateManageSubcats(catId) {
+            const tbody = document.querySelector('#manage-subcats-table tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            subcategoriesData.filter(s => String(s.category_id) === String(catId)).forEach(s => {
+                const tr = document.createElement('tr');
+
+                const colorTd = document.createElement('td');
+                const colorSpan = document.createElement('span');
+                colorSpan.style.display = 'inline-block';
+                colorSpan.style.width = '12px';
+                colorSpan.style.height = '12px';
+                colorSpan.style.background = s.color;
+                colorTd.appendChild(colorSpan);
+                tr.appendChild(colorTd);
+
+                const nameTd = document.createElement('td');
+                nameTd.textContent = s.name;
+                tr.appendChild(nameTd);
+
+                const favTd = document.createElement('td');
+                const favBtn = document.createElement('button');
+                favBtn.className = 'tx-fav-btn' + (s.favorite ? ' selected' : '');
+                favBtn.textContent = s.favorite ? '★' : '☆';
+                favBtn.onclick = async () => {
+                    const resp = await fetch('/subcategories/' + s.id, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ favorite: !s.favorite })
+                    });
+                    if (resp.ok) {
+                        fetchDashboard();
+                    }
+                    await refreshCategoryData();
+                    populateManageSubcats(catId);
+                };
+                favTd.appendChild(favBtn);
+                tr.appendChild(favTd);
+
+                const editTd = document.createElement('td');
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Éditer';
+                editBtn.onclick = () => {
+                    document.getElementById('subcategory-id').value = s.id;
+                    document.getElementById('subcategory-name').value = s.name;
+                    document.getElementById('subcategory-category').value = s.category_id;
+                    document.getElementById('subcategory-color').value = s.color || '#000000';
+                };
+                editTd.appendChild(editBtn);
+                tr.appendChild(editTd);
+
+                const delTd = document.createElement('td');
+                const delBtn = document.createElement('button');
+                delBtn.textContent = 'Supprimer';
+                delBtn.onclick = async () => {
+                    await fetch('/subcategories/' + s.id, { method: 'DELETE' });
+                    await refreshCategoryData();
+                    populateManageSubcats(catId);
+                };
+                delTd.appendChild(delBtn);
+                tr.appendChild(delTd);
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        function showManageSubcats(catId) {
+            manageCatId = catId;
+            populateManageSubcats(catId);
+            manageSubcatsOverlay.style.display = 'flex';
+        }
+
+        document.getElementById('transactions-table').addEventListener('click', e => {
+            if (e.target.classList.contains('tx-cat-btn')) {
+                currentCatBtn = e.target;
+                document.getElementById('popup-category-select').value = currentCatBtn.dataset.current || '';
+                showPopupAt(catOverlay, e.clientX, e.clientY);
+                openSelect('popup-category-select');
+            } else if (e.target.classList.contains('tx-sub-btn')) {
+                currentSubBtn = e.target;
+                populateSubPopup(currentSubBtn.dataset.categoryId);
+                document.getElementById('popup-subcategory-select').value = currentSubBtn.dataset.current || '';
+                showPopupAt(subOverlay, e.clientX, e.clientY);
+                openSelect('popup-subcategory-select');
+            } else if (e.target.classList.contains('tx-rule-btn')) {
+                currentRuleBtn = e.target;
+                const label = currentRuleBtn.dataset.label || '';
+                const words = label.split(/[^\wÀ-ÿ]+/).filter(Boolean);
+                const cont = document.getElementById('rule-label-checkboxes');
+                cont.innerHTML = '';
+                const rule = rulesData.find(r => {
+                    const sameCat = String(r.category_id) === (currentRuleBtn.dataset.category || '');
+                    const sameSub = String(r.subcategory_id || '') === (currentRuleBtn.dataset.subcategory || '');
+                    return sameCat && sameSub && label.toLowerCase().includes((r.pattern || '').toLowerCase());
+                });
+                const patternWords = rule ? (rule.pattern || '').split(/[^\wÀ-ÿ]+/).filter(Boolean) : [];
+                words.forEach(w => {
+                    const lbl = document.createElement('label');
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.value = w;
+                    if (patternWords.includes(w)) cb.checked = true;
+                    lbl.appendChild(cb);
+                    lbl.append(' ' + w + ' ');
+                    cont.appendChild(lbl);
+                });
+                const roc = document.getElementById('rule-overlay-category');
+                roc.value = currentRuleBtn.dataset.category || '';
+                updateSubcategories(roc.value, 'rule-overlay-subcategory', '(Aucune)');
+                document.getElementById('rule-overlay-subcategory').value = currentRuleBtn.dataset.subcategory || '';
+                ruleOverlay.style.display = 'flex';
+            } else if (e.target.classList.contains('tx-filter-btn')) {
+                currentFilterBtn = e.target;
+                const words = (currentFilterBtn.dataset.label || '').split(/[^\wÀ-ÿ]+/).filter(Boolean);
+                const cont = document.getElementById('fav-filter-label-checkboxes');
+                cont.innerHTML = '';
+                words.forEach(w => {
+                    const lbl = document.createElement('label');
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.value = w;
+                    lbl.appendChild(cb);
+                    lbl.append(' ' + w + ' ');
+                    cont.appendChild(lbl);
+                });
+                const foc = document.getElementById('fav-filter-overlay-category');
+                foc.value = currentFilterBtn.dataset.category || '';
+                updateSubcategories(foc.value, 'fav-filter-overlay-subcategory', '(Aucune)');
+                document.getElementById('fav-filter-overlay-subcategory').value = currentFilterBtn.dataset.subcategory || '';
+                favFilterOverlay.style.display = 'flex';
+            }
+        });
+
+        catOverlay.addEventListener('click', async e => {
+            if (e.target === catOverlay) await saveCategory();
+        });
+        subOverlay.addEventListener('click', async e => {
+            if (e.target === subOverlay) await saveSubcategory();
+        });
+        ruleOverlay.addEventListener('click', async e => {
+            if (e.target === ruleOverlay) await saveRule();
+        });
+        favFilterOverlay.addEventListener('click', async e => {
+            if (e.target === favFilterOverlay) await saveFavoriteFilter();
+        });
+        manageSubcatsOverlay.addEventListener('click', e => { if (e.target === manageSubcatsOverlay) manageSubcatsOverlay.style.display = 'none'; });
+
+        function showDeleteError(transactions, subcats) {
+            delErrorSubList.innerHTML = '';
+            (subcats || []).forEach(s => {
+                const li = document.createElement('li');
+                li.textContent = `${s.id} - ${s.name}`;
+                delErrorSubList.appendChild(li);
+            });
+            delErrorList.innerHTML = '';
+            (transactions || []).forEach(t => {
+                const li = document.createElement('li');
+                li.textContent = `${formatDate(t.date)} - ${t.label} - ${formatAmount(t.amount)}`;
+                delErrorList.appendChild(li);
+            });
+            delErrorOverlay.style.display = 'flex';
+        }
+
+        delErrorOverlay.addEventListener('click', e => { if (e.target === delErrorOverlay) delErrorOverlay.style.display = 'none'; });
+        if (delErrorClose) delErrorClose.addEventListener('click', () => { delErrorOverlay.style.display = 'none'; });
+        if (recurrentsClose) recurrentsClose.addEventListener('click', () => { recurrentsOverlay.style.display = 'none'; });
+        recurrentsOverlay.addEventListener('click', e => { if (e.target === recurrentsOverlay) recurrentsOverlay.style.display = 'none'; });
+        if (projDetailsClose) projDetailsClose.addEventListener('click', () => { projDetailsOverlay.style.display = 'none'; });
+        if (projDetailsOverlay) projDetailsOverlay.addEventListener('click', e => { if (e.target === projDetailsOverlay) projDetailsOverlay.style.display = 'none'; });
+        if (favoriteInfoClose) favoriteInfoClose.addEventListener('click', () => { favoriteInfoOverlay.style.display = 'none'; });
+        if (favoriteInfoOverlay) favoriteInfoOverlay.addEventListener('click', e => { if (e.target === favoriteInfoOverlay) favoriteInfoOverlay.style.display = 'none'; });
+        if (dashboardInfoClose) dashboardInfoClose.addEventListener('click', () => { dashboardInfoOverlay.style.display = 'none'; });
+        if (dashboardInfoOverlay) dashboardInfoOverlay.addEventListener('click', e => { if (e.target === dashboardInfoOverlay) dashboardInfoOverlay.style.display = 'none'; });
+        if (recurrentsBtnCalendar && recurrentsBtnList) {
+            recurrentsBtnCalendar.addEventListener('click', () => {
+                if (recurrentsData.length === 0) return;
+                recurrentsBtnCalendar.classList.add('selected');
+                recurrentsBtnList.classList.remove('selected');
+                if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'flex';
+                if (recurrentsListView) recurrentsListView.style.display = 'none';
+            });
+            recurrentsBtnList.addEventListener('click', () => {
+                if (recurrentsData.length === 0) return;
+                recurrentsBtnList.classList.add('selected');
+                recurrentsBtnCalendar.classList.remove('selected');
+                if (recurrentsCalendarView) recurrentsCalendarView.style.display = 'none';
+                if (recurrentsListView) recurrentsListView.style.display = 'flex';
+                if (recurrentsChart) recurrentsChart.resize();
+            });
+        }
+
+        if (btnRecurrents && btnIncome && btnExpense && btnBalance) {
+            btnRecurrents.addEventListener('click', () => { showRecurrentsView(); });
+            btnIncome.addEventListener('click', () => { showIncomeCategories(); });
+            btnExpense.addEventListener('click', () => { showExpenseCategories(); });
+            btnBalance.addEventListener('click', () => { showBalanceOnly(); });
+        }
+
+        function showDuplicates(dups, accountId) {
+            const list = document.getElementById('duplicate-list');
+            list.innerHTML = '';
+            dupOverlay.dataset.rows = JSON.stringify(dups);
+            dupOverlay.dataset.accountId = accountId || '';
+            dups.forEach((d, idx) => {
+                const li = document.createElement('li');
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.checked = true;
+                cb.dataset.index = idx;
+                li.appendChild(cb);
+                li.appendChild(document.createTextNode(`${formatDate(d.date)} - ${d.label} - ${formatAmount(d.amount)}`));
+                list.appendChild(li);
+            });
+            dupOverlay.style.display = 'flex';
+        }
+
+        dupOverlay.addEventListener('click', e => { if (e.target === dupOverlay) dupOverlay.style.display = 'none'; });
+        document.getElementById('duplicate-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const rows = JSON.parse(dupOverlay.dataset.rows || '[]');
+            const selected = [];
+            document.querySelectorAll('#duplicate-list input[type="checkbox"]').forEach(cb => {
+                if (cb.checked) selected.push(rows[cb.dataset.index]);
+            });
+            dupOverlay.style.display = 'none';
+            if (!selected.length) {
+                fetchTransactions();
+                fetchDashboard();
+                fetchStats();
+                fetchProjection();
+                fetchProjectionCategories();
+                fetchProjectionFuture();
+                fetchCategoryStats();
+                fetchSankeyStats();
+                return;
+            }
+            const resp = await fetch('/import/confirm', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ transactions: selected, account_id: dupOverlay.dataset.accountId })
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (resp.ok) {
+                fetchTransactions();
+                fetchDashboard();
+                fetchStats();
+                fetchProjection();
+                fetchProjectionCategories();
+                fetchProjectionFuture();
+                fetchCategoryStats();
+                fetchSankeyStats();
+            } else {
+                if (data.errors) alert(data.errors.join('\n')); else alert(data.error || 'Erreur import');
+            }
+        });
+
+        async function saveCategory() {
+            if (!currentCatBtn) return;
+            const id = currentCatBtn.dataset.id;
+            const val = document.getElementById('popup-category-select').value;
+            const resp = await fetch('/transactions/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category_id: val })
+            });
+            if (resp.ok) {
+                const cat = findCategory(val);
+                currentCatBtn.dataset.current = val;
+                if (cat) {
+                    currentCatBtn.textContent = cat.name;
+                    currentCatBtn.style.color = cat.color || '';
+                } else {
+                    currentCatBtn.textContent = '(Aucune)';
+                    currentCatBtn.style.color = '';
+                }
+                fetchTransactions();
+            }
+            catOverlay.style.display = 'none';
+            currentCatBtn = null;
+        }
+
+        document.getElementById('popup-category-save').addEventListener('click', () => {
+            saveCategory();
+        });
+
+        async function saveSubcategory() {
+            if (!currentSubBtn) return;
+            const id = currentSubBtn.dataset.id;
+            const val = document.getElementById('popup-subcategory-select').value;
+            const resp = await fetch('/transactions/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subcategory_id: val })
+            });
+            if (resp.ok) {
+                const sub = findSubcategory(val);
+                currentSubBtn.dataset.current = val;
+                if (sub) {
+                    currentSubBtn.textContent = sub.name;
+                    currentSubBtn.style.color = sub.color || '';
+                } else {
+                    currentSubBtn.textContent = '(Aucune)';
+                    currentSubBtn.style.color = '';
+                }
+                fetchTransactions();
+            }
+            subOverlay.style.display = 'none';
+            currentSubBtn = null;
+        }
+
+        document.getElementById('popup-subcategory-save').addEventListener('click', () => {
+            saveSubcategory();
+        });
+
+        async function saveRule() {
+            if (!currentRuleBtn) return;
+            const words = Array.from(document.querySelectorAll('#rule-label-checkboxes input:checked')).map(cb => cb.value);
+            const category_id = document.getElementById('rule-overlay-category').value;
+            const subcategory_id = document.getElementById('rule-overlay-subcategory').value;
+            const pattern = words.join(' ');
+            if (pattern && category_id) {
+                await fetch('/rules', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ pattern, category_id, subcategory_id })
+                });
+                await fetchRules();
+                fetchTransactions();
+            }
+            ruleOverlay.style.display = 'none';
+            currentRuleBtn = null;
+        }
+
+        document.getElementById('rule-overlay-save').addEventListener('click', () => {
+            saveRule();
+        });
+
+        async function saveFavoriteFilter() {
+            if (!currentFilterBtn) return;
+            const words = Array.from(document.querySelectorAll('#fav-filter-label-checkboxes input:checked')).map(cb => cb.value);
+            const category_id = document.getElementById('fav-filter-overlay-category').value;
+            const subcategory_id = document.getElementById('fav-filter-overlay-subcategory').value;
+            const pattern = words.join(' ');
+            if (pattern || category_id || subcategory_id) {
+                await fetch('/favorite_filters', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ pattern, category_id, subcategory_id })
+                });
+                fetchDashboard();
+            }
+            favFilterOverlay.style.display = 'none';
+            currentFilterBtn = null;
+        }
+
+        document.getElementById('fav-filter-overlay-save').addEventListener('click', () => {
+            saveFavoriteFilter();
+        });
+
+        const sectionIds = ['transactions-section', 'accounts-section', 'dashboard-section', 'stats-section', 'recurrents-section', 'projection-section', 'settings-section'];
+        const sidebarButtons = document.querySelectorAll('#navbar button[data-target]');
+        sidebarButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.target;
+                sectionIds.forEach(id => {
+                    document.getElementById(id).style.display = id === target ? 'block' : 'none';
+                });
+                sidebarButtons.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                if (target === 'projection-section') {
+                    fetchProjection();
+                    fetchProjectionCategories();
+                    fetchProjectionFuture();
+                } else if (target === 'recurrents-section') {
+                    fetchRecurrents();
+                }
+            });
+        });
+        if (sidebarButtons.length) {
+            sidebarButtons[0].classList.add('selected');
+        }
+
+        document.querySelectorAll('#navbar li').forEach(li => {
+            const header = li.querySelector('.menu-header');
+            if (!header) return;
+            header.addEventListener('mouseenter', () => {
+                document.querySelectorAll('#navbar li.open').forEach(openLi => {
+                    if (openLi !== li) openLi.classList.remove('open');
+                });
+                li.classList.add('open');
+            });
+            li.addEventListener('mouseleave', () => {
+                li.classList.remove('open');
+            });
+        });
+
+        const themeSelect = document.getElementById('theme-select');
+        const fontSelect = document.getElementById('font-select');
+        const hideAmountsBox = document.getElementById('hide-amounts');
+        const themeLink = document.getElementById('theme-link');
+        const accountSelect = document.getElementById('account-select');
+        const statsPeriodSelect = document.getElementById('stats-period');
+        const filterCategorySelect = document.getElementById('filter-category');
+        const ruleOverlayCategorySelect = document.getElementById('rule-overlay-category');
+        const favFilterOverlayCategorySelect = document.getElementById('fav-filter-overlay-category');
+        const projectionModeInputs = document.querySelectorAll('#projection-mode input');
+        const dashboardThresholdInput = document.getElementById('dashboard-threshold');
+        const dashboardMonthsInput = document.getElementById('dashboard-months');
+        const dashboardFavOnlyInput = document.getElementById('dashboard-favorites-only');
+        const recurrentMonthInput = document.getElementById('recurrent-month');
+
+        function applyPreferences() {
+            const theme = localStorage.getItem('theme') || 'light';
+            const font = localStorage.getItem('font') || 'roboto';
+            const hide = localStorage.getItem('hideAmounts') === 'true';
+            const threshold = localStorage.getItem('dashboardThreshold') || '1.5';
+            const months = localStorage.getItem('dashboardMonths') || '3';
+            const favOnly = localStorage.getItem('dashboardFavoritesOnly') === 'true';
+            themeLink.href = theme + '.css';
+            document.body.classList.remove('font-roboto', 'font-arial', 'font-geneva');
+            document.body.classList.add('font-' + font);
+            document.body.classList.toggle('hide-amounts', hide);
+            themeSelect.value = theme;
+            fontSelect.value = font;
+            hideAmountsBox.checked = hide;
+            if (dashboardThresholdInput) dashboardThresholdInput.value = threshold;
+            if (dashboardMonthsInput) dashboardMonthsInput.value = months;
+            if (dashboardFavOnlyInput) dashboardFavOnlyInput.checked = favOnly;
+        }
+
+        themeSelect.addEventListener('change', () => {
+            localStorage.setItem('theme', themeSelect.value);
+            applyPreferences();
+        });
+        fontSelect.addEventListener('change', () => {
+            localStorage.setItem('font', fontSelect.value);
+            applyPreferences();
+        });
+        hideAmountsBox.addEventListener('change', () => {
+            localStorage.setItem('hideAmounts', hideAmountsBox.checked);
+            applyPreferences();
+            fetchTransactions();
+            fetchStats();
+            fetchProjection();
+            fetchProjectionCategories();
+            fetchProjectionFuture();
+            fetchCategoryStats();
+            fetchSankeyStats();
+        });
+
+       if (dashboardThresholdInput) {
+            dashboardThresholdInput.addEventListener('change', () => {
+                localStorage.setItem('dashboardThreshold', dashboardThresholdInput.value);
+                fetchDashboard();
+            });
+        }
+
+        if (dashboardMonthsInput) {
+            dashboardMonthsInput.addEventListener('change', () => {
+                localStorage.setItem('dashboardMonths', dashboardMonthsInput.value);
+                fetchDashboard();
+            });
+        }
+
+        if (dashboardFavOnlyInput) {
+            dashboardFavOnlyInput.addEventListener('change', () => {
+                localStorage.setItem('dashboardFavoritesOnly', dashboardFavOnlyInput.checked);
+                fetchDashboard();
+            });
+        }
+
+        if (recurrentMonthInput) {
+            recurrentMonthInput.addEventListener('change', () => {
+                fetchRecurrents();
+            });
+        }
+
+        statsPeriodSelect.addEventListener('change', () => {
+            fetchStats();
+            fetchCategoryStats();
+            fetchSankeyStats();
+        });
+
+        if (filterCategorySelect) {
+            filterCategorySelect.addEventListener('change', () => {
+                updateSubcategories(filterCategorySelect.value, 'filter-subcategory', '(Toutes)');
+            });
+        }
+
+        if (ruleOverlayCategorySelect) {
+            ruleOverlayCategorySelect.addEventListener('change', () => {
+                updateSubcategories(ruleOverlayCategorySelect.value, 'rule-overlay-subcategory', '(Aucune)');
+            });
+        }
+
+        if (favFilterOverlayCategorySelect) {
+            favFilterOverlayCategorySelect.addEventListener('change', () => {
+                updateSubcategories(favFilterOverlayCategorySelect.value, 'fav-filter-overlay-subcategory', '(Aucune)');
+            });
+        }
+
+        projectionModeInputs.forEach(r => {
+            r.addEventListener('change', () => {
+                fetchProjectionFuture();
+            });
+        });
+
+        accountSelect.addEventListener('change', () => {
+            selectedAccountId = accountSelect.value;
+            fetchTransactions();
+            fetchBalanceInfo();
+            displayAccountInfo();
+        });
+
+        document.getElementById('balance-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            if (!selectedAccountId) return;
+            const date = document.getElementById('balance-date').value;
+            const amount = document.getElementById('balance-amount').value;
+            const btn = e.target.querySelector('button[type="submit"]');
+            const msg = document.getElementById('balance-form-msg');
+            if (btn) btn.disabled = true;
+            if (msg) msg.textContent = '';
+            try {
+                const resp = await fetch(`/accounts/${selectedAccountId}/balance`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ balance_date: date, initial_balance: amount })
+                });
+                if (handleUnauthorized(resp)) return;
+                if (!resp.ok) {
+                    alert('Erreur lors de l\u2019enregistrement du solde');
+                } else if (msg) {
+                    msg.textContent = 'Enregistr\u00e9';
+                    setTimeout(() => { msg.textContent = ''; }, 2000);
+                }
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+            fetchDashboard();
+            fetchStats();
+        });
+
+        const filterInputs = [
+            'filter-start-date', 'filter-end-date', 'filter-period',
+            'filter-type', 'filter-payment',
+            'filter-label', 'filter-min-amount', 'filter-max-amount',
+            'filter-category', 'filter-subcategory', 'filter-amount-order',
+            'filter-favorite', 'filter-reconciled', 'filter-toanalyze'
+        ];
+        filterInputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', () => {
+                    fetchTransactions();
+                    fetchCategoryStats();
+                    fetchSankeyStats();
+                });
+                el.addEventListener('change', () => {
+                    fetchTransactions();
+                    fetchCategoryStats();
+                    fetchSankeyStats();
+                });
+            }
+        });
+
+        async function toggleReconciledAll() {
+            const boxes = Array.from(document.querySelectorAll('#transactions-table tbody input.reconciled-checkbox'));
+            if (!boxes.length) return;
+            const shouldCheck = boxes.some(cb => !cb.checked);
+            await Promise.all(boxes.filter(cb => cb.checked !== shouldCheck).map(cb => {
+                return fetch('/transactions/' + cb.dataset.id, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ reconciled: shouldCheck })
+                });
+            }));
+            fetchTransactions();
+        }
+
+        async function toggleToAnalyzeAll() {
+            const boxes = Array.from(document.querySelectorAll('#transactions-table tbody input.to-analyze-checkbox'));
+            if (!boxes.length) return;
+            const shouldCheck = boxes.some(cb => !cb.checked);
+            await Promise.all(boxes.filter(cb => cb.checked !== shouldCheck).map(cb => {
+                return fetch('/transactions/' + cb.dataset.id, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ to_analyze: shouldCheck })
+                });
+            }));
+            fetchTransactions();
+            fetchProjectionCategories();
+        }
+
+        document.getElementById('toggle-all-reconciled').addEventListener('click', toggleReconciledAll);
+        document.getElementById('toggle-all-toanalyze').addEventListener('click', toggleToAnalyzeAll);
+
+        document.getElementById('reset-transactions').addEventListener('click', async () => {
+            if (!confirm('Confirmer la suppression de toutes les transactions ?')) return;
+            const resp = await fetch('/reset', {method: 'POST'});
+            if (resp.ok) {
+                fetchTransactions();
+                fetchDashboard();
+                fetchStats();
+                fetchProjection();
+                fetchProjectionCategories();
+                fetchProjectionFuture();
+                fetchCategoryStats();
+                fetchSankeyStats();
+            }
+        });
+
+        document.getElementById('reset-future-row').addEventListener('click', resetFutureRow);
+        document.getElementById('reset-future-column').addEventListener('click', resetFutureColumn);
+        document.getElementById('reset-future-table').addEventListener('click', resetFutureTable);
+        document.getElementById('clear-custom-rows').addEventListener('click', () => {
+            document.querySelectorAll('#projection-future-table tbody tr[data-custom="true"]').forEach(tr => tr.remove());
+            clearSavedFutureTable();
+            updateFutureTotals();
+            updateBalanceRow();
+            drawProjectionChart();
+            saveFutureTable();
+        });
+
+        window.addEventListener('resize', () => {
+            if (incomeChart) incomeChart.resize();
+            if (expenseChart) expenseChart.resize();
+        });
+
+        applyPreferences();
+    </script>
+    <script src="sankey.js"></script>
+    <script>
+        const exampleData = [
+            {date: '2025-07-01', categorie: 'Alimentation et Boissons', montant: 120, id: 'TX123'},
+            {date: '2025-07-03', categorie: 'Loisirs et Divertissements', montant: 75, id: 'TX124'}
+        ];
+        new FinancialSankey('financialSankey', exampleData);
+    </script>
+</body>
+</html>
