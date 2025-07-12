@@ -564,3 +564,9 @@ body.hide-amounts .amount-input {
     color: var(--bg-color);
     font-weight: bold;
 }
+
+/* Account selectors on separate lines */
+#projection-accounts label {
+    display: block;
+    margin-bottom: 0.25em;
+}

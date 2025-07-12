@@ -1674,6 +1674,11 @@
             tbody.appendChild(row);
         }
 
+        function getFutureTableKey() {
+            return 'projectionFutureTable-' +
+                (projectionAccountIds.length ? projectionAccountIds.join(',') : 'all');
+        }
+
         function saveFutureTable() {
             const rows = [];
             document.querySelectorAll('#projection-future-table tbody tr').forEach(tr => {
@@ -1686,19 +1691,19 @@
                 rows.push({category, sign, values, custom});
             });
             const data = {months: projectionFutureMonths, rows};
-            localStorage.setItem('projectionFutureTable', JSON.stringify(data));
+            localStorage.setItem(getFutureTableKey(), JSON.stringify(data));
         }
 
         function loadFutureTable() {
             try {
-                const raw = localStorage.getItem('projectionFutureTable');
+                const raw = localStorage.getItem(getFutureTableKey());
                 if (!raw) return null;
                 const data = JSON.parse(raw);
                 if (data && Array.isArray(data.rows)) {
                     const filteredRows = data.rows.filter(r => r.category !== 'Ajouter ligne');
                     if (filteredRows.length !== data.rows.length) {
                         data.rows = filteredRows;
-                        localStorage.setItem('projectionFutureTable', JSON.stringify(data));
+                        localStorage.setItem(getFutureTableKey(), JSON.stringify(data));
                     }
                 }
                 return data;
@@ -1708,7 +1713,7 @@
         }
 
         function clearSavedFutureTable() {
-            localStorage.removeItem('projectionFutureTable');
+            localStorage.removeItem(getFutureTableKey());
         }
 
         async function fetchProjection() {
