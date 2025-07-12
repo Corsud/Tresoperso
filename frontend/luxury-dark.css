@@ -1,4 +1,6 @@
-/* ----------- BODY & GLOBAL ----------- */
+/* luxury-dark.css - Optimisé pour TrésoPerso (juillet 2025) */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Montserrat:wght@400;600&display=swap');
+
 body {
   background: #181c2a;
   color: #f6f7fb;
@@ -130,27 +132,28 @@ body {
   font-size: 0.98em;
 }
 
-/* -- Largeur & retour à la ligne par colonne -- */
-/* Colonnes SANS retour à la ligne */
-#transactions-table th:nth-child(1), #transactions-table td:nth-child(1),
-#transactions-table th:nth-child(2), #transactions-table td:nth-child(2),
-#transactions-table th:nth-child(3), #transactions-table td:nth-child(3),
-#transactions-table th:nth-child(7), #transactions-table td:nth-child(7),
-#transactions-table th:nth-child(10), #transactions-table td:nth-child(10),
-#transactions-table th:nth-child(11), #transactions-table td:nth-child(11),
-#transactions-table th:nth-child(12), #transactions-table td:nth-child(12) {
+/* Colonnes à largeur minimale/fixe et pas de retour à la ligne */
+#transactions-table th:nth-child(1), #transactions-table td:nth-child(1) { width: 45px; min-width: 40px; max-width: 48px; white-space: nowrap !important; text-align: center; }
+#transactions-table th:nth-child(2), #transactions-table td:nth-child(2) { width: 54px; min-width: 50px; max-width: 58px; white-space: nowrap !important; text-align: center; }
+#transactions-table th:nth-child(3), #transactions-table td:nth-child(3) { width: 92px; min-width: 88px; max-width: 100px; white-space: nowrap !important; text-align: center; }
+#transactions-table th:nth-child(10), #transactions-table td:nth-child(10) { width: 70px; min-width: 60px; max-width: 85px; white-space: nowrap !important; text-align: center; }
+#transactions-table th:nth-child(11), #transactions-table td:nth-child(11) { width: 54px; min-width: 45px; max-width: 62px; white-space: nowrap !important; text-align: center; }
+#transactions-table th:nth-child(12), #transactions-table td:nth-child(12) { width: 85px; min-width: 60px; max-width: 100px; white-space: nowrap !important; text-align: center; }
+
+/* Montant : largeur calculée pour jusqu’à 7 chiffres + décimale + séparateur espace */
+#transactions-table th:nth-child(7), #transactions-table td:nth-child(7) {
+  width: 120px; min-width: 90px; max-width: 135px;
   white-space: nowrap !important;
-  max-width: 85px;
-  min-width: 50px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-family: 'Montserrat', Arial, sans-serif;
 }
 
-/* Colonne LIBELLÉ (colonne 6) : large, max 5 lignes */
+/* Libellé : large, retour à la ligne max 5 lignes */
 #transactions-table th:nth-child(6), #transactions-table td:nth-child(6) {
-  min-width: 320px;
-  max-width: 420px;
+  min-width: 260px; max-width: 400px; width: 30vw;
   white-space: normal !important;
+  word-break: break-word;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 5;
@@ -159,19 +162,32 @@ body {
   line-height: 1.3em;
   height: calc(1.3em * 5);
   text-overflow: ellipsis;
-  word-break: break-word;
 }
-/* Alignement à droite pour Montant */
-#transactions-table th:nth-child(7), #transactions-table td:nth-child(7) {
-  text-align: right;
+
+/* Catégorie et Sous-catégorie : flexibles, retour à la ligne autorisé */
+#transactions-table th:nth-child(8), #transactions-table td:nth-child(8),
+#transactions-table th:nth-child(9), #transactions-table td:nth-child(9) {
+  min-width: 90px; max-width: 180px;
+  white-space: normal !important;
+  word-break: break-word;
+  text-align: left;
 }
 
 /* Les autres colonnes : flex, retour à la ligne possible */
 #transactions-table th, #transactions-table td {
+  vertical-align: middle;
   word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Ligne sélectionnée ou hover */
+/* Responsive : sur petits écrans, réduit la largeur du libellé */
+@media (max-width: 1200px) {
+  #transactions-table th:nth-child(6), #transactions-table td:nth-child(6) {
+    min-width: 150px; max-width: 220px; width: 18vw;
+  }
+}
+
 #transactions-table tr:hover {
   background: #22243a;
 }
@@ -239,7 +255,6 @@ a:hover {
   color: #e6be6a;
 }
 
-/* ----------- BADGES ----------- */
 .badge, .tag {
   background: #f8c471;
   color: #14213d;
@@ -250,7 +265,6 @@ a:hover {
   margin-right: 0.4em;
 }
 
-/* ----------- SCROLLBAR ----------- */
 ::-webkit-scrollbar-thumb {
   background: #e6be6a;
   border-radius: 12px;
@@ -260,12 +274,13 @@ a:hover {
   width: 10px;
 }
 
-/* ----------- RESPONSIVE ----------- */
-@media (max-width: 1200px) {
-  #transactions-table th:nth-child(6), #transactions-table td:nth-child(6) {
-    min-width: 200px; max-width: 260px;
-  }
+.summary, .total, .important {
+  color: #f8c471;
+  font-family: 'Playfair Display', serif;
+  font-weight: bold;
+  font-size: 1.08em;
 }
+
 @media (max-width: 900px) {
   #navbar ul.menu > li { font-size: 0.97em; }
   #transactions-table th, #transactions-table td { font-size: 0.93em; padding: 0.6em 0.2em; }
