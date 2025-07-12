@@ -73,73 +73,43 @@
                         <span id="balance-form-msg" style="margin-left:0.5em;"></span>
                     </form>
                 </div>
-                <table id="transactions-table">
-                    <thead>
-                        <tr class="filter-row">
-                            <th><select id="filter-favorite">
-                                <option value="">(Tous)</option>
-                                <option value="true">Oui</option>
-                                <option value="false">Non</option>
-                            </select></th>
-                            <th></th>
-                            <th class="stack">
-                                <input type="date" id="filter-start-date" />
-                                <input type="date" id="filter-end-date" />
-                                <select id="filter-period">
-                                    <option value="">(Période)</option>
-                                    <option value="current-week">Semaine en cours</option>
-                                    <option value="previous-week">Semaine précédente</option>
-                                    <option value="current-month">Mois en cours</option>
-                                    <option value="previous-month">Mois précédent</option>
-                                    <option value="ytd">Année en cours</option>
-                                    <option value="last-6-months">6 derniers mois</option>
-                                    <option value="previous-year">Année précédente</option>
-                                    <option value="all">Tout</option>
-                                </select>
-                            </th>
-                            <th><select id="filter-type"><option value="">(Tous)</option></select></th>
-                            <th><select id="filter-payment"><option value="">(Tous)</option></select></th>
-                            <th><input type="text" id="filter-label" placeholder="Libellé" /></th>
-                            <th class="stack">
-                                <input type="number" id="filter-min-amount" placeholder="Min" style="width:5em;" />
-                                <input type="number" id="filter-max-amount" placeholder="Max" style="width:5em;" />
-                                <select id="filter-amount-order">
-                                    <option value="">(Date)</option>
-                                    <option value="asc">Croissant</option>
-                                    <option value="desc">Décroissant</option>
-                                </select>
-                            </th>
-                            <th><select id="filter-category"><option value="">(Toutes)</option></select></th>
-                            <th><select id="filter-subcategory"><option value="">(Toutes)</option></select></th>
-                            <th></th>
-                            <th><select id="filter-reconciled">
-                                <option value="">(Tous)</option>
-                                <option value="true">Oui</option>
-                                <option value="false">Non</option>
-                            </select></th>
-                            <th><select id="filter-toanalyze">
-                                <option value="">(Tous)</option>
-                                <option value="true">Oui</option>
-                                <option value="false">Non</option>
-                            </select></th>
-                        </tr>
-                        <tr>
-                            <th>★</th>
-                            <th>Filtre</th>
-                            <th>Date</th>
-                            <th>Type</th>
-                            <th>Moyen de paiement</th>
-                            <th>Libellé</th>
-                            <th>Montant</th>
-                            <th>Catégorie</th>
-                            <th>Sous-catégorie</th>
-                            <th>Règle</th>
-                            <th>Pointée <button id="toggle-all-reconciled" class="toggle-all-btn">✓</button></th>
-                            <th>A analyser <button id="toggle-all-toanalyze" class="toggle-all-btn">✓</button></th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+          <table id="transactions-table">
+  <thead>
+    <tr>
+      <th class="col-star">★</th>
+      <th class="col-filter">Filtre</th>
+      <th class="col-date">Date</th>
+      <th class="col-type">Type</th>
+      <th class="col-moyen">Moyen de paiement</th>
+      <th class="col-libelle">Libellé</th>
+      <th class="col-montant">Montant</th>
+      <th class="col-categorie">Catégorie</th>
+      <th class="col-souscat">Sous-catégorie</th>
+      <th class="col-regle">Règle</th>
+      <th class="col-pointee">Pointée</th>
+      <th class="col-analyser">À analyser</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Exemple ligne : -->
+    <tr>
+      <td class="col-star">★</td>
+      <td class="col-filter">CB</td>
+      <td class="col-date">12/07/2025</td>
+      <td class="col-type">Dépense</td>
+      <td class="col-moyen">Carte</td>
+      <td class="col-libelle">Achat station essence ...</td>
+      <td class="col-montant">-52,60</td>
+      <td class="col-categorie">Transports</td>
+      <td class="col-souscat">Carburant</td>
+      <td class="col-regle">Auto</td>
+      <td class="col-pointee">Oui</td>
+      <td class="col-analyser"><input type="checkbox" /></td>
+    </tr>
+    <!-- ... -->
+  </tbody>
+</table>
+
             </section>
 
             <section id="accounts-section" style="display:none;">
