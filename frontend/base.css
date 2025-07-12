@@ -570,3 +570,12 @@ body.hide-amounts .amount-input {
     display: block;
     margin-bottom: 0.25em;
 }
+
+#recurrents-accounts label {
+    display: block;
+    margin-bottom: 0.25em;
+}
+
+#recurrent-month-container {
+    margin-bottom: 0.5em;
+}
