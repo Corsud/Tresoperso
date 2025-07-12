@@ -7,8 +7,10 @@ from sqlalchemy import (
     Date,
     Boolean,
     ForeignKey,
+    JSON,
     text,
     event,
+    inspect,
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from flask_login import UserMixin
@@ -142,11 +144,24 @@ class FavoriteFilter(Base):
     subcategory = relationship('Subcategory')
 
 
+class ProjectionRow(Base):
+    __tablename__ = 'projection_rows'
+
+    id = Column(Integer, primary_key=True)
+    category = Column(String, nullable=False, default='')
+    sign = Column(String, nullable=False)
+    values = Column(JSON, nullable=False)
+    account_ids = Column(String)
+    custom = Column(Boolean, default=False)
+
+
 def init_db():
     """Create database tables if they do not exist."""
     with engine.connect() as conn:
         conn.execute(text('PRAGMA foreign_keys=ON'))
     Base.metadata.create_all(engine)
+    if not inspect(engine).has_table('projection_rows'):
+        ProjectionRow.__table__.create(bind=engine)
 
     # Ensure new columns exist when upgrading from older versions
     with engine.connect() as conn:

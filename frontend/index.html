@@ -1700,12 +1700,7 @@
             tbody.appendChild(row);
         }
 
-        function getFutureTableKey() {
-            return 'projectionFutureTable-' +
-                (projectionAccountIds.length ? projectionAccountIds.join(',') : 'all');
-        }
-
-        function saveFutureTable() {
+        async function saveFutureTable() {
             const rows = [];
             document.querySelectorAll('#projection-future-table tbody tr').forEach(tr => {
                 if (tr.classList.contains('total-row') || tr.classList.contains('group-header') || tr.classList.contains('add-row')) return;
@@ -1716,30 +1711,32 @@
                 const values = Array.from(tr.querySelectorAll('td.amount .cell-value')).map(span => parseAmount(span.textContent));
                 rows.push({category, sign, values, custom});
             });
-            const data = {months: projectionFutureMonths, rows};
-            localStorage.setItem(getFutureTableKey(), JSON.stringify(data));
+            const data = {rows, account_ids: projectionAccountIds};
+            await fetch('/projection/future', {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
         }
 
-        function loadFutureTable() {
-            try {
-                const raw = localStorage.getItem(getFutureTableKey());
-                if (!raw) return null;
-                const data = JSON.parse(raw);
-                if (data && Array.isArray(data.rows)) {
-                    const filteredRows = data.rows.filter(r => r.category !== 'Ajouter ligne');
-                    if (filteredRows.length !== data.rows.length) {
-                        data.rows = filteredRows;
-                        localStorage.setItem(getFutureTableKey(), JSON.stringify(data));
-                    }
-                }
+        async function loadFutureTable() {
+            const params = new URLSearchParams();
+            if (projectionAccountIds.length) params.set('account_ids', projectionAccountIds.join(','));
+            const resp = await fetch('/projection/future' + (params.toString() ? `?${params.toString()}` : ''));
+            if (handleUnauthorized(resp) || !resp.ok) return null;
+            const data = await resp.json();
+            if (data && Array.isArray(data.rows)) {
+                const filteredRows = data.rows.filter(r => r.category !== 'Ajouter ligne');
+                data.rows = filteredRows;
                 return data;
-            } catch (e) {
-                return null;
             }
+            return null;
         }
 
-        function clearSavedFutureTable() {
-            localStorage.removeItem(getFutureTableKey());
+        async function clearSavedFutureTable() {
+            const params = new URLSearchParams();
+            if (projectionAccountIds.length) params.set('account_ids', projectionAccountIds.join(','));
+            await fetch('/projection/future' + (params.toString() ? `?${params.toString()}` : ''), { method: 'DELETE' });
         }
 
         async function fetchProjection() {
@@ -1857,8 +1854,8 @@
 
             projectionFutureMonths = months.slice();
 
-            const saved = loadFutureTable();
-            if (saved && JSON.stringify(saved.months) === JSON.stringify(months)) {
+            const saved = await loadFutureTable();
+            if (saved && Array.isArray(saved.rows)) {
                 rows = saved.rows;
             }
 

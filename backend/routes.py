@@ -1485,6 +1485,73 @@ def projection_categories_forecast():
     return jsonify(result)
 
 
+@app.route('/projection/future', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@login_required
+def projection_future():
+    session = models.SessionLocal()
+    account_ids = _parse_account_ids()
+    acc_key = ','.join(str(i) for i in sorted(account_ids)) if account_ids else None
+
+    if request.method == 'GET':
+        query = session.query(models.ProjectionRow)
+        if acc_key:
+            query = query.filter(models.ProjectionRow.account_ids == acc_key)
+        else:
+            query = query.filter(models.ProjectionRow.account_ids.is_(None))
+        rows = [
+            {
+                'id': r.id,
+                'category': r.category,
+                'sign': r.sign,
+                'values': r.values,
+                'custom': r.custom,
+            }
+            for r in query.all()
+        ]
+        session.close()
+        return jsonify({'rows': rows})
+
+    if request.method in ('POST', 'PUT'):
+        data = request.get_json() or {}
+        rows_data = data.get('rows', [])
+        if request.method == 'PUT':
+            q = session.query(models.ProjectionRow)
+            if acc_key:
+                q = q.filter(models.ProjectionRow.account_ids == acc_key)
+            else:
+                q = q.filter(models.ProjectionRow.account_ids.is_(None))
+            q.delete()
+        for r in rows_data:
+            pr = models.ProjectionRow(
+                category=r.get('category', ''),
+                sign=r.get('sign', 'expense'),
+                values=r.get('values') or [],
+                custom=bool(r.get('custom')),
+                account_ids=acc_key,
+            )
+            session.add(pr)
+        session.commit()
+        q = session.query(models.ProjectionRow)
+        if acc_key:
+            q = q.filter(models.ProjectionRow.account_ids == acc_key)
+        else:
+            q = q.filter(models.ProjectionRow.account_ids.is_(None))
+        ids = [pr.id for pr in q.all()]
+        session.close()
+        return jsonify({'ids': ids}), 201 if request.method == 'POST' else 200
+
+    # DELETE
+    q = session.query(models.ProjectionRow)
+    if acc_key:
+        q = q.filter(models.ProjectionRow.account_ids == acc_key)
+    else:
+        q = q.filter(models.ProjectionRow.account_ids.is_(None))
+    deleted = q.delete()
+    session.commit()
+    session.close()
+    return jsonify({'deleted': deleted})
+
+
 @app.route('/balance')
 @login_required
 def balance():
