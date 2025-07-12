@@ -276,6 +276,10 @@ tbody th {
     padding: 4px 8px;
     border: none;
 }
+#navbar > ul > li > button[data-target] {
+    font-weight: bold;
+    color: var(--text-color);
+}
 #content { flex-grow: 1; padding: 60px 10px 0 10px; }
 
 a {
