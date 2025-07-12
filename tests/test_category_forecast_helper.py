@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from backend import models
 import backend as app_module
 
+
 class FixedDate(datetime.datetime):
     @classmethod
     def now(cls, tz=None):

@@ -1,6 +1,6 @@
 import csv
 import re
-from datetime import datetime, timedelta  # use standard datetime
+from datetime import datetime  # use standard datetime
 from sqlalchemy import func
 
 from .models import Transaction
@@ -90,7 +90,8 @@ def parse_csv(content):
             continue
         if len(row) < 5:
             errors.append(
-                f"Ligne {line_no}: colonnes manquantes (ligne comportant moins de cinq colonnes ou des colonnes essentielles manquantes)"
+                f"Ligne {line_no}: colonnes manquantes (ligne comportant moins "
+                "de cinq colonnes ou des colonnes essentielles manquantes)"
             )
             continue
 
@@ -100,12 +101,13 @@ def parse_csv(content):
         label = row[3].strip()
         if label.startswith(('=', '+', '-', '@')):
             label = "'" + label
-        
+
         amount_str = row[4]
 
         if not (date_str and label and amount_str):
             errors.append(
-                f"Ligne {line_no}: colonnes manquantes (ligne comportant moins de cinq colonnes ou des colonnes essentielles manquantes)"
+                f"Ligne {line_no}: colonnes manquantes (ligne comportant moins "
+                "de cinq colonnes ou des colonnes essentielles manquantes)"
             )
             continue
 

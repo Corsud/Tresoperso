@@ -16,8 +16,10 @@ def client():
     models.init_db()
     session = models.SessionLocal()
     session.add_all([
-        models.Transaction(date=datetime.date(2021,1,1), label='T1', amount=10, favorite=True, reconciled=True, to_analyze=True),
-        models.Transaction(date=datetime.date(2021,1,2), label='T2', amount=20, favorite=False, reconciled=False, to_analyze=False),
+        models.Transaction(date=datetime.date(2021, 1, 1), label='T1', amount=10,
+                           favorite=True, reconciled=True, to_analyze=True),
+        models.Transaction(date=datetime.date(2021, 1, 2), label='T2', amount=20,
+                           favorite=False, reconciled=False, to_analyze=False),
     ])
     session.commit()
     session.close()
@@ -82,7 +84,7 @@ def test_filter_account_none(client):
     session.add(acc)
     session.flush()
     acc_id = acc.id
-    session.add(models.Transaction(date=datetime.date(2021,1,3), label='T3', amount=5, bank_account_id=acc_id))
+    session.add(models.Transaction(date=datetime.date(2021, 1, 3), label='T3', amount=5, bank_account_id=acc_id))
     session.commit()
     session.close()
 
@@ -97,4 +99,3 @@ def test_filter_account_none(client):
     data = resp.get_json()
     assert len(data) == 1
     assert data[0]['account_id'] == acc_id
-

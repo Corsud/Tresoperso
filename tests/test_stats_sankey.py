@@ -24,12 +24,18 @@ def client():
     session.add_all([cat_inc, sub_inc, cat_food, sub_food, cat_mixed, sub_mixed])
     session.flush()
     session.add_all([
-        models.Transaction(date=datetime.date(2021, 1, 1), label='inc1', amount=100, category=cat_inc, subcategory=sub_inc),
-        models.Transaction(date=datetime.date(2021, 1, 2), label='inc2', amount=50, category=cat_inc, subcategory=sub_inc),
-        models.Transaction(date=datetime.date(2021, 1, 3), label='food1', amount=-40, category=cat_food, subcategory=sub_food),
-        models.Transaction(date=datetime.date(2021, 1, 4), label='food2', amount=-10, category=cat_food, subcategory=sub_food),
-        models.Transaction(date=datetime.date(2021, 1, 5), label='mix+', amount=20, category=cat_mixed, subcategory=sub_mixed),
-        models.Transaction(date=datetime.date(2021, 1, 6), label='mix-', amount=-5, category=cat_mixed, subcategory=sub_mixed),
+        models.Transaction(date=datetime.date(2021, 1, 1), label='inc1',
+                           amount=100, category=cat_inc, subcategory=sub_inc),
+        models.Transaction(date=datetime.date(2021, 1, 2), label='inc2',
+                           amount=50, category=cat_inc, subcategory=sub_inc),
+        models.Transaction(date=datetime.date(2021, 1, 3), label='food1',
+                           amount=-40, category=cat_food, subcategory=sub_food),
+        models.Transaction(date=datetime.date(2021, 1, 4), label='food2',
+                           amount=-10, category=cat_food, subcategory=sub_food),
+        models.Transaction(date=datetime.date(2021, 1, 5), label='mix+',
+                           amount=20, category=cat_mixed, subcategory=sub_mixed),
+        models.Transaction(date=datetime.date(2021, 1, 6), label='mix-',
+                           amount=-5, category=cat_mixed, subcategory=sub_mixed),
     ])
     session.commit()
     session.close()

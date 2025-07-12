@@ -16,8 +16,8 @@ def client():
     models.init_db()
     session = models.SessionLocal()
     session.add_all([
-        models.Transaction(date=datetime.date(2021,1,1), label='T1', amount=10),
-        models.Transaction(date=datetime.date(2021,1,2), label='T2', amount=20)
+        models.Transaction(date=datetime.date(2021, 1, 1), label='T1', amount=10),
+        models.Transaction(date=datetime.date(2021, 1, 2), label='T2', amount=20)
     ])
     session.commit()
     session.close()
@@ -36,7 +36,7 @@ def test_delete_unassigned_transactions(client):
     acc = models.BankAccount(account_type='Compte', number='123')
     session.add(acc)
     session.flush()
-    session.add(models.Transaction(date=datetime.date(2021,1,3), label='T3', amount=5, bank_account_id=acc.id))
+    session.add(models.Transaction(date=datetime.date(2021, 1, 3), label='T3', amount=5, bank_account_id=acc.id))
     session.commit()
     session.close()
 
@@ -48,4 +48,3 @@ def test_delete_unassigned_transactions(client):
     remaining = session.query(models.Transaction).count()
     session.close()
     assert remaining == 1
-

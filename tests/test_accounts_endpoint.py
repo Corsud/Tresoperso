@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from backend import models
 import backend as app_module
 
+
 @pytest.fixture
 def client():
     engine = create_engine('sqlite:///:memory:')

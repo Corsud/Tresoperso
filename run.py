@@ -1,5 +1,7 @@
 import socket
+
 from backend import run as backend_run
+
 
 def find_available_port(start_port=5000, max_tries=20):
     port = start_port
@@ -11,6 +13,7 @@ def find_available_port(start_port=5000, max_tries=20):
             except OSError:
                 port += 1
     raise RuntimeError("No available port found.")
+
 
 if __name__ == '__main__':
     port = find_available_port(5000)

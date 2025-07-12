@@ -29,6 +29,8 @@ def _set_sqlite_pragma(dbapi_connection, connection_record):
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
+
+
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
@@ -41,6 +43,7 @@ class User(UserMixin, Base):
     id = Column(Integer, primary_key=True)
     username = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
+
 
 class Category(Base):
     __tablename__ = 'categories'
@@ -70,6 +73,7 @@ class Category(Base):
         cascade='all, delete-orphan',
     )
 
+
 class Subcategory(Base):
     __tablename__ = 'subcategories'
 
@@ -81,6 +85,7 @@ class Subcategory(Base):
 
     category = relationship('Category', back_populates='subcategories')
     transactions = relationship('Transaction', back_populates='subcategory')
+
 
 class BankAccount(Base):
     __tablename__ = 'bank_accounts'
@@ -98,6 +103,7 @@ class BankAccount(Base):
         back_populates='account',
         cascade='all, delete-orphan'
     )
+
 
 class Transaction(Base):
     __tablename__ = 'transactions'

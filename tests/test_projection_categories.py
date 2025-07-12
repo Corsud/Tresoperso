@@ -6,10 +6,12 @@ from sqlalchemy.orm import sessionmaker
 from backend import models
 import backend as app_module
 
+
 class FixedDate(datetime.datetime):
     @classmethod
     def now(cls, tz=None):
         return cls(2021, 7, 15)
+
 
 @pytest.fixture
 def client(monkeypatch):
@@ -37,9 +39,11 @@ def client(monkeypatch):
     with app_module.app.test_client() as client:
         yield client
 
+
 def login(client):
     resp = client.post('/login', json={'username': 'admin', 'password': 'admin'})
     assert resp.status_code == 200
+
 
 def test_projection_categories(client):
     login(client)

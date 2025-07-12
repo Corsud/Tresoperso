@@ -6,10 +6,12 @@ from sqlalchemy.orm import sessionmaker
 from backend import models
 import backend as app_module
 
+
 class FixedDate(datetime.datetime):
     @classmethod
     def now(cls, tz=None):
         return cls(2021, 5, 15)
+
 
 @pytest.fixture
 def client(monkeypatch):
@@ -26,21 +28,22 @@ def client(monkeypatch):
     fil = models.FavoriteFilter(pattern='Shop')
     session.add(fil)
     session.add_all([
-        models.Transaction(date=datetime.date(2021,2,5), label='inc1', amount=1000),
-        models.Transaction(date=datetime.date(2021,3,5), label='inc2', amount=1200),
-        models.Transaction(date=datetime.date(2021,4,5), label='inc3', amount=800),
-        models.Transaction(date=datetime.date(2021,4,10), label='Food Apr', amount=-60, category=cat),
-        models.Transaction(date=datetime.date(2021,5,10), label='Groceries', amount=-50, category=cat),
-        models.Transaction(date=datetime.date(2021,5,12), label='Huge expense', amount=-1200, category=cat),
-        models.Transaction(date=datetime.date(2021,5,13), label='Shop now', amount=-70, category=cat),
-        models.Transaction(date=datetime.date(2021,3,6), label='Shop old', amount=-30, category=cat),
-        models.Transaction(date=datetime.date(2021,2,6), label='Shop older', amount=-40, category=cat),
-        models.Transaction(date=datetime.date(2021,4,6), label='Shop old2', amount=-50, category=cat),
+        models.Transaction(date=datetime.date(2021, 2, 5), label='inc1', amount=1000),
+        models.Transaction(date=datetime.date(2021, 3, 5), label='inc2', amount=1200),
+        models.Transaction(date=datetime.date(2021, 4, 5), label='inc3', amount=800),
+        models.Transaction(date=datetime.date(2021, 4, 10), label='Food Apr', amount=-60, category=cat),
+        models.Transaction(date=datetime.date(2021, 5, 10), label='Groceries', amount=-50, category=cat),
+        models.Transaction(date=datetime.date(2021, 5, 12), label='Huge expense', amount=-1200, category=cat),
+        models.Transaction(date=datetime.date(2021, 5, 13), label='Shop now', amount=-70, category=cat),
+        models.Transaction(date=datetime.date(2021, 3, 6), label='Shop old', amount=-30, category=cat),
+        models.Transaction(date=datetime.date(2021, 2, 6), label='Shop older', amount=-40, category=cat),
+        models.Transaction(date=datetime.date(2021, 4, 6), label='Shop old2', amount=-50, category=cat),
     ])
     session.commit()
     session.close()
     with app_module.app.test_client() as client:
         yield client
+
 
 def login(client):
     resp = client.post('/login', json={'username': 'admin', 'password': 'admin'})
@@ -135,4 +138,3 @@ def test_dashboard_schema(client):
             item = grp['items'][0]
             for key in ['type', 'name', 'current_total', 'six_month_avg']:
                 assert key in item
-
