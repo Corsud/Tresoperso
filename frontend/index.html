@@ -1855,7 +1855,7 @@
             projectionFutureMonths = months.slice();
 
             const saved = await loadFutureTable();
-            if (saved && Array.isArray(saved.rows)) {
+            if (saved && Array.isArray(saved.rows) && saved.rows.length) {
                 rows = saved.rows;
             }
 
