@@ -1,271 +1,118 @@
-/* luxury-dark.css - Compatible index.html Tresoperso (V2 - colonnes ajustées juillet 2025) */
+/* luxury-dark.css - Compatibilité anti-conflit avec base.css (Tresoperso juillet 2025) */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Montserrat:wght@400;600&display=swap');
 
 body {
-  background: #181c2a;
-  color: #f6f7fb;
-  font-family: 'Montserrat', Arial, sans-serif;
-  margin: 0;
+  background: #181c2a !important;
+  color: #f6f7fb !important;
+  font-family: 'Montserrat', Arial, sans-serif !important;
+  margin: 0 !important;
 }
 
+/* NAVBAR & MENU premium */
 #navbar, #navbar ul.menu {
   background: #14213d !important;
   color: #f8c471 !important;
-  width: 100vw;
-  border-bottom: 3px solid #e6be6a;
-  font-family: 'Playfair Display', serif;
-}
-#navbar ul.menu {
-  display: flex;
-  align-items: center;
-  list-style: none;
-  margin: 0; padding: 0;
-}
-#navbar ul.menu > li {
-  margin-right: 0.5em;
-  position: relative;
+  border-bottom: 3px solid #e6be6a !important;
+  font-family: 'Playfair Display', serif !important;
 }
 #navbar .logo {
-  font-size: 1.5em;
-  color: #f8c471;
-  font-family: 'Playfair Display', serif;
-  font-weight: bold;
-  letter-spacing: 0.04em;
-  margin-right: 1.5em;
-  padding: 0.3em 1em;
-}
-#navbar .menu-header {
-  color: #f8c471;
-  font-size: 1.06em;
-  padding: 0.2em 0.8em;
-}
-#navbar button, #navbar li > button, #navbar .submenu button {
-  background: transparent;
-  color: #f8c471;
-  font-family: 'Montserrat', Arial, sans-serif;
-  font-weight: 600;
-  border: none;
-  border-radius: 14px 14px 0 0;
-  padding: 0.5em 1.2em;
-  font-size: 1em;
-  transition: background 0.15s, color 0.15s;
-  cursor: pointer;
-}
-#navbar button:hover, #navbar .submenu button:hover {
-  background: #22243a;
-  color: #fffdfa;
-}
-#navbar li.open > .menu-header {
-  background: #f8c471;
-  color: #14213d !important;
-  border-radius: 14px 14px 0 0;
-}
-#navbar .submenu {
-  display: none;
-  position: absolute;
-  background: #181c2a;
-  border-radius: 0 0 16px 16px;
-  top: 2.5em;
-  left: 0;
-  min-width: 180px;
-  z-index: 5;
-  padding: 0.4em 0.2em;
-  box-shadow: 0 6px 18px #22243a88;
-}
-#navbar li.open:hover .submenu, #navbar li.open:focus-within .submenu {
-  display: block;
-}
-#navbar .submenu li {
-  margin: 0;
-  width: 100%;
-}
-#navbar .submenu button {
-  width: 100%;
-  text-align: left;
-  padding: 0.6em 1.1em;
-  font-size: 1em;
-  color: #f8c471;
-  border-radius: 8px;
-}
-#navbar .submenu button:hover {
-  background: #f8c471;
-  color: #14213d;
+  font-size: 1.5em !important;
+  color: #f8c471 !important;
+  font-family: 'Playfair Display', serif !important;
 }
 
-/* --- TABLEAU TRANSACTIONS --- */
+/* TABLE TRANSACTIONS - anti-conflit : on surcharge tout, y compris le white-space de base.css */
 #transactions-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  background: #181c2a;
-  color: #fffdfa;
-  font-family: 'Montserrat', Arial, sans-serif;
-  table-layout: fixed;
-  margin-top: 1.5em;
-  border-radius: 18px;
-  overflow: hidden;
-  box-shadow: 0 6px 22px #22243a18;
+  font-size: 1em !important;
+  width: 100% !important;
+  table-layout: fixed !important;
+  background: #181c2a !important;
+  color: #fffdfa !important;
+  border-radius: 18px !important;
+  box-shadow: 0 6px 22px #22243a18 !important;
+  overflow: hidden !important;
 }
-#transactions-table thead {
-  background: #22243a;
+#transactions-table th, #transactions-table td {
+  border: none !important;
+  background: #181c2a !important;
+  color: #fffdfa !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  vertical-align: middle !important;
+  padding: 0.6em 0.2em !important;
+  font-family: 'Montserrat', Arial, sans-serif !important;
 }
 #transactions-table th {
-  color: #f8c471;
-  font-family: 'Playfair Display', serif;
-  font-size: 1em;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  border-bottom: 2px solid #e6be6a44;
-  padding: 0.7em 0.2em;
-  background: #22243a;
-  overflow: hidden;
+  color: #f8c471 !important;
+  background: #22243a !important;
+  font-family: 'Playfair Display', serif !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  border-bottom: 2px solid #e6be6a44 !important;
+  white-space: nowrap !important;
 }
 #transactions-table td {
-  color: #fffdfa;
-  padding: 0.6em 0.2em;
-  border-bottom: 1px solid #e6be6a28;
-  background: #181c2a;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  vertical-align: middle;
-  font-size: 0.98em;
+  white-space: nowrap !important;
 }
 
+/* Largeurs au plus juste pour Date (3), Montant (7), A analyser (12) sans retour à la ligne */
 #transactions-table th:nth-child(3), #transactions-table td:nth-child(3) {
-  width: 92px; min-width: 75px; max-width: 98px;
-  white-space: nowrap !important;
-  text-align: center;
+  width: 94px !important; min-width: 70px !important; max-width: 98px !important; white-space: nowrap !important; text-align: center !important;
 }
 #transactions-table th:nth-child(7), #transactions-table td:nth-child(7) {
-  width: 106px; min-width: 80px; max-width: 114px;
-  white-space: nowrap !important;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  font-family: 'Montserrat', Arial, sans-serif;
+  width: 105px !important; min-width: 82px !important; max-width: 115px !important; white-space: nowrap !important; text-align: right !important; font-variant-numeric: tabular-nums !important; font-family: 'Montserrat', Arial, sans-serif !important;
 }
 #transactions-table th:nth-child(12), #transactions-table td:nth-child(12) {
-  width: 38px; min-width: 32px; max-width: 44px;
-  white-space: nowrap !important;
-  text-align: center;
+  width: 39px !important; min-width: 31px !important; max-width: 48px !important; white-space: nowrap !important; text-align: center !important;
 }
-#transactions-table th:nth-child(1), #transactions-table td:nth-child(1) {
-  width: 58px; min-width: 50px; max-width: 70px; white-space: nowrap !important; text-align: center;
-}
-#transactions-table th:nth-child(2), #transactions-table td:nth-child(2) {
-  width: 50px; min-width: 40px; max-width: 58px; white-space: nowrap !important; text-align: center;
-}
-#transactions-table th:nth-child(10), #transactions-table td:nth-child(10) {
-  width: 52px; min-width: 44px; max-width: 60px; white-space: nowrap !important; text-align: center;
-}
-#transactions-table th:nth-child(11), #transactions-table td:nth-child(11) {
-  width: 54px; min-width: 44px; max-width: 62px; white-space: nowrap !important; text-align: center;
-}
+
+/* Colonnes Type (4) et Moyen de paiement (5) : retour à la ligne ok, largeur réduite */
 #transactions-table th:nth-child(4), #transactions-table td:nth-child(4),
 #transactions-table th:nth-child(5), #transactions-table td:nth-child(5) {
-  min-width: 60px; max-width: 120px; width: 9vw; white-space: normal !important; word-break: break-word; text-align: left; }
+  min-width: 60px !important; max-width: 110px !important; width: 9vw !important; white-space: normal !important; word-break: break-word !important; text-align: left !important;
+}
+/* Libellé (6) : largeur max, retour à la ligne max 5 lignes */
 #transactions-table th:nth-child(6), #transactions-table td:nth-child(6) {
-  min-width: 200px; max-width: 340px; width: 21vw; white-space: normal !important; word-break: break-word; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; line-clamp: 5; line-height: 1.3em; height: calc(1.3em * 5); text-overflow: ellipsis; }
+  min-width: 170px !important; max-width: 320px !important; width: 18vw !important; white-space: normal !important; word-break: break-word !important; overflow: hidden !important; display: -webkit-box !important; -webkit-line-clamp: 5 !important; -webkit-box-orient: vertical !important; line-clamp: 5 !important; line-height: 1.3em !important; height: calc(1.3em * 5) !important; text-overflow: ellipsis !important;
+}
+/* Catégorie (8) & Sous-catégorie (9) : retour à la ligne ok */
 #transactions-table th:nth-child(8), #transactions-table td:nth-child(8), #transactions-table th:nth-child(9), #transactions-table td:nth-child(9) {
-  min-width: 70px; max-width: 120px; width: 9vw; white-space: normal !important; word-break: break-word; text-align: left; }
+  min-width: 70px !important; max-width: 120px !important; width: 8vw !important; white-space: normal !important; word-break: break-word !important; text-align: left !important;
+}
 
+#transactions-table th:nth-child(1), #transactions-table td:nth-child(1) {
+  width: 60px !important; min-width: 48px !important; max-width: 74px !important; white-space: nowrap !important; text-align: center !important;
+}
+#transactions-table th:nth-child(2), #transactions-table td:nth-child(2) {
+  width: 44px !important; min-width: 36px !important; max-width: 54px !important; white-space: nowrap !important; text-align: center !important;
+}
+#transactions-table th:nth-child(10), #transactions-table td:nth-child(10) {
+  width: 54px !important; min-width: 44px !important; max-width: 64px !important; white-space: nowrap !important; text-align: center !important;
+}
+#transactions-table th:nth-child(11), #transactions-table td:nth-child(11) {
+  width: 54px !important; min-width: 44px !important; max-width: 64px !important; white-space: nowrap !important; text-align: center !important;
+}
+
+/* Responsive : réduit la largeur du libellé sur petits écrans */
+@media (max-width: 900px) {
+  #transactions-table th, #transactions-table td { font-size: 0.93em !important; padding: 0.6em 0.2em !important; }
+  #transactions-table th:nth-child(6), #transactions-table td:nth-child(6) { min-width: 110px !important; max-width: 160px !important; width: 13vw !important; }
+}
+
+/* Surcharge les paddings conflictuels */
 #transactions-table th, #transactions-table td {
-  vertical-align: middle;
-  word-break: break-word;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  padding-left: 2px !important;
+  padding-right: 2px !important;
 }
 
 #transactions-table tr:hover {
-  background: #22243a;
+  background: #22243a !important;
 }
 #transactions-table tr.selected {
   background: #f8c471 !important;
   color: #14213d !important;
 }
 #transactions-table td.amount {
-  font-family: 'Montserrat', Arial, sans-serif;
-  font-weight: bold;
-}
-
-input, select, textarea {
-  background: #22243a;
-  color: #fffdfa;
-  border: 1.5px solid #e6be6a;
-  border-radius: 8px;
-  padding: 0.4em 0.8em;
-  font-size: 1em;
-  font-family: inherit;
-  margin-bottom: 0.25em;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: #f8c471;
-  box-shadow: 0 0 0 1.5px #f8c47122;
-}
-input::placeholder, select option, textarea::placeholder {
-  color: #e6be6a;
-  opacity: 0.85;
-}
-
-button, .btn {
-  background: linear-gradient(90deg, #f8c471, #e6be6a);
-  color: #14213d;
-  border-radius: 12px;
-  padding: 0.5em 1.3em;
-  font-weight: bold;
-  font-family: 'Montserrat', Arial, sans-serif;
-  border: none;
-  box-shadow: 0 2px 12px rgba(230,190,106,0.14);
-  font-size: 1em;
-  outline: none;
-  transition: filter 0.15s, box-shadow 0.15s;
-  cursor: pointer;
-}
-button:hover, .btn:hover {
-  filter: brightness(1.08);
-  box-shadow: 0 2px 16px rgba(248,196,113,0.25);
-}
-button:active, .btn:active {
-  filter: brightness(0.97);
-}
-
-a {
-  color: #f8c471;
-  text-decoration: underline;
-  transition: color 0.18s;
-}
-a:hover {
-  color: #e6be6a;
-}
-
-.badge, .tag {
-  background: #f8c471;
-  color: #14213d;
-  font-size: 0.97em;
-  border-radius: 8px;
-  padding: 0.25em 0.8em;
-  font-weight: bold;
-  margin-right: 0.4em;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #e6be6a;
-  border-radius: 12px;
-}
-::-webkit-scrollbar {
-  background: #22243a;
-  width: 10px;
-}
-
-.summary, .total, .important {
-  color: #f8c471;
-  font-family: 'Playfair Display', serif;
-  font-weight: bold;
-  font-size: 1.08em;
-}
-
-@media (max-width: 900px) {
-  #navbar ul.menu > li { font-size: 0.97em; }
-  #transactions-table th, #transactions-table td { font-size: 0.93em; padding: 0.6em 0.2em; }
+  font-family: 'Montserrat', Arial, sans-serif !important;
+  font-weight: bold !important;
 }
