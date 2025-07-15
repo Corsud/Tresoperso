@@ -1538,7 +1538,8 @@
                 const tbody = table.querySelector('tbody');
                 data.alerts.forEach(a => {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${formatDate(a.date)}</td><td>${a.label}</td><td class="amount">${formatAmount(a.amount)}</td><td>${a.category}</td><td>${a.reason}</td>`;
+                    const reason = typeof a.reason === 'number' ? formatAmount(a.reason) : a.reason;
+                    tr.innerHTML = `<td>${formatDate(a.date)}</td><td>${a.label}</td><td class="amount">${formatAmount(a.amount)}</td><td>${a.category}</td><td>${reason}</td>`;
                     tbody.appendChild(tr);
                 });
                 container.appendChild(table);

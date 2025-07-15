@@ -60,7 +60,12 @@ def test_dashboard_alerts_and_summaries(client):
     for key in ['date', 'label', 'amount', 'category', 'reason']:
         assert key in first
     huge = [a for a in data['alerts'] if a['label'] == 'Huge expense'][0]
-    assert huge['reason'] == 'category_threshold'
+    session = app_module.SessionLocal()
+    cat = session.query(models.Category).filter_by(name='Food').one()
+    cat_avgs, _ = app_module.compute_dashboard_averages(session, months=3, favorites_only=False)
+    session.close()
+    expected = cat_avgs[cat.id] * 1.5
+    assert huge['reason'] == pytest.approx(expected)
     favs = {}
     cats = {grp['category']: grp for grp in data['favorite_summaries']}
     for grp in data['favorite_summaries']:
