@@ -1814,11 +1814,14 @@
             const params = new URLSearchParams();
             if (projectionAccountIds.length) params.set('account_ids', projectionAccountIds.join(','));
             projectionStartBalance = NaN;
+            let months, rows, period;
             if (mode === 'forecast') {
                 const resp = await fetch('/projection/categories/forecast' + (params.toString() ? `?${params.toString()}` : ''));
                 if (handleUnauthorized(resp) || !resp.ok) return;
                 const data = await resp.json();
-                await buildFutureTable(data.months, data.rows, data.period);
+                months = data.months;
+                rows = data.rows;
+                period = data.period;
             } else {
                 const [avgResp, fResp] = await Promise.all([
                     fetch('/projection/categories/average' + (params.toString() ? `?${params.toString()}` : '')),
@@ -1827,12 +1830,21 @@
                 if (handleUnauthorized(avgResp) || handleUnauthorized(fResp) || !avgResp.ok || !fResp.ok) return;
                 const avgs = await avgResp.json();
                 const fData = await fResp.json();
-                const rows = avgs.map(a => ({
+                months = fData.months;
+                period = fData.period;
+                rows = avgs.map(a => ({
                     category: a.category,
                     values: fData.months.map(() => a.average),
                 }));
-                await buildFutureTable(fData.months, rows, fData.period);
             }
+
+            const saved = await loadFutureTable();
+            if (saved && Array.isArray(saved.rows)) {
+                const customs = saved.rows.filter(r => r.custom);
+                if (customs.length) rows = rows.concat(customs);
+            }
+
+            await buildFutureTable(months, rows, period);
         }
 
         async function buildFutureTable(months, rows, period) {
@@ -1852,12 +1864,7 @@
             thead.appendChild(headRow);
 
             projectionFutureMonths = months.slice();
-
-            const saved = await loadFutureTable();
-            if (saved && Array.isArray(saved.rows) && saved.rows.length) {
-                rows = saved.rows;
-            }
-
+            
             function createEditableRow(r, sign) {
                 const tr = document.createElement('tr');
                 tr.dataset.sign = sign;
@@ -2930,8 +2937,7 @@
         }
 
         projectionModeInputs.forEach(r => {
-            r.addEventListener('change', async () => {
-                await clearSavedFutureTable();
+            r.addEventListener('change', () => {
                 fetchProjectionFuture();
             });
         });
