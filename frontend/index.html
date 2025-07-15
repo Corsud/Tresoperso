@@ -2928,7 +2928,8 @@
         }
 
         projectionModeInputs.forEach(r => {
-            r.addEventListener('change', () => {
+            r.addEventListener('change', async () => {
+                await clearSavedFutureTable();
                 fetchProjectionFuture();
             });
         });
