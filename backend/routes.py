@@ -1,5 +1,6 @@
 from flask import request, jsonify
 import logging
+import os
 from flask_login import login_required
 from sqlalchemy import func, or_, and_, case
 from datetime import datetime, timedelta  # use standard datetime
@@ -35,6 +36,17 @@ def _parse_account_ids():
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
+
+
+@app.route('/themes')
+def list_themes():
+    """Return available theme names (CSS files in frontend directory)."""
+    files = []
+    for name in os.listdir(app.static_folder):
+        if name.endswith('.css') and name != 'base.css':
+            files.append(name[:-4])
+    files.sort()
+    return jsonify(files)
 
 
 @app.route('/accounts', methods=['GET', 'POST'])

@@ -291,16 +291,7 @@
                 <ul id="rules-list" style="display:none;"></ul>
                 <h1>Préférences d'affichage</h1>
                 <label for="theme-select">Thème :</label>
-                <select id="theme-select">
-                    <option value="light">Clair</option>
-                    <option value="dark">Sombre</option>
-                    <option value="flat-light">Flat clair</option>
-                    <option value="flat-dark">Flat sombre</option>
-                    <option value="luxury-light">Luxe clair</option>
-                    <option value="luxury-dark">Luxe sombre</option>
-                    <option value="magazine-light">Magazine clair</option>
-                    <option value="magazine-dark">Magazine sombre</option>
-                </select>
+                <select id="theme-select"></select>
                 <label for="font-select">Police :</label>
                 <select id="font-select">
                     <option value="roboto">Roboto</option>
@@ -2828,6 +2819,24 @@
         const dashboardFavOnlyInput = document.getElementById('dashboard-favorites-only');
         const recurrentMonthInput = document.getElementById('recurrent-month');
 
+        async function loadThemes() {
+            try {
+                const resp = await fetch('/themes');
+                if (resp.ok) {
+                    const themes = await resp.json();
+                    themeSelect.innerHTML = '';
+                    themes.forEach(t => {
+                        const opt = document.createElement('option');
+                        opt.value = t;
+                        opt.textContent = t;
+                        themeSelect.appendChild(opt);
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to load themes', e);
+            }
+        }
+
         function applyPreferences() {
             const theme = localStorage.getItem('theme') || 'light';
             const font = localStorage.getItem('font') || 'roboto';
@@ -3047,7 +3056,7 @@
             if (expenseChart) expenseChart.resize();
         });
 
-        applyPreferences();
+        loadThemes().then(applyPreferences);
     </script>
     <script src="sankey.js"></script>
     <script>
