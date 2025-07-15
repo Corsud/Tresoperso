@@ -1256,8 +1256,12 @@ def dashboard():
     for tx in recent_txs:
         name = tx.category.name if tx.category else "Inconnu"
         cat_avg = cat_avgs.get(tx.category_id)
-        if cat_avg and abs(tx.amount) > cat_avg * threshold:
-            reason = "category_threshold"
+        if cat_avg:
+            ref = cat_avg * threshold
+        else:
+            ref = None
+        if ref is not None and abs(tx.amount) > ref:
+            reason = ref
         elif abs(tx.amount) > income_avg:
             reason = "income_threshold"
         else:
