@@ -1559,11 +1559,12 @@
                     const tdFav = document.createElement('td');
                     if (group.items && group.items.length) {
                         const inner = document.createElement('table');
+                        inner.className = 'favorite-inner-table';
                         inner.innerHTML = '<thead><tr><th>Favori</th><th>Mois en cours</th><th>Moy. 6 mois</th></tr></thead><tbody></tbody>';
                         const innerBody = inner.querySelector('tbody');
                         group.items.forEach(f => {
                             const row = document.createElement('tr');
-                            row.innerHTML = `<td>${f.name}</td><td>${formatAmount(f.current_total)}</td><td>${formatAmount(f.six_month_avg)}</td>`;
+                            row.innerHTML = `<td>${f.name}</td><td class="amount">${formatAmount(f.current_total)}</td><td class="amount">${formatAmount(f.six_month_avg)}</td>`;
                             innerBody.appendChild(row);
                         });
                         tdFav.appendChild(inner);
