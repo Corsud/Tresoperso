@@ -364,6 +364,15 @@ body.hide-amounts .amount-input {
     text-align: right;
 }
 
+.favorite-inner-table {
+    table-layout: fixed;
+    width: 100%;
+}
+.favorite-inner-table th,
+.favorite-inner-table td {
+    width: 33%;
+}
+
 #recurrents-calendar {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
