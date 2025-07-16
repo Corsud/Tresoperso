@@ -1603,14 +1603,36 @@
 
         function drawProjectionChart() {
             const labels = [];
-            const barValues = [];
-            projectionData.forEach(d => {
-                labels.push(d.month);
-                barValues.push(parseFloat(d.total) || 0);
+            projectionCatMonths.forEach(m => labels.push(m));
+            projectionFutureMonths.forEach(m => labels.push(m));
+
+            const catMap = new Map();
+            projectionPastCatRows.forEach(r => {
+                catMap.set(r.category, Object.assign(catMap.get(r.category) || {}, { past: r }));
             });
-            projectionFutureTotals.forEach(d => {
-                labels.push(d.month);
-                barValues.push(parseFloat(d.total) || 0);
+            projectionFutureCatRows.forEach(r => {
+                catMap.set(r.category, Object.assign(catMap.get(r.category) || {}, { future: r }));
+            });
+
+            const datasets = [];
+            catMap.forEach((obj, cat) => {
+                const past = obj.past ? obj.past.values.slice() : new Array(projectionCatMonths.length).fill(0);
+                const future = obj.future ? obj.future.values.slice() : new Array(projectionFutureMonths.length).fill(0);
+                const values = past.concat(future);
+                const sign = (obj.future && (obj.future.sign || obj.future.__sign))
+                    || (obj.past && (obj.past.sign || obj.past.__sign))
+                    || (values.reduce((a,b)=>a+b,0) >= 0 ? 'income' : 'expense');
+                const dataVals = sign === 'expense'
+                    ? values.map(v => -Math.abs(v))
+                    : values.slice();
+                const catOpt = categoryOptions.find(c => c.name === cat);
+                const color = catOpt && catOpt.color ? catOpt.color : 'rgba(54, 162, 235, 0.5)';
+                datasets.push({
+                    label: cat,
+                    data: dataVals,
+                    backgroundColor: color,
+                    stack: sign
+                });
             });
 
             const lineValues = [];
@@ -1633,20 +1655,14 @@
                 });
             }
 
-            const datasets = [
-                {
-                    label: 'Mouvements',
-                    data: barValues,
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)'
-                },
-                {
-                    label: 'Solde',
-                    type: 'line',
-                    data: lineValues,
-                    fill: false,
-                    borderColor: 'rgba(153, 102, 255, 1)'
-                }
-            ];
+            datasets.push({
+                label: 'Solde',
+                type: 'line',
+                data: lineValues,
+                fill: false,
+                borderColor: 'rgba(153, 102, 255, 1)',
+                order: 10
+            });
 
 
             const ctx = document.getElementById('projectionChart').getContext('2d');
@@ -1675,13 +1691,14 @@
             projectionFutureCatRows = [];
             rows.forEach(tr => {
                 const catCell = tr.children[0];
+                const sign = tr.dataset.sign || 'expense';
                 const values = [];
                 tr.querySelectorAll('td.amount').forEach((td, idx) => {
                     const val = parseAmount(td.textContent);
                     values[idx] = val;
                     totals[idx] = (totals[idx] || 0) + val;
                 });
-                projectionFutureCatRows.push({category: catCell.textContent.replace('×','').trim(), values});
+                projectionFutureCatRows.push({category: catCell.textContent.replace('×','').trim(), sign, values});
             });
             const totalRow = tbody.querySelector('tr.total-row');
             totals.forEach((v, idx) => {
@@ -1757,7 +1774,7 @@
                 const values = Array.from(tr.querySelectorAll('td.amount .cell-value')).map(span => parseAmount(span.textContent));
                 rows.push({category, sign, values, custom});
             });
-            projectionFutureCatRows = rows.map(r => ({category: r.category, values: r.values.slice()}));
+            projectionFutureCatRows = rows.map(r => ({category: r.category, sign: r.sign, values: r.values.slice()}));
             const data = {rows, account_ids: projectionAccountIds};
             await fetch('/projection/future', {
                 method: 'PUT',
