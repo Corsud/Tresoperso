@@ -1617,10 +1617,21 @@
             let running = Number.isFinite(projectionStartBalance)
                 ? projectionStartBalance
                 : 0;
-            barValues.forEach(v => {
-                running += v;
+            projectionData.forEach(d => {
+                running += parseFloat(d.total) || 0;
                 lineValues.push(running);
             });
+            const balanceRow = document.querySelector('#projection-future-table tbody tr.balance-row');
+            if (balanceRow) {
+                balanceRow.querySelectorAll('td.amount').forEach(td => {
+                    lineValues.push(parseAmount(td.textContent));
+                });
+            } else {
+                projectionFutureTotals.forEach(d => {
+                    running += parseFloat(d.total) || 0;
+                    lineValues.push(running);
+                });
+            }
 
             const datasets = [
                 {
@@ -1732,6 +1743,7 @@
                 row.appendChild(td);
             });
             tbody.appendChild(row);
+            drawProjectionChart();
         }
 
         async function saveFutureTable() {
