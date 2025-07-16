@@ -407,6 +407,9 @@
         let projectionData = [];
         let projectionFutureTotals = [];
         let projectionFutureMonths = [];
+        let projectionCatMonths = [];
+        let projectionPastCatRows = [];
+        let projectionFutureCatRows = [];
         let projectionAccountIds = [];
         let projectionStartBalance = 0;
         let activeFutureCell = null;
@@ -1634,6 +1637,7 @@
                 }
             ];
 
+
             const ctx = document.getElementById('projectionChart').getContext('2d');
             if (projChart) projChart.destroy();
             const hide = localStorage.getItem('hideAmounts') === 'true';
@@ -1646,6 +1650,7 @@
 
             projChart = new Chart(ctx, {
                 type: 'bar',
+
                 data: { labels, datasets },
                 options: opts
             });
@@ -1654,13 +1659,18 @@
         function updateFutureTotals() {
             const table = document.getElementById('projection-future-table');
             const tbody = table.querySelector('tbody');
-            const rows = Array.from(tbody.querySelectorAll('tr:not(.total-row):not(.group-header)'));
+            const rows = Array.from(tbody.querySelectorAll('tr:not(.total-row):not(.group-header):not(.add-row)'));
             const totals = [];
+            projectionFutureCatRows = [];
             rows.forEach(tr => {
+                const catCell = tr.children[0];
+                const values = [];
                 tr.querySelectorAll('td.amount').forEach((td, idx) => {
                     const val = parseAmount(td.textContent);
+                    values[idx] = val;
                     totals[idx] = (totals[idx] || 0) + val;
                 });
+                projectionFutureCatRows.push({category: catCell.textContent.replace('×','').trim(), values});
             });
             const totalRow = tbody.querySelector('tr.total-row');
             totals.forEach((v, idx) => {
@@ -1669,6 +1679,7 @@
             });
             projectionFutureTotals = projectionFutureMonths.map((m, idx) => ({ month: m, total: totals[idx] || 0 }));
             updateMonthBalanceRow();
+            drawProjectionChart();
         }
 
         function updateMonthBalanceRow() {
@@ -1734,6 +1745,7 @@
                 const values = Array.from(tr.querySelectorAll('td.amount .cell-value')).map(span => parseAmount(span.textContent));
                 rows.push({category, sign, values, custom});
             });
+            projectionFutureCatRows = rows.map(r => ({category: r.category, values: r.values.slice()}));
             const data = {rows, account_ids: projectionAccountIds};
             await fetch('/projection/future', {
                 method: 'PUT',
@@ -1774,7 +1786,6 @@
         document.getElementById('projection-future-table').addEventListener('input', () => {
             updateFutureTotals();
             updateBalanceRow();
-            drawProjectionChart();
             saveFutureTable();
         });
 
@@ -1831,6 +1842,10 @@
                 });
                 tbody.appendChild(tr);
             });
+
+            projectionCatMonths = data.months.slice();
+            projectionPastCatRows = data.rows.map(r => ({...r}));
+            drawProjectionChart();
         }
 
         async function fetchProjectionFuture() {
@@ -1885,10 +1900,11 @@
                 th.textContent = m;
                 headRow.appendChild(th);
             });
-            thead.appendChild(headRow);
+           thead.appendChild(headRow);
 
             projectionFutureMonths = months.slice();
-            
+            projectionFutureCatRows = rows.map(r => ({...r}));
+
             function createEditableRow(r, sign) {
                 const tr = document.createElement('tr');
                 tr.dataset.sign = sign;
@@ -1905,7 +1921,6 @@
                         tr.remove();
                         updateFutureTotals();
                         updateBalanceRow();
-                        drawProjectionChart();
                         saveFutureTable();
                     });
                     tdCat.appendChild(del);
@@ -1926,7 +1941,6 @@
                         valSpan.textContent = formatAmount(parseAmount(valSpan.textContent));
                         updateFutureTotals();
                         updateBalanceRow();
-                        drawProjectionChart();
                         saveFutureTable();
                     });
                     const reset = document.createElement('span');
@@ -1937,7 +1951,6 @@
                         valSpan.textContent = formatAmount(td.dataset.original);
                         updateFutureTotals();
                         updateBalanceRow();
-                        drawProjectionChart();
                         saveFutureTable();
                         e.stopPropagation();
                     });
@@ -2005,7 +2018,6 @@
             appendGroup('Dépenses', expenses, 'expense');
             updateFutureTotals();
             await updateBalanceRow();
-            drawProjectionChart();
             saveFutureTable();
         }
 
@@ -2017,7 +2029,6 @@
             });
             updateFutureTotals();
             updateBalanceRow();
-            drawProjectionChart();
             saveFutureTable();
         }
 
@@ -2033,7 +2044,6 @@
             });
             updateFutureTotals();
             updateBalanceRow();
-            drawProjectionChart();
             saveFutureTable();
         }
 
@@ -2046,7 +2056,6 @@
             clearSavedFutureTable();
             updateFutureTotals();
             updateBalanceRow();
-            drawProjectionChart();
             saveFutureTable();
         }
 
@@ -3080,7 +3089,6 @@
             clearSavedFutureTable();
             updateFutureTotals();
             updateBalanceRow();
-            drawProjectionChart();
             saveFutureTable();
         });
 
