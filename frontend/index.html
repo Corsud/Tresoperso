@@ -1600,30 +1600,54 @@
 
         function drawProjectionChart() {
             const labels = [];
-            const values = [];
+            const barValues = [];
             projectionData.forEach(d => {
                 labels.push(d.month);
-                values.push(parseFloat(d.total) || 0);
+                barValues.push(parseFloat(d.total) || 0);
             });
             projectionFutureTotals.forEach(d => {
                 labels.push(d.month);
-                values.push(parseFloat(d.total) || 0);
+                barValues.push(parseFloat(d.total) || 0);
             });
+
+            const lineValues = [];
+            let running = Number.isFinite(projectionStartBalance)
+                ? projectionStartBalance
+                : 0;
+            barValues.forEach(v => {
+                running += v;
+                lineValues.push(running);
+            });
+
+            const datasets = [
+                {
+                    label: 'Mouvements',
+                    data: barValues,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)'
+                },
+                {
+                    label: 'Solde',
+                    type: 'line',
+                    data: lineValues,
+                    fill: false,
+                    borderColor: 'rgba(153, 102, 255, 1)'
+                }
+            ];
+
             const ctx = document.getElementById('projectionChart').getContext('2d');
             if (projChart) projChart.destroy();
             const hide = localStorage.getItem('hideAmounts') === 'true';
+            const opts = getChartOptions(hide);
+            opts.scales = opts.scales || {};
+            opts.scales.x = opts.scales.x || {};
+            opts.scales.y = opts.scales.y || {};
+            opts.scales.x.stacked = true;
+            opts.scales.y.stacked = true;
+
             projChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels,
-                    datasets: [{
-                        label: 'Projection',
-                        data: values,
-                        fill: false,
-                        borderColor: 'rgba(153, 102, 255, 1)'
-                    }]
-                },
-                options: getChartOptions(hide)
+                type: 'bar',
+                data: { labels, datasets },
+                options: opts
             });
         }
 
