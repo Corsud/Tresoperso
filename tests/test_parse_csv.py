@@ -101,20 +101,36 @@ def test_parse_csv_sanitizes_label(label):
     assert transactions[0]["label"] == "'" + label
 
 
-def test_parse_csv_with_custom_mapping():
-    csv_data = """Compte courant 12345678 2021-01-01
-Achat;Debit;2021-01-02;-12,34;CB
-"""
-    mapping = {
-        'label': 0,
-        'type': 1,
-        'date': 2,
-        'amount': 3,
-        'payment_method': 4,
-    }
+@pytest.mark.parametrize(
+    "csv_data,mapping",
+    [
+        (
+            """Compte courant 12345678 2021-01-01\nAchat;Debit;2021-01-02;-12,34;CB\n""",
+            {
+                'label': 0,
+                'type': 1,
+                'date': 2,
+                'amount': 3,
+                'payment_method': 4,
+            },
+        ),
+        (
+            """Compte courant 12345678 2021-01-01\n-12,34;CB;Achat;Debit;2021-01-02\n""",
+            {
+                'amount': 0,
+                'payment_method': 1,
+                'label': 2,
+                'type': 3,
+                'date': 4,
+            },
+        ),
+    ],
+)
+def test_parse_csv_with_custom_mapping(csv_data, mapping):
     transactions, duplicates, errors, info = parse_csv(csv_data, mapping=mapping)
 
     assert not errors
+    assert duplicates == []
     assert len(transactions) == 1
     t = transactions[0]
     assert t['label'] == 'Achat'
