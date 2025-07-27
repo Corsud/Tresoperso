@@ -241,6 +241,11 @@ tbody th {
     flex-direction: column;
     gap: 4px;
 }
+#import-config-overlay .popup {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
 
 #rule-label-checkboxes,
 #fav-filter-label-checkboxes {
