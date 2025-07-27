@@ -8,19 +8,19 @@ from sqlalchemy import func
 from .models import Transaction
 
 
-def detect_csv_structure(content: str) -> Tuple[str, Optional[int], List[str]]:
-    """Guess delimiter and header line in CSV text.
+def detect_csv_structure(content: str) -> Tuple[str, Optional[int], int, List[str]]:
+    """Guess delimiter, header and first data line in CSV text.
 
     The function uses :class:`csv.Sniffer` when possible and falls back to a
     simple heuristic. It skips empty lines at the beginning of the file and
     returns the delimiter, the index of the header line in ``content.splitlines``
-    and the list of detected column names. ``None`` is returned as the header
-    index when no obvious header could be detected.
+    (or ``None`` when no obvious header is found), the index of the first
+    transaction line and the list of detected column names.
     """
 
     lines = content.splitlines()
     if not lines:
-        return ',', None, []
+        return ',', None, 0, []
 
     # Remove leading blank lines but keep their count to compute the index
     start_index = 0
@@ -29,9 +29,12 @@ def detect_csv_structure(content: str) -> Tuple[str, Optional[int], List[str]]:
             start_index = i
             break
     else:
-        return ',', None, []
+        return ',', None, 0, []
 
-    sample_lines = [l for l in lines[start_index:start_index + 10] if l.strip()]
+    mid = len(lines) // 2
+    sample_lines = [l for l in lines[mid:mid + 10] if l.strip()]
+    if len(sample_lines) < 2:
+        sample_lines = [l for l in lines[start_index:start_index + 10] if l.strip()]
     sample = '\n'.join(sample_lines)
     sniffer = csv.Sniffer()
     delimiter = ','
@@ -39,11 +42,15 @@ def detect_csv_structure(content: str) -> Tuple[str, Optional[int], List[str]]:
         dialect = sniffer.sniff(sample, delimiters=[',', ';', '\t', '|'])
         delimiter = dialect.delimiter
     except csv.Error:
-        counts = {d: sample.count(d) for d in [',', ';', '\t', '|']}
+        pass
+
+    counts = {d: sample.count(d) for d in [',', ';', '\t', '|']}
+    if counts.get(delimiter, 0) == 0 or max(counts.values()) > counts.get(delimiter, 0):
         delimiter = max(counts, key=counts.get)
 
     header_index: Optional[int] = None
     columns: List[str] = []
+    data_start_idx = start_index
 
     for idx in range(start_index, len(lines)):
         row = lines[idx]
@@ -63,7 +70,15 @@ def detect_csv_structure(content: str) -> Tuple[str, Optional[int], List[str]]:
         except csv.Error:
             pass
 
-    return delimiter, header_index, columns
+    if header_index is not None:
+        data_start_idx = header_index + 1
+    else:
+        data_start_idx = start_index + 1
+
+    while data_start_idx < len(lines) and not lines[data_start_idx].strip():
+        data_start_idx += 1
+
+    return delimiter, header_index, data_start_idx, columns
 
 
 def parse_csv(content, mapping=None):
