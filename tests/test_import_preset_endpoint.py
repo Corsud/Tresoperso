@@ -42,3 +42,17 @@ def test_import_preset_returns_columns_and_preview(client):
     assert session.query(models.Transaction).count() == 0
     session.close()
 
+
+def test_import_preset_without_header(client):
+    login(client)
+    csv = (
+        "Compte courant 12345678 2021-01-01\n"
+        "2021-01-02;Achat;-12,34\n"
+        "2021-01-03;Test;5,00\n"
+    )
+    resp = send_preset_file(client, csv)
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data['columns'] == ['Colonne 1', 'Colonne 2', 'Colonne 3']
+    assert data['preview'][0] == ['2021-01-02', 'Achat', '-12,34']
+

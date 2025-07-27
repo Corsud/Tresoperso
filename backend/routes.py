@@ -222,14 +222,18 @@ def import_preset():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
-    delimiter, header_idx, columns = detect_csv_structure(content)
+    delimiter, header_idx, data_start_idx, columns = detect_csv_structure(content)
     lines = content.splitlines()
-    start = header_idx + 1 if header_idx is not None else 0
+    start = data_start_idx
     preview = []
     for row in lines[start:start + 5]:
         if not row.strip():
             continue
         preview.append([c.strip() for c in row.split(delimiter)])
+
+    if not columns and start < len(lines):
+        col_count = len(lines[start].split(delimiter))
+        columns = [f'Colonne {i}' for i in range(1, col_count + 1)]
 
     return jsonify({'columns': columns, 'preview': preview})
 
