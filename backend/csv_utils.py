@@ -1,9 +1,69 @@
 import csv
 import re
 from datetime import datetime  # use standard datetime
+from typing import List, Optional, Tuple
+
 from sqlalchemy import func
 
 from .models import Transaction
+
+
+def detect_csv_structure(content: str) -> Tuple[str, Optional[int], List[str]]:
+    """Guess delimiter and header line in CSV text.
+
+    The function uses :class:`csv.Sniffer` when possible and falls back to a
+    simple heuristic. It skips empty lines at the beginning of the file and
+    returns the delimiter, the index of the header line in ``content.splitlines``
+    and the list of detected column names. ``None`` is returned as the header
+    index when no obvious header could be detected.
+    """
+
+    lines = content.splitlines()
+    if not lines:
+        return ',', None, []
+
+    # Remove leading blank lines but keep their count to compute the index
+    start_index = 0
+    for i, line in enumerate(lines):
+        if line.strip():
+            start_index = i
+            break
+    else:
+        return ',', None, []
+
+    sample_lines = [l for l in lines[start_index:start_index + 10] if l.strip()]
+    sample = '\n'.join(sample_lines)
+    sniffer = csv.Sniffer()
+    delimiter = ','
+    try:
+        dialect = sniffer.sniff(sample, delimiters=[',', ';', '\t', '|'])
+        delimiter = dialect.delimiter
+    except csv.Error:
+        counts = {d: sample.count(d) for d in [',', ';', '\t', '|']}
+        delimiter = max(counts, key=counts.get)
+
+    header_index: Optional[int] = None
+    columns: List[str] = []
+
+    for idx in range(start_index, len(lines)):
+        row = lines[idx]
+        if not row.strip():
+            continue
+        parts = [c.strip().lower() for c in row.split(delimiter)]
+        if any('date' in p for p in parts) and any('montant' in p or 'amount' in p for p in parts):
+            header_index = idx
+            columns = [c.strip() for c in row.split(delimiter)]
+            break
+    if header_index is None and sample_lines:
+        # Use Sniffer.has_header on the first data lines
+        try:
+            if sniffer.has_header(sample):
+                header_index = start_index
+                columns = [c.strip() for c in lines[start_index].split(delimiter)]
+        except csv.Error:
+            pass
+
+    return delimiter, header_index, columns
 
 
 def parse_csv(content):
