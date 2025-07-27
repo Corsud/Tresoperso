@@ -328,6 +328,24 @@
                 </form>
             </div>
         </div>
+        <div id="import-config-overlay" class="overlay">
+            <div class="popup">
+                <form id="import-config-form">
+                    <table id="import-config-table" class="thin-grid">
+                        <thead>
+                            <tr><th>Champ requis</th><th>Colonne du fichier</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <div style="margin-top:0.5em;">
+                        <label>Nom de la configuration :
+                            <input type="text" id="import-config-name" />
+                        </label>
+                    </div>
+                    <button type="submit">Enregistrer</button>
+                </form>
+            </div>
+        </div>
         <div id="rule-overlay" class="overlay">
             <div class="popup">
                 <div id="rule-label-checkboxes"></div>
@@ -849,6 +867,52 @@
             }
         }
 
+        let selectedCsvFile = null;
+
+        async function fetchImportPreset(file) {
+            const fd = new FormData();
+            fd.append('file', file);
+            const resp = await fetch('/import/preset', { method: 'POST', body: fd });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok) {
+                alert(data.error || 'Erreur import');
+                return null;
+            }
+            return data;
+        }
+
+        function showImportConfig(columns) {
+            const tbody = document.querySelector('#import-config-table tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const fields = [
+                { id: 'date', label: 'Date' },
+                { id: 'type', label: 'Type' },
+                { id: 'payment', label: 'Paiement' },
+                { id: 'label', label: 'Libellé' },
+                { id: 'amount', label: 'Montant' }
+            ];
+            fields.forEach(f => {
+                const tr = document.createElement('tr');
+                const tdField = document.createElement('td');
+                tdField.textContent = f.label;
+                const tdSel = document.createElement('td');
+                const sel = document.createElement('select');
+                sel.dataset.field = f.id;
+                columns.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c;
+                    opt.textContent = c;
+                    sel.appendChild(opt);
+                });
+                tdSel.appendChild(sel);
+                tr.appendChild(tdField);
+                tr.appendChild(tdSel);
+                tbody.appendChild(tr);
+            });
+            importConfigOverlay.style.display = 'flex';
+        }
+
         async function deleteAccount(id) {
             const resp = await fetch(`/accounts/${id}`, { method: 'DELETE' });
             if (resp.ok) {
@@ -1130,8 +1194,14 @@
             }
         });
 
-        document.getElementById('csv-file').addEventListener('change', () => {
-            if (document.getElementById('csv-file').files.length) {
+        document.getElementById('csv-file').addEventListener('change', async () => {
+            const fi = document.getElementById('csv-file');
+            if (!fi.files.length) return;
+            selectedCsvFile = fi.files[0];
+            const preset = await fetchImportPreset(selectedCsvFile);
+            if (preset && preset.columns) {
+                showImportConfig(preset.columns);
+            } else {
                 document.getElementById('upload-form').requestSubmit();
             }
         });
@@ -2443,6 +2513,8 @@
         const delErrorSubList = document.getElementById('delete-error-subcat-list');
         const delErrorList = document.getElementById('delete-error-list');
         const delErrorClose = document.getElementById('delete-error-close');
+        const importConfigOverlay = document.getElementById('import-config-overlay');
+        const importConfigNameInput = document.getElementById('import-config-name');
         const recurrentsOverlay = document.getElementById('recurrents-overlay');
         const recurrentsClose = document.getElementById('recurrents-close');
         const recurrentsBtnCalendar = document.getElementById('recurrents-btn-calendar');
@@ -2669,6 +2741,24 @@
         if (favoriteInfoOverlay) favoriteInfoOverlay.addEventListener('click', e => { if (e.target === favoriteInfoOverlay) favoriteInfoOverlay.style.display = 'none'; });
         if (dashboardInfoClose) dashboardInfoClose.addEventListener('click', () => { dashboardInfoOverlay.style.display = 'none'; });
         if (dashboardInfoOverlay) dashboardInfoOverlay.addEventListener('click', e => { if (e.target === dashboardInfoOverlay) dashboardInfoOverlay.style.display = 'none'; });
+
+        if (importConfigOverlay) importConfigOverlay.addEventListener('click', e => { if (e.target === importConfigOverlay) importConfigOverlay.style.display = 'none'; });
+        const importConfigForm = document.getElementById('import-config-form');
+        if (importConfigForm) importConfigForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const mapping = {};
+            document.querySelectorAll('#import-config-table select').forEach(sel => {
+                mapping[sel.dataset.field] = sel.value;
+            });
+            const name = importConfigNameInput ? importConfigNameInput.value.trim() : '';
+            if (name) {
+                const presets = JSON.parse(localStorage.getItem('importPresets') || '{}');
+                presets[name] = mapping;
+                localStorage.setItem('importPresets', JSON.stringify(presets));
+            }
+            importConfigOverlay.style.display = 'none';
+            document.getElementById('upload-form').requestSubmit();
+        });
         if (recurrentsBtnCalendar && recurrentsBtnList) {
             recurrentsBtnCalendar.addEventListener('click', () => {
                 if (recurrentsData.length === 0) return;
