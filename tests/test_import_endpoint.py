@@ -53,3 +53,39 @@ def test_reimport_returns_duplicates(client):
     accounts = session.query(models.BankAccount).all()
     session.close()
     assert len(accounts) == 1
+
+
+def test_import_with_custom_profile(client, monkeypatch):
+    login(client)
+    csv_body = "Achat;Debit;2021-01-02;-12,34;CB\n"
+    csv = "Compte courant 12345678 2021-01-01\n" + csv_body
+
+    mapping = {
+        'label': 0,
+        'type': 1,
+        'date': 2,
+        'amount': 3,
+        'payment_method': 4,
+    }
+
+    original = app_module.routes.parse_csv
+
+    def custom_parse(content):
+        return original(content, mapping=mapping)
+
+    monkeypatch.setattr(app_module.routes, 'parse_csv', custom_parse)
+
+    first = import_file(client, csv)
+    assert first.status_code == 200
+    data1 = first.get_json()
+    acc_id = data1['account']['id']
+    assert data1.get('imported') == 1
+    assert 'duplicates' not in data1
+
+    second = import_file(client, csv)
+    assert second.status_code == 200
+    data2 = second.get_json()
+    assert data2['account']['id'] == acc_id
+    assert not data2.get('errors')
+    assert 'duplicates' in data2
+    assert len(data2['duplicates']) == 1

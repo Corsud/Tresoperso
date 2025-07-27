@@ -32,3 +32,27 @@ def test_detect_comma_delimiter():
     assert delim == ','
     assert header_idx == 0
     assert cols == ['Date', 'Libelle', 'Montant']
+
+
+def test_detect_tab_delimiter_and_spaces():
+    csv_data = (
+        "\n"
+        "  Date\t Type \t Montant  \n"
+        "2021-01-02\t Debit \t -12.34\n"
+    )
+    delim, header_idx, cols = detect_csv_structure(csv_data)
+    assert delim == '\t'
+    assert header_idx == 1
+    assert cols == ['Date', 'Type', 'Montant']
+
+
+def test_detect_pipe_delimiter_with_header_spaces():
+    csv_data = (
+        "Compte courant 12345678 2021-01-01\n"
+        "Date | Libelle | Montant \n"
+        "2021-01-02 | Achat | -12.34\n"
+    )
+    delim, header_idx, cols = detect_csv_structure(csv_data)
+    assert delim == '|'
+    assert header_idx == 1
+    assert cols == ['Date', 'Libelle', 'Montant']
