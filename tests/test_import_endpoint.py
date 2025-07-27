@@ -1,4 +1,5 @@
 import io
+import json
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -23,9 +24,17 @@ def login(client):
     assert resp.status_code == 200
 
 
-def import_file(client, csv):
+def import_file(client, csv, mapping=None):
     data = {'file': (io.BytesIO(csv.encode('utf-8')), 'test.csv')}
+    if mapping:
+        data['mapping'] = json.dumps(mapping)
     return client.post('/import', data=data, content_type='multipart/form-data')
+
+def preview_file(client, csv, mapping=None):
+    data = {'file': (io.BytesIO(csv.encode('utf-8')), 'test.csv')}
+    if mapping:
+        data['mapping'] = json.dumps(mapping)
+    return client.post('/import/preview', data=data, content_type='multipart/form-data')
 
 
 def test_reimport_returns_duplicates(client):
@@ -55,7 +64,7 @@ def test_reimport_returns_duplicates(client):
     assert len(accounts) == 1
 
 
-def test_import_with_custom_profile(client, monkeypatch):
+def test_import_with_custom_profile(client):
     login(client)
     csv_body = "Achat;Debit;2021-01-02;-12,34;CB\n"
     csv = "Compte courant 12345678 2021-01-01\n" + csv_body
@@ -68,24 +77,34 @@ def test_import_with_custom_profile(client, monkeypatch):
         'payment_method': 4,
     }
 
-    original = app_module.routes.parse_csv
-
-    def custom_parse(content):
-        return original(content, mapping=mapping)
-
-    monkeypatch.setattr(app_module.routes, 'parse_csv', custom_parse)
-
-    first = import_file(client, csv)
+    first = import_file(client, csv, mapping=mapping)
     assert first.status_code == 200
     data1 = first.get_json()
     acc_id = data1['account']['id']
     assert data1.get('imported') == 1
     assert 'duplicates' not in data1
 
-    second = import_file(client, csv)
+    second = import_file(client, csv, mapping=mapping)
     assert second.status_code == 200
     data2 = second.get_json()
     assert data2['account']['id'] == acc_id
     assert not data2.get('errors')
     assert 'duplicates' in data2
     assert len(data2['duplicates']) == 1
+
+
+def test_preview_does_not_insert(client):
+    login(client)
+    csv = """Compte courant 12345678 2021-01-01
+2021-01-02;Debit;CB;Achat;-12,34
+2021-01-03;Credit;VIR;Salaire;1000,00
+"""
+    resp = preview_file(client, csv)
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert 'transactions' in data
+    assert len(data['transactions']) == 2
+    session = models.SessionLocal()
+    assert session.query(models.Transaction).count() == 0
+    assert session.query(models.BankAccount).count() == 0
+    session.close()

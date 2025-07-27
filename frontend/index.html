@@ -352,6 +352,21 @@
                 </form>
             </div>
         </div>
+        <div id="import-preview-overlay" class="overlay">
+            <div class="popup">
+                <h3>Prévisualisation de l'import</h3>
+                <table id="import-preview-table" class="thin-grid">
+                    <thead>
+                        <tr><th>Date</th><th>Type</th><th>Paiement</th><th>Libellé</th><th>Montant</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div id="import-preview-duplicates"></div>
+                <div id="import-preview-errors" class="error-list"></div>
+                <button id="import-preview-confirm">Importer</button>
+                <button id="import-preview-cancel" type="button">Annuler</button>
+            </div>
+        </div>
         <div id="rule-overlay" class="overlay">
             <div class="popup">
                 <div id="rule-label-checkboxes"></div>
@@ -438,6 +453,7 @@
         let projectionStartBalance = 0;
         let activeFutureCell = null;
         let importPresetsData = [];
+        let currentImportMapping = null;
 
         function showLoginForm() {
             document.getElementById('app').style.display = 'none';
@@ -847,9 +863,10 @@
             importPresetsData = await resp.json();
         }
 
-        async function createAccount(file) {
+        async function createAccount(file, mapping) {
             const formData = new FormData();
             formData.append('file', file);
+            if (mapping) formData.append('mapping', JSON.stringify(mapping));
             const resp = await fetch('/import', { method: 'POST', body: formData });
             const data = await resp.json().catch(() => ({}));
             if (resp.ok) {
@@ -886,6 +903,19 @@
             const fd = new FormData();
             fd.append('file', file);
             const resp = await fetch('/import/preset', { method: 'POST', body: fd });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok) {
+                alert(data.error || 'Erreur import');
+                return null;
+            }
+            return data;
+        }
+
+        async function fetchImportPreview(file, mapping) {
+            const fd = new FormData();
+            fd.append('file', file);
+            if (mapping) fd.append('mapping', JSON.stringify(mapping));
+            const resp = await fetch('/import/preview', { method: 'POST', body: fd });
             const data = await resp.json().catch(() => ({}));
             if (!resp.ok) {
                 alert(data.error || 'Erreur import');
@@ -935,6 +965,40 @@
             });
             importConfigForm.dataset.presetId = '';
             importConfigOverlay.style.display = 'flex';
+        }
+
+        function showImportPreview(data) {
+            if (!importPreviewTbody) return;
+            importPreviewTbody.innerHTML = '';
+            (data.transactions || []).forEach(t => {
+                const tr = document.createElement('tr');
+                const fields = ['date','type','payment_method','label','amount'];
+                fields.forEach(f => {
+                    const td = document.createElement('td');
+                    const inp = document.createElement('input');
+                    inp.value = t[f];
+                    td.appendChild(inp);
+                    tr.appendChild(td);
+                });
+                importPreviewTbody.appendChild(tr);
+            });
+            importPreviewDuplicates.innerHTML = '';
+            if (data.duplicates && data.duplicates.length) {
+                const ul = document.createElement('ul');
+                data.duplicates.forEach(d => {
+                    const li = document.createElement('li');
+                    li.textContent = `${d.date} - ${d.label} - ${d.amount}`;
+                    ul.appendChild(li);
+                });
+                importPreviewDuplicates.appendChild(ul);
+            }
+            importPreviewErrors.innerHTML = '';
+            if (data.errors && data.errors.length) {
+                const ul = document.createElement('ul');
+                data.errors.forEach(err => { const li = document.createElement('li'); li.textContent = err; ul.appendChild(li); });
+                importPreviewErrors.appendChild(ul);
+            }
+            importPreviewOverlay.style.display = 'flex';
         }
 
         async function deleteAccount(id) {
@@ -1227,7 +1291,9 @@
             if (preset && preset.columns) {
                 await showImportConfig(preset.columns);
             } else {
-                document.getElementById('upload-form').requestSubmit();
+                currentImportMapping = null;
+                const prev = await fetchImportPreview(selectedCsvFile, null);
+                if (prev) showImportPreview(prev);
             }
         });
 
@@ -1235,8 +1301,10 @@
             e.preventDefault();
             const fileInput = document.getElementById('csv-file');
             if (!fileInput.files.length) return;
-            await createAccount(fileInput.files[0]);
+            await createAccount(fileInput.files[0], currentImportMapping);
             fileInput.value = '';
+            selectedCsvFile = null;
+            currentImportMapping = null;
         });
 
         async function fetchCategories() {
@@ -2542,6 +2610,12 @@
         const importConfigNameInput = document.getElementById('import-config-name');
         const importPresetSelect = document.getElementById('import-preset-select');
         const importPresetDelete = document.getElementById('import-preset-delete');
+        const importPreviewOverlay = document.getElementById('import-preview-overlay');
+        const importPreviewTbody = document.querySelector('#import-preview-table tbody');
+        const importPreviewDuplicates = document.getElementById('import-preview-duplicates');
+        const importPreviewErrors = document.getElementById('import-preview-errors');
+        const importPreviewConfirm = document.getElementById('import-preview-confirm');
+        const importPreviewCancel = document.getElementById('import-preview-cancel');
         const recurrentsOverlay = document.getElementById('recurrents-overlay');
         const recurrentsClose = document.getElementById('recurrents-close');
         const recurrentsBtnCalendar = document.getElementById('recurrents-btn-calendar');
@@ -2770,6 +2844,7 @@
         if (dashboardInfoOverlay) dashboardInfoOverlay.addEventListener('click', e => { if (e.target === dashboardInfoOverlay) dashboardInfoOverlay.style.display = 'none'; });
 
         if (importConfigOverlay) importConfigOverlay.addEventListener('click', e => { if (e.target === importConfigOverlay) importConfigOverlay.style.display = 'none'; });
+        if (importPreviewOverlay) importPreviewOverlay.addEventListener('click', e => { if (e.target === importPreviewOverlay) importPreviewOverlay.style.display = 'none'; });
         const importConfigForm = document.getElementById('import-config-form');
         if (importPresetSelect) importPresetSelect.addEventListener('change', () => {
             const id = importPresetSelect.value;
@@ -2820,7 +2895,9 @@
                 await fetchImportPresets();
             }
             importConfigOverlay.style.display = 'none';
-            document.getElementById('upload-form').requestSubmit();
+            currentImportMapping = mapping;
+            const prev = await fetchImportPreview(selectedCsvFile, mapping);
+            if (prev) showImportPreview(prev);
         });
         if (recurrentsBtnCalendar && recurrentsBtnList) {
             recurrentsBtnCalendar.addEventListener('click', () => {
@@ -2903,6 +2980,12 @@
             } else {
                 if (data.errors) alert(data.errors.join('\n')); else alert(data.error || 'Erreur import');
             }
+        });
+
+        if (importPreviewCancel) importPreviewCancel.addEventListener('click', () => { importPreviewOverlay.style.display = 'none'; });
+        if (importPreviewConfirm) importPreviewConfirm.addEventListener('click', () => {
+            importPreviewOverlay.style.display = 'none';
+            document.getElementById('upload-form').requestSubmit();
         });
 
         async function saveCategory() {
