@@ -1674,6 +1674,13 @@
             opts.scales.y = opts.scales.y || {};
             opts.scales.x.stacked = true;
             opts.scales.y.stacked = true;
+            opts.plugins = opts.plugins || {};
+            opts.plugins.tooltip = opts.plugins.tooltip || {};
+            opts.plugins.tooltip.callbacks = opts.plugins.tooltip.callbacks || {};
+            opts.plugins.tooltip.callbacks.title = items => {
+                const it = items[0];
+                return [it.dataset.label, it.label];
+            };
 
             projChart = new Chart(ctx, {
                 type: 'bar',
