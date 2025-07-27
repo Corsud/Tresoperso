@@ -884,14 +884,7 @@
                 if (data.duplicates && data.duplicates.length) {
                     showDuplicates(data.duplicates, data.account ? data.account.id : '');
                 } else {
-                    fetchTransactions();
-                    fetchDashboard();
-                    fetchStats();
-                    fetchProjection();
-                    fetchProjectionCategories();
-                    fetchProjectionFuture();
-                    fetchCategoryStats();
-                    fetchSankeyStats();
+                    refreshAll();
                 }
             } else {
                 if (data.errors) {
@@ -900,6 +893,17 @@
                     alert(data.error || 'Erreur import');
                 }
             }
+        }
+
+        function refreshAll() {
+            fetchTransactions();
+            fetchDashboard();
+            fetchStats();
+            fetchProjection();
+            fetchProjectionCategories();
+            fetchProjectionFuture();
+            fetchCategoryStats();
+            fetchSankeyStats();
         }
 
         let selectedCsvFile = null;
@@ -2952,7 +2956,12 @@
             dupOverlay.style.display = 'flex';
         }
 
-        dupOverlay.addEventListener('click', e => { if (e.target === dupOverlay) dupOverlay.style.display = 'none'; });
+        dupOverlay.addEventListener('click', e => {
+            if (e.target === dupOverlay) {
+                dupOverlay.style.display = 'none';
+                refreshAll();
+            }
+        });
         document.getElementById('duplicate-form').addEventListener('submit', async e => {
             e.preventDefault();
             const rows = JSON.parse(dupOverlay.dataset.rows || '[]');
@@ -2962,14 +2971,7 @@
             });
             dupOverlay.style.display = 'none';
             if (!selected.length) {
-                fetchTransactions();
-                fetchDashboard();
-                fetchStats();
-                fetchProjection();
-                fetchProjectionCategories();
-                fetchProjectionFuture();
-                fetchCategoryStats();
-                fetchSankeyStats();
+                refreshAll();
                 return;
             }
             const resp = await fetch('/import/confirm', {
@@ -2979,14 +2981,7 @@
             });
             const data = await resp.json().catch(() => ({}));
             if (resp.ok) {
-                fetchTransactions();
-                fetchDashboard();
-                fetchStats();
-                fetchProjection();
-                fetchProjectionCategories();
-                fetchProjectionFuture();
-                fetchCategoryStats();
-                fetchSankeyStats();
+                refreshAll();
             } else {
                 if (data.errors) alert(data.errors.join('\n')); else alert(data.error || 'Erreur import');
             }
