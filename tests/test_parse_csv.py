@@ -99,3 +99,26 @@ def test_parse_csv_sanitizes_label(label):
 
     assert not errors
     assert transactions[0]["label"] == "'" + label
+
+
+def test_parse_csv_with_custom_mapping():
+    csv_data = """Compte courant 12345678 2021-01-01
+Achat;Debit;2021-01-02;-12,34;CB
+"""
+    mapping = {
+        'label': 0,
+        'type': 1,
+        'date': 2,
+        'amount': 3,
+        'payment_method': 4,
+    }
+    transactions, duplicates, errors, info = parse_csv(csv_data, mapping=mapping)
+
+    assert not errors
+    assert len(transactions) == 1
+    t = transactions[0]
+    assert t['label'] == 'Achat'
+    assert t['type'] == 'Debit'
+    assert t['payment_method'] == 'CB'
+    assert t['date'] == datetime.date(2021, 1, 2)
+    assert t['amount'] == -12.34
