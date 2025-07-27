@@ -10,7 +10,7 @@ from difflib import SequenceMatcher
 
 from .app import app, load_categories_json, save_categories_json
 from . import models
-from .csv_utils import parse_csv, apply_rule_to_transactions
+from .csv_utils import parse_csv, apply_rule_to_transactions, detect_csv_structure
 
 logger = logging.getLogger(__name__)
 
@@ -203,6 +203,34 @@ def account_detail(account_id):
     }
     session.close()
     return jsonify(result)
+
+
+@app.route('/import/preset', methods=['POST'])
+@login_required
+def import_preset():
+    """Return CSV columns and sample rows without inserting data."""
+    if 'file' not in request.files:
+        return jsonify({'error': 'Aucun fichier fourni'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'Aucun fichier fourni'}), 400
+
+    try:
+        content = file.stream.read().decode('utf-8')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+    delimiter, header_idx, columns = detect_csv_structure(content)
+    lines = content.splitlines()
+    start = header_idx + 1 if header_idx is not None else 0
+    preview = []
+    for row in lines[start:start + 5]:
+        if not row.strip():
+            continue
+        preview.append([c.strip() for c in row.split(delimiter)])
+
+    return jsonify({'columns': columns, 'preview': preview})
 
 
 @app.route('/import', methods=['POST'])
