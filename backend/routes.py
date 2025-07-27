@@ -2163,6 +2163,63 @@ def favorite_filters(filter_id=None):
     return jsonify({'message': 'deleted'})
 
 
+@app.route('/import_presets', methods=['GET', 'POST'])
+@app.route('/import_presets/<int:preset_id>', methods=['GET', 'PUT', 'DELETE'])
+@login_required
+def import_presets(preset_id=None):
+    session = models.SessionLocal()
+    if request.method == 'GET':
+        if preset_id is None:
+            data = [
+                {'id': p.id, 'name': p.name, 'mapping': p.mapping}
+                for p in session.query(models.ImportPreset).all()
+            ]
+            session.close()
+            return jsonify(data)
+        preset = session.query(models.ImportPreset).get(preset_id)
+        if not preset:
+            session.close()
+            return jsonify({'error': 'Not found'}), 404
+        result = {'id': preset.id, 'name': preset.name, 'mapping': preset.mapping}
+        session.close()
+        return jsonify(result)
+
+    if request.method == 'POST':
+        data = request.get_json() or {}
+        name = (data.get('name') or '').strip()
+        mapping = data.get('mapping') or {}
+        if not name or not isinstance(mapping, dict):
+            session.close()
+            return jsonify({'error': 'Missing fields'}), 400
+        preset = models.ImportPreset(name=name, mapping=mapping)
+        session.add(preset)
+        session.commit()
+        result = {'id': preset.id, 'name': preset.name, 'mapping': preset.mapping}
+        session.close()
+        return jsonify(result), 201
+
+    preset = session.query(models.ImportPreset).get(preset_id)
+    if not preset:
+        session.close()
+        return jsonify({'error': 'Not found'}), 404
+
+    if request.method == 'PUT':
+        data = request.get_json() or {}
+        if 'name' in data:
+            preset.name = data['name']
+        if 'mapping' in data and isinstance(data['mapping'], dict):
+            preset.mapping = data['mapping']
+        session.commit()
+        result = {'id': preset.id, 'name': preset.name, 'mapping': preset.mapping}
+        session.close()
+        return jsonify(result)
+
+    session.delete(preset)
+    session.commit()
+    session.close()
+    return jsonify({'message': 'deleted'})
+
+
 @app.route('/reset', methods=['POST'])
 @login_required
 def reset():

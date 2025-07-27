@@ -331,6 +331,12 @@
         <div id="import-config-overlay" class="overlay">
             <div class="popup">
                 <form id="import-config-form">
+                    <div>
+                        <label>Profil :
+                            <select id="import-preset-select"></select>
+                        </label>
+                        <button type="button" id="import-preset-delete">Supprimer</button>
+                    </div>
                     <table id="import-config-table" class="thin-grid">
                         <thead>
                             <tr><th>Champ requis</th><th>Colonne du fichier</th></tr>
@@ -431,6 +437,7 @@
         let projectionAccountIds = [];
         let projectionStartBalance = 0;
         let activeFutureCell = null;
+        let importPresetsData = [];
 
         function showLoginForm() {
             document.getElementById('app').style.display = 'none';
@@ -834,6 +841,12 @@
             await populateAccountsTable();
         }
 
+        async function fetchImportPresets() {
+            const resp = await fetch('/import_presets');
+            if (handleUnauthorized(resp) || !resp.ok) return;
+            importPresetsData = await resp.json();
+        }
+
         async function createAccount(file) {
             const formData = new FormData();
             formData.append('file', file);
@@ -881,10 +894,20 @@
             return data;
         }
 
-        function showImportConfig(columns) {
+        async function showImportConfig(columns) {
+            await fetchImportPresets();
             const tbody = document.querySelector('#import-config-table tbody');
             if (!tbody) return;
             tbody.innerHTML = '';
+            if (importPresetSelect) {
+                importPresetSelect.innerHTML = '<option value="">(Aucun)</option>';
+                importPresetsData.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = p.name;
+                    importPresetSelect.appendChild(opt);
+                });
+            }
             const fields = [
                 { id: 'date', label: 'Date' },
                 { id: 'type', label: 'Type' },
@@ -910,6 +933,7 @@
                 tr.appendChild(tdSel);
                 tbody.appendChild(tr);
             });
+            importConfigForm.dataset.presetId = '';
             importConfigOverlay.style.display = 'flex';
         }
 
@@ -1175,6 +1199,7 @@
             });
             if (resp.ok) {
                 await fetchAccounts();
+                await fetchImportPresets();
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
                 displayAccountInfo();
@@ -1200,7 +1225,7 @@
             selectedCsvFile = fi.files[0];
             const preset = await fetchImportPreset(selectedCsvFile);
             if (preset && preset.columns) {
-                showImportConfig(preset.columns);
+                await showImportConfig(preset.columns);
             } else {
                 document.getElementById('upload-form').requestSubmit();
             }
@@ -2515,6 +2540,8 @@
         const delErrorClose = document.getElementById('delete-error-close');
         const importConfigOverlay = document.getElementById('import-config-overlay');
         const importConfigNameInput = document.getElementById('import-config-name');
+        const importPresetSelect = document.getElementById('import-preset-select');
+        const importPresetDelete = document.getElementById('import-preset-delete');
         const recurrentsOverlay = document.getElementById('recurrents-overlay');
         const recurrentsClose = document.getElementById('recurrents-close');
         const recurrentsBtnCalendar = document.getElementById('recurrents-btn-calendar');
@@ -2744,17 +2771,53 @@
 
         if (importConfigOverlay) importConfigOverlay.addEventListener('click', e => { if (e.target === importConfigOverlay) importConfigOverlay.style.display = 'none'; });
         const importConfigForm = document.getElementById('import-config-form');
-        if (importConfigForm) importConfigForm.addEventListener('submit', e => {
+        if (importPresetSelect) importPresetSelect.addEventListener('change', () => {
+            const id = importPresetSelect.value;
+            const preset = importPresetsData.find(p => String(p.id) === String(id));
+            document.querySelectorAll('#import-config-table select').forEach(sel => { sel.value = sel.options[0].value; });
+            if (preset) {
+                importConfigNameInput.value = preset.name;
+                importConfigForm.dataset.presetId = preset.id;
+                Object.entries(preset.mapping).forEach(([field, col]) => {
+                    const sel = document.querySelector(`#import-config-table select[data-field="${field}"]`);
+                    if (sel) sel.value = col;
+                });
+            } else {
+                importConfigNameInput.value = '';
+                importConfigForm.dataset.presetId = '';
+            }
+        });
+        if (importPresetDelete) importPresetDelete.addEventListener('click', async () => {
+            const id = importConfigForm.dataset.presetId;
+            if (!id) return;
+            const resp = await fetch(`/import_presets/${id}`, { method: 'DELETE' });
+            if (resp.ok) {
+                await fetchImportPresets();
+                importPresetSelect.value = '';
+                importConfigNameInput.value = '';
+                importConfigForm.dataset.presetId = '';
+            }
+        });
+        if (importConfigForm) importConfigForm.addEventListener('submit', async e => {
             e.preventDefault();
             const mapping = {};
             document.querySelectorAll('#import-config-table select').forEach(sel => {
                 mapping[sel.dataset.field] = sel.value;
             });
             const name = importConfigNameInput ? importConfigNameInput.value.trim() : '';
+            const id = importConfigForm.dataset.presetId;
             if (name) {
-                const presets = JSON.parse(localStorage.getItem('importPresets') || '{}');
-                presets[name] = mapping;
-                localStorage.setItem('importPresets', JSON.stringify(presets));
+                const payload = { name, mapping };
+                if (id) {
+                    await fetch(`/import_presets/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                } else {
+                    const resp = await fetch('/import_presets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (resp.ok) {
+                        const data = await resp.json().catch(() => null);
+                        if (data) importConfigForm.dataset.presetId = data.id;
+                    }
+                }
+                await fetchImportPresets();
             }
             importConfigOverlay.style.display = 'none';
             document.getElementById('upload-form').requestSubmit();
