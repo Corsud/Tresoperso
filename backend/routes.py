@@ -1,6 +1,7 @@
 from flask import request, jsonify
 import logging
 import os
+import json
 from flask_login import login_required
 from sqlalchemy import func, or_, and_, case
 from datetime import datetime, timedelta  # use standard datetime
@@ -233,6 +234,104 @@ def import_preset():
     return jsonify({'columns': columns, 'preview': preview})
 
 
+@app.route('/import/preview', methods=['POST'])
+@login_required
+def import_preview():
+    """Return a preview of CSV transactions without inserting them."""
+    if 'file' not in request.files:
+        return jsonify({'error': 'Aucun fichier fourni'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'Aucun fichier fourni'}), 400
+
+    mapping = None
+    if 'mapping' in request.form:
+        try:
+            mapping = json.loads(request.form['mapping'])
+        except Exception:
+            mapping = None
+
+    try:
+        content = file.stream.read().decode('utf-8')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+    transactions, csv_duplicates, csv_errors, account_info = parse_csv(
+        content, mapping=mapping
+    )
+    errors = list(csv_errors)
+
+    session = models.SessionLocal()
+    duplicates = list(csv_duplicates)
+    account = session.query(models.BankAccount).filter_by(
+        account_type=account_info.get('account_type'),
+        number=account_info.get('number'),
+    ).first()
+    if account:
+        for t in transactions:
+            exists = (
+                session.query(models.Transaction)
+                .filter_by(
+                    date=t['date'],
+                    label=t['label'],
+                    amount=t['amount'],
+                    bank_account_id=account.id,
+                )
+                .first()
+            )
+            if exists:
+                duplicates.append({
+                    'date': t['date'],
+                    'type': t['type'],
+                    'payment_method': t['payment_method'],
+                    'label': t['label'],
+                    'amount': t['amount'],
+                    'account_id': account.id,
+                })
+    session.close()
+
+    preview_rows = [
+        {
+            **t,
+            'date': t['date'].isoformat()
+            if hasattr(t['date'], 'isoformat')
+            else t['date'],
+        }
+        for t in transactions[:5]
+    ]
+
+    response = {
+        'transactions': preview_rows,
+        'account': {
+            'id': account.id if account else None,
+            'account_type': account_info.get('account_type'),
+            'number': account_info.get('number'),
+            'export_date': account_info.get('export_date').isoformat()
+            if account_info.get('export_date')
+            else None,
+            'name': account_info.get('name', ''),
+            'initial_balance': account_info.get('initial_balance'),
+            'balance_date': account_info.get('balance_date').isoformat()
+            if account_info.get('balance_date')
+            else None,
+        },
+    }
+    if duplicates:
+        response['duplicates'] = [
+            {
+                **d,
+                'date': d['date'].isoformat()
+                if hasattr(d['date'], 'isoformat')
+                else d['date'],
+            }
+            for d in duplicates
+        ]
+    if errors:
+        response['errors'] = errors
+    return jsonify(response)
+
+
 @app.route('/import', methods=['POST'])
 @login_required
 def import_csv():
@@ -244,13 +343,20 @@ def import_csv():
     if file.filename == '':
         return jsonify({'error': 'Aucun fichier fourni'}), 400
 
+    mapping = None
+    if 'mapping' in request.form:
+        try:
+            mapping = json.loads(request.form['mapping'])
+        except Exception:
+            mapping = None
+
     errors = []
     try:
         content = file.stream.read().decode('utf-8')
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
-    transactions, csv_duplicates, csv_errors, account_info = parse_csv(content)
+    transactions, csv_duplicates, csv_errors, account_info = parse_csv(content, mapping=mapping)
     errors = list(csv_errors)
 
     session = models.SessionLocal()

@@ -103,6 +103,7 @@ Depuis l'onglet **Comptes** de l'interface web vous pouvez gérer plusieurs comp
 Chaque import CSV crée automatiquement le compte correspondant s'il n'existe pas encore.
 Si le numéro et le type correspondent à un compte existant, la date d'export est simplement mise à jour au lieu de créer un doublon.
 Utilisez le bouton «Importer CSV» pour sélectionner un fichier et mettre à jour le compte choisi. Un bouton «Supprimer» permet aussi d'effacer un compte.
+Une étape de prévisualisation s'affiche désormais avant l'insertion : après avoir sélectionné le fichier et mappé les colonnes, les premières lignes interprétées sont présentées avec les éventuels doublons détectés. Aucune donnée n'est alors enregistrée tant que vous n'avez pas confirmé l'import.
 
 ## API
 
