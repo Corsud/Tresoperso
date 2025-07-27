@@ -924,7 +924,7 @@
             return data;
         }
 
-        async function showImportConfig(columns) {
+        async function showImportConfig(columns, previewRows) {
             await fetchImportPresets();
             const tbody = document.querySelector('#import-config-table tbody');
             if (!tbody) return;
@@ -945,6 +945,7 @@
                 { id: 'label', label: 'Libellé' },
                 { id: 'amount', label: 'Montant' }
             ];
+            const sample = Array.isArray(previewRows) && previewRows.length ? previewRows[0] : [];
             fields.forEach(f => {
                 const tr = document.createElement('tr');
                 const tdField = document.createElement('td');
@@ -952,10 +953,14 @@
                 const tdSel = document.createElement('td');
                 const sel = document.createElement('select');
                 sel.dataset.field = f.id;
-                columns.forEach(c => {
+                columns.forEach((c, i) => {
                     const opt = document.createElement('option');
-                    opt.value = c;
-                    opt.textContent = c;
+                    opt.value = i;
+                    if (/^Colonne\s+\d+/i.test(c) && sample[i] !== undefined) {
+                        opt.textContent = sample[i];
+                    } else {
+                        opt.textContent = c;
+                    }
                     sel.appendChild(opt);
                 });
                 tdSel.appendChild(sel);
@@ -1289,7 +1294,7 @@
             selectedCsvFile = fi.files[0];
             const preset = await fetchImportPreset(selectedCsvFile);
             if (preset && preset.columns) {
-                await showImportConfig(preset.columns);
+                await showImportConfig(preset.columns, preset.preview);
             } else {
                 currentImportMapping = null;
                 const prev = await fetchImportPreview(selectedCsvFile, null);
@@ -2877,7 +2882,7 @@
             e.preventDefault();
             const mapping = {};
             document.querySelectorAll('#import-config-table select').forEach(sel => {
-                mapping[sel.dataset.field] = sel.value;
+                mapping[sel.dataset.field] = parseInt(sel.value, 10);
             });
             const name = importConfigNameInput ? importConfigNameInput.value.trim() : '';
             const id = importConfigForm.dataset.presetId;
