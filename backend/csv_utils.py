@@ -66,8 +66,21 @@ def detect_csv_structure(content: str) -> Tuple[str, Optional[int], List[str]]:
     return delimiter, header_index, columns
 
 
-def parse_csv(content):
-    """Parse CSV content and return transactions, duplicates, errors and account info."""
+def parse_csv(content, mapping=None):
+    """Parse CSV content and return transactions, duplicates, errors and account info.
+
+    ``mapping`` associates transaction fields to column indexes. The default
+    mapping assumes the following order: date, type, payment method, label and
+    amount.
+    """
+    if mapping is None:
+        mapping = {
+            'date': 0,
+            'type': 1,
+            'payment_method': 2,
+            'label': 3,
+            'amount': 4,
+        }
     reader = csv.reader(content.splitlines(), delimiter=';')
     rows = list(reader)
     if not rows:
@@ -145,29 +158,28 @@ def parse_csv(content):
     errors = []
     seen = set()
 
+    max_required = max(mapping.get('date', 0), mapping.get('label', 0), mapping.get('amount', 0))
     for line_no, row in enumerate(rows[start_idx:], start=start_idx + 1):
         if not any(cell.strip() for cell in row):
             continue
-        if len(row) < 5:
+        if len(row) <= max_required:
             errors.append(
-                f"Ligne {line_no}: colonnes manquantes (ligne comportant moins "
-                "de cinq colonnes ou des colonnes essentielles manquantes)"
+                f"Ligne {line_no}: colonnes manquantes (ligne comportant moins de colonnes que requis)"
             )
             continue
 
-        date_str = row[0]
-        tx_type = row[1]
-        payment_method = row[2]
-        label = row[3].strip()
+        date_str = row[mapping['date']]
+        tx_type = row[mapping['type']] if 'type' in mapping and mapping['type'] < len(row) else ''
+        payment_method = row[mapping['payment_method']] if 'payment_method' in mapping and mapping['payment_method'] < len(row) else ''
+        label = row[mapping['label']].strip()
         if label.startswith(('=', '+', '-', '@')):
             label = "'" + label
 
-        amount_str = row[4]
+        amount_str = row[mapping['amount']]
 
         if not (date_str and label and amount_str):
             errors.append(
-                f"Ligne {line_no}: colonnes manquantes (ligne comportant moins "
-                "de cinq colonnes ou des colonnes essentielles manquantes)"
+                f"Ligne {line_no}: colonnes manquantes (valeurs essentielles manquantes)"
             )
             continue
 
