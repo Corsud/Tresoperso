@@ -161,6 +161,14 @@ class ProjectionRow(Base):
     custom = Column(Boolean, default=False)
 
 
+class ImportPreset(Base):
+    __tablename__ = 'import_presets'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True, nullable=False)
+    mapping = Column(JSON, nullable=False)
+
+
 def init_db():
     """Create database tables if they do not exist."""
     with engine.connect() as conn:
@@ -168,6 +176,8 @@ def init_db():
     Base.metadata.create_all(engine)
     if not inspect(engine).has_table('projection_rows'):
         ProjectionRow.__table__.create(bind=engine)
+    if not inspect(engine).has_table('import_presets'):
+        ImportPreset.__table__.create(bind=engine)
 
     # Ensure new columns exist when upgrading from older versions
     with engine.connect() as conn:
