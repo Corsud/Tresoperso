@@ -869,7 +869,12 @@
             if (mapping) formData.append('mapping', JSON.stringify(mapping));
             const resp = await fetch('/import', { method: 'POST', body: formData });
             const data = await resp.json().catch(() => ({}));
-            if (resp.ok) {
+
+            const success = resp.ok || (typeof data.imported === 'number' && data.imported > 0);
+            if (success) {
+                if (data.errors) {
+                    alert(data.errors.join('\n'));
+                }
                 if (data.account) {
                     selectedAccountId = data.account.id;
                 }
