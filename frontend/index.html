@@ -3014,6 +3014,10 @@
                     currentCatBtn.textContent = '(Aucune)';
                     currentCatBtn.style.color = '';
                 }
+                const subBtn = document.querySelector(
+                    `.tx-sub-btn[data-id="${id}"]`
+                );
+                if (subBtn) subBtn.dataset.categoryId = val;
                 const fc = document.getElementById('filter-category').value;
                 const fs = document.getElementById('filter-subcategory').value;
                 if (fc || fs) {
