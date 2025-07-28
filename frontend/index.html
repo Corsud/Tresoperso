@@ -454,6 +454,8 @@
         let activeFutureCell = null;
         let importPresetsData = [];
         let currentImportMapping = null;
+        let pendingCatChange = false;
+        let pendingSubChange = false;
 
         function showLoginForm() {
             document.getElementById('app').style.display = 'none';
@@ -3012,7 +3014,18 @@
                     currentCatBtn.textContent = '(Aucune)';
                     currentCatBtn.style.color = '';
                 }
-                fetchTransactions();
+                const fc = document.getElementById('filter-category').value;
+                const fs = document.getElementById('filter-subcategory').value;
+                if (fc || fs) {
+                    pendingCatChange = true;
+                    if (pendingSubChange) {
+                        pendingCatChange = false;
+                        pendingSubChange = false;
+                        fetchTransactions();
+                    }
+                } else {
+                    fetchTransactions();
+                }
             }
             catOverlay.style.display = 'none';
             currentCatBtn = null;
@@ -3041,7 +3054,18 @@
                     currentSubBtn.textContent = '(Aucune)';
                     currentSubBtn.style.color = '';
                 }
-                fetchTransactions();
+                const fc = document.getElementById('filter-category').value;
+                const fs = document.getElementById('filter-subcategory').value;
+                if (fc || fs) {
+                    pendingSubChange = true;
+                    if (pendingCatChange) {
+                        pendingCatChange = false;
+                        pendingSubChange = false;
+                        fetchTransactions();
+                    }
+                } else {
+                    fetchTransactions();
+                }
             }
             subOverlay.style.display = 'none';
             currentSubBtn = null;
@@ -3308,16 +3332,17 @@
         filterInputs.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
-                el.addEventListener('input', () => {
+                const handler = () => {
+                    if (id === 'filter-category' || id === 'filter-subcategory') {
+                        pendingCatChange = false;
+                        pendingSubChange = false;
+                    }
                     fetchTransactions();
                     fetchCategoryStats();
                     fetchSankeyStats();
-                });
-                el.addEventListener('change', () => {
-                    fetchTransactions();
-                    fetchCategoryStats();
-                    fetchSankeyStats();
-                });
+                };
+                el.addEventListener('input', handler);
+                el.addEventListener('change', handler);
             }
         });
 
