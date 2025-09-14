@@ -15,15 +15,32 @@ def client():
     app_module.SessionLocal = models.SessionLocal
     models.init_db()
     session = models.SessionLocal()
+    cat1 = models.Category(name='Food', color='red')
+    sub1 = models.Subcategory(name='Meal', category=cat1, color='red')
+    cat2 = models.Category(name='Salary', color='blue')
+    sub2 = models.Subcategory(name='Job', category=cat2, color='blue')
     session.add_all([
-        models.Transaction(date=datetime.date(2021, 1, 1), label='T1', amount=10,
-                           favorite=True, reconciled=True, to_analyze=True),
-        models.Transaction(date=datetime.date(2021, 1, 2), label='T2', amount=20,
-                           favorite=False, reconciled=False, to_analyze=False),
+        cat1, sub1, cat2, sub2,
+        models.Transaction(
+            date=datetime.date(2021, 1, 1), label='T1', amount=10,
+            favorite=True, reconciled=True, to_analyze=True,
+            category=cat1, subcategory=sub1,
+        ),
+        models.Transaction(
+            date=datetime.date(2021, 1, 2), label='T2', amount=20,
+            favorite=False, reconciled=False, to_analyze=False,
+            category=cat2, subcategory=sub2,
+        ),
     ])
     session.commit()
+    cat1_id, sub1_id = cat1.id, sub1.id
+    cat2_id, sub2_id = cat2.id, sub2.id
     session.close()
     with app_module.app.test_client() as client:
+        client.cat1_id = cat1_id
+        client.sub1_id = sub1_id
+        client.cat2_id = cat2_id
+        client.sub2_id = sub2_id
         yield client
 
 
@@ -99,3 +116,32 @@ def test_filter_account_none(client):
     data = resp.get_json()
     assert len(data) == 1
     assert data[0]['account_id'] == acc_id
+
+
+def test_filter_category_and_subcategory(client):
+    login(client)
+    resp = client.get(
+        f'/transactions?category_id={client.cat1_id}&subcategory_id={client.sub1_id}'
+    )
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert len(data) == 1
+    assert data[0]['label'] == 'T1'
+
+
+def test_filter_category_only(client):
+    login(client)
+    resp = client.get(f'/transactions?category_id={client.cat2_id}')
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert len(data) == 1
+    assert data[0]['label'] == 'T2'
+
+
+def test_filter_subcategory_only(client):
+    login(client)
+    resp = client.get(f'/transactions?subcategory_id={client.sub2_id}')
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert len(data) == 1
+    assert data[0]['label'] == 'T2'

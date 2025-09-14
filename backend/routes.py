@@ -575,10 +575,16 @@ def list_transactions():
     label = request.args.get('label')
     if label:
         query = query.filter(models.Transaction.label.contains(label))
-
-    subcategory = request.args.get('subcategory')
-    if subcategory:
-        query = query.join(models.Subcategory).filter(models.Subcategory.name == subcategory)
+    sid = request.args.get('subcategory_id')
+    if sid:
+        try:
+            query = query.filter(models.Transaction.subcategory_id == int(sid))
+        except ValueError:
+            pass
+    else:
+        subcategory = request.args.get('subcategory')
+        if subcategory:
+            query = query.join(models.Subcategory).filter(models.Subcategory.name == subcategory)
 
     start_date = request.args.get('start_date')
     if start_date:
