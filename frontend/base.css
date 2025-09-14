@@ -11,6 +11,7 @@
     --interactive-color: #0066cc;
     --selected-color: #cce5ff;
     --table-header-bg: var(--selected-color);
+    --navbar-height: 60px;
 }
 
 body {
@@ -77,12 +78,14 @@ tbody th {
 }
 
 #transactions-table thead tr:nth-child(1) {
-    top: 0;
+    top: var(--navbar-height);
+
     z-index: 3;
 }
 
 #transactions-table thead tr:nth-child(2) {
-    top: var(--transactions-filter-row-height);
+    top: calc(var(--navbar-height) + var(--transactions-filter-row-height));
+
 }
 
 /* Filter row inside transactions table */
@@ -304,7 +307,7 @@ tbody th {
     font-weight: bold;
     color: var(--text-color);
 }
-#content { flex-grow: 1; padding: 60px 10px 0 10px; }
+#content { flex-grow: 1; padding: var(--navbar-height) 10px 0 10px; }
 
 a {
     color: var(--interactive-color);
