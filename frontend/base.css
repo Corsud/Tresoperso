@@ -79,11 +79,13 @@ tbody th {
 
 #transactions-table thead tr:nth-child(1) {
     top: var(--navbar-height);
+
     z-index: 3;
 }
 
 #transactions-table thead tr:nth-child(2) {
     top: calc(var(--navbar-height) + var(--transactions-filter-row-height));
+
 }
 
 /* Filter row inside transactions table */
