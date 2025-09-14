@@ -2762,13 +2762,13 @@
                 currentCatBtn = e.target;
                 document.getElementById('popup-category-select').value = currentCatBtn.dataset.current || '';
                 showPopupAt(catOverlay, e.clientX, e.clientY);
-                openSelect('popup-category-select');
+                requestAnimationFrame(() => openSelect('popup-category-select'));
             } else if (e.target.classList.contains('tx-sub-btn')) {
                 currentSubBtn = e.target;
                 populateSubPopup(currentSubBtn.dataset.categoryId);
                 document.getElementById('popup-subcategory-select').value = currentSubBtn.dataset.current || '';
                 showPopupAt(subOverlay, e.clientX, e.clientY);
-                openSelect('popup-subcategory-select');
+                requestAnimationFrame(() => openSelect('popup-subcategory-select'));
             } else if (e.target.classList.contains('tx-rule-btn')) {
                 currentRuleBtn = e.target;
                 const label = currentRuleBtn.dataset.label || '';
