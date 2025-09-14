@@ -11,6 +11,7 @@
     --interactive-color: #0066cc;
     --selected-color: #cce5ff;
     --table-header-bg: var(--selected-color);
+    --navbar-height: 60px;
 }
 
 body {
@@ -57,6 +58,7 @@ tbody th {
     font-size: 0.85rem;
     width: 95%;
     table-layout: auto;
+    --transactions-filter-row-height: 4.25rem;
 }
 #transactions-table.long-label {
     font-size: 0.75rem;
@@ -66,6 +68,22 @@ tbody th {
 }
 #transactions-table th {
     white-space: normal;
+}
+
+#transactions-table thead tr:nth-child(1),
+#transactions-table thead tr:nth-child(2) {
+    position: sticky;
+    background-color: var(--table-header-bg);
+    z-index: 2;
+}
+
+#transactions-table thead tr:nth-child(1) {
+    top: var(--navbar-height);
+    z-index: 3;
+}
+
+#transactions-table thead tr:nth-child(2) {
+    top: calc(var(--navbar-height) + var(--transactions-filter-row-height));
 }
 
 /* Filter row inside transactions table */
@@ -287,7 +305,7 @@ tbody th {
     font-weight: bold;
     color: var(--text-color);
 }
-#content { flex-grow: 1; padding: 60px 10px 0 10px; }
+#content { flex-grow: 1; padding: var(--navbar-height) 10px 0 10px; }
 
 a {
     color: var(--interactive-color);
