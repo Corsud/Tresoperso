@@ -2104,8 +2104,38 @@
 
             const saved = await loadFutureTable();
             if (saved && Array.isArray(saved.rows)) {
-                const customs = saved.rows.filter(r => r.custom);
-                if (customs.length) rows = rows.concat(customs);
+                const computeSign = (row) => {
+                    if (row.sign) return row.sign;
+                    const sum = (row.values || []).reduce((acc, v) => acc + v, 0);
+                    return sum >= 0 ? 'income' : 'expense';
+                };
+                const customs = [];
+                saved.rows.forEach(savedRow => {
+                    if (savedRow.custom) {
+                        customs.push(savedRow);
+                        return;
+                    }
+                    const savedSign = computeSign(savedRow);
+                    const idx = rows.findIndex(r => {
+                        const rowSign = computeSign(r);
+                        return r.category === savedRow.category && rowSign === savedSign;
+                    });
+                    const clonedValues = (savedRow.values || []).slice();
+                    if (idx !== -1) {
+                        rows[idx] = {
+                            ...rows[idx],
+                            values: clonedValues,
+                            sign: savedSign,
+                        };
+                    } else {
+                        rows.push({
+                            category: savedRow.category,
+                            values: clonedValues,
+                            sign: savedSign,
+                        });
+                    }
+                });
+                if (customs.length) rows = rows.concat(customs.map(r => ({...r, values: (r.values || []).slice()})));
             }
 
             await buildFutureTable(months, rows, period);
