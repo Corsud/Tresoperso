@@ -3138,6 +3138,10 @@
                     fetchProjection();
                     fetchProjectionCategories();
                     fetchProjectionFuture();
+                } else if (target === 'transactions-section') {
+                    fetchTransactions();
+                    displayAccountInfo();
+                    fetchBalanceInfo();
                 } else if (target === 'recurrents-section') {
                     fetchRecurrents();
                 }
