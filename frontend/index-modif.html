@@ -1678,7 +1678,8 @@
             document.querySelectorAll('#projection-future-table tbody tr').forEach(tr => {
                 if (tr.classList.contains('total-row') || tr.classList.contains('group-header') || tr.classList.contains('add-row')) return;
                 const catCell = tr.children[0];
-                let category = catCell.textContent.replace('×', '').trim();
+                const catLabel = catCell.querySelector('.category-label');
+                let category = catLabel ? catLabel.textContent.trim() : catCell.textContent.replace(/[×↺]/g, '').trim();
                 const sign = tr.dataset.sign || 'expense';
                 const custom = tr.dataset.custom === 'true';
                 const values = Array.from(tr.querySelectorAll('td.amount .cell-value')).map(span => parseAmount(span.textContent));
@@ -1843,10 +1844,56 @@
                 const tr = document.createElement('tr');
                 tr.dataset.sign = sign;
                 if (r.custom) tr.dataset.custom = 'true';
+
+                const originalValues = {
+                    category: r.category || '',
+                    values: months.map((_, idx) => (r.values?.[idx] || 0))
+                };
+                tr.dataset.originalValues = JSON.stringify(originalValues);
+
                 const tdCat = document.createElement('td');
-                tdCat.textContent = r.category || '';
+                const catContainer = document.createElement('div');
+                catContainer.className = 'category-cell';
+
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'category-label';
+                labelSpan.textContent = originalValues.category;
+                catContainer.appendChild(labelSpan);
+
+                const actionsContainer = document.createElement('div');
+                actionsContainer.className = 'category-actions';
+
+                const resetRowBtn = document.createElement('button');
+                resetRowBtn.type = 'button';
+                resetRowBtn.className = 'reset-row';
+                resetRowBtn.title = 'Réinitialiser la ligne';
+                resetRowBtn.setAttribute('aria-label', 'Réinitialiser la ligne');
+                resetRowBtn.textContent = '\u21BA';
+                resetRowBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const orig = tr.dataset.originalValues ? JSON.parse(tr.dataset.originalValues) : null;
+                    if (!orig) return;
+                    labelSpan.textContent = orig.category || '';
+                    if (r.custom) labelSpan.contentEditable = 'true';
+                    const amountCells = tr.querySelectorAll('td.amount');
+                    amountCells.forEach((td, idx) => {
+                        const value = orig.values?.[idx] || 0;
+                        td.dataset.original = value;
+                        const span = td.querySelector('.cell-value');
+                        if (span) {
+                            span.textContent = formatAmount(value);
+                        }
+                    });
+                    updateFutureTotals();
+                    updateBalanceRow();
+                    drawProjectionChart();
+                    saveFutureTable();
+                });
+                actionsContainer.appendChild(resetRowBtn);
+
                 if (r.custom) {
-                    tdCat.contentEditable = 'true';
+                    labelSpan.contentEditable = 'true';
+                    labelSpan.addEventListener('blur', saveFutureTable);
                     const del = document.createElement('span');
                     del.className = 'remove-row';
                     del.textContent = '×';
@@ -1858,9 +1905,11 @@
                         drawProjectionChart();
                         saveFutureTable();
                     });
-                    tdCat.appendChild(del);
-                    tdCat.addEventListener('blur', saveFutureTable);
+                    actionsContainer.appendChild(del);
                 }
+
+                catContainer.appendChild(actionsContainer);
+                tdCat.appendChild(catContainer);
                 tr.appendChild(tdCat);
                 for (let i=0;i<months.length;i++) {
                     const orig = r.values[i] || 0;
