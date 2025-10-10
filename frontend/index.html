@@ -2105,6 +2105,23 @@
                 }));
             }
 
+            const normalizeValues = (vals = []) => months.map((_, idx) => {
+                const raw = vals[idx];
+                const num = typeof raw === 'number' ? raw : parseFloat(raw);
+                return Number.isFinite(num) ? num : 0;
+            });
+
+            rows = rows.map(r => {
+                const defaults = normalizeValues(r.values);
+                return {
+                    ...r,
+                    category: r.category,
+                    values: defaults.slice(),
+                    defaults,
+                    defaultCategory: r.category || '',
+                };
+            });
+
             const saved = await loadFutureTable();
             if (saved && Array.isArray(saved.rows)) {
                 const computeSign = (row) => {
@@ -2123,10 +2140,11 @@
                         const rowSign = computeSign(r);
                         return r.category === savedRow.category && rowSign === savedSign;
                     });
-                    const clonedValues = (savedRow.values || []).slice();
+                    const clonedValues = normalizeValues(savedRow.values);
                     if (idx !== -1) {
                         rows[idx] = {
                             ...rows[idx],
+                            category: savedRow.category,
                             values: clonedValues,
                             sign: savedSign,
                         };
@@ -2135,10 +2153,19 @@
                             category: savedRow.category,
                             values: clonedValues,
                             sign: savedSign,
+                            defaults: normalizeValues(savedRow.defaults || savedRow.values || []),
+                            defaultCategory: savedRow.defaultCategory || savedRow.category || '',
                         });
                     }
                 });
-                if (customs.length) rows = rows.concat(customs.map(r => ({...r, values: (r.values || []).slice()})));
+                if (customs.length) {
+                    rows = rows.concat(customs.map(r => ({
+                        ...r,
+                        values: normalizeValues(r.values),
+                        defaults: normalizeValues(r.defaults || r.values || []),
+                        defaultCategory: r.defaultCategory || r.category || '',
+                    })));
+                }
             }
 
             await buildFutureTable(months, rows, period);
@@ -2168,9 +2195,13 @@
                 tr.dataset.sign = sign;
                 if (r.custom) tr.dataset.custom = 'true';
 
+                const defaultCategory = r.defaultCategory || r.category || '';
+                const defaults = months.map((_, idx) => (r.defaults?.[idx] !== undefined ? r.defaults[idx] : 0));
+                const displayedValues = months.map((_, idx) => (r.values?.[idx] !== undefined ? r.values[idx] : defaults[idx] || 0));
+
                 const originalValues = {
-                    category: r.category || '',
-                    values: months.map((_, idx) => (r.values?.[idx] || 0))
+                    category: defaultCategory,
+                    values: defaults
                 };
                 tr.dataset.originalValues = JSON.stringify(originalValues);
 
@@ -2180,7 +2211,7 @@
 
                 const labelSpan = document.createElement('span');
                 labelSpan.className = 'category-label';
-                labelSpan.textContent = originalValues.category;
+                labelSpan.textContent = r.category || '';
                 catContainer.appendChild(labelSpan);
 
                 const actionsContainer = document.createElement('div');
@@ -2192,7 +2223,7 @@
                 resetRowBtn.title = 'Réinitialiser la ligne';
                 resetRowBtn.setAttribute('aria-label', 'Réinitialiser la ligne');
                 resetRowBtn.textContent = '\u21BA';
-                resetRowBtn.addEventListener('click', (e) => {
+                resetRowBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     const orig = tr.dataset.originalValues ? JSON.parse(tr.dataset.originalValues) : null;
                     if (!orig) return;
@@ -2208,8 +2239,10 @@
                         }
                     });
                     updateFutureTotals();
-                    updateBalanceRow();
-                    saveFutureTable();
+                    await updateBalanceRow();
+                    await clearSavedFutureTable();
+                    await fetchProjectionFuture();
+                    activeFutureCell = null;
                 });
                 actionsContainer.appendChild(resetRowBtn);
 
@@ -2233,14 +2266,15 @@
                 tdCat.appendChild(catContainer);
                 tr.appendChild(tdCat);
                 for (let i=0;i<months.length;i++) {
-                    const orig = r.values[i] || 0;
+                    const orig = defaults[i] || 0;
+                    const currentValue = displayedValues[i] || 0;
                     const td = document.createElement('td');
                     td.className = 'amount editable-cell ' + (sign === 'income' ? 'income-cell' : 'expense-cell');
                     td.dataset.original = orig;
                     const valSpan = document.createElement('span');
                     valSpan.className = 'cell-value';
                     valSpan.contentEditable = 'true';
-                    valSpan.textContent = formatAmount(orig);
+                    valSpan.textContent = formatAmount(currentValue);
                     valSpan.addEventListener('focus', () => { activeFutureCell = td; });
                     valSpan.addEventListener('blur', () => {
                         valSpan.textContent = formatAmount(parseAmount(valSpan.textContent));
@@ -2310,7 +2344,7 @@
                 const btn = document.createElement('button');
                 btn.textContent = 'Ajouter ligne';
                 btn.addEventListener('click', () => {
-                    const tr = createEditableRow({category:'', values:new Array(months.length).fill(0), custom:true}, sign);
+                    const tr = createEditableRow({category:'', values:new Array(months.length).fill(0), defaults:new Array(months.length).fill(0), custom:true, defaultCategory:''}, sign);
                     tbody.insertBefore(tr, addRow);
                     saveFutureTable();
                 });
@@ -2326,18 +2360,26 @@
             saveFutureTable();
         }
 
-        function resetFutureRow() {
+        async function resetFutureRow() {
             if (!activeFutureCell) return;
-            activeFutureCell.parentElement.querySelectorAll('td[data-original]').forEach(td => {
+            const tr = activeFutureCell.parentElement;
+            const orig = tr.dataset.originalValues ? JSON.parse(tr.dataset.originalValues) : null;
+            if (orig) {
+                const labelSpan = tr.querySelector('.category-label');
+                if (labelSpan) labelSpan.textContent = orig.category || '';
+            }
+            tr.querySelectorAll('td[data-original]').forEach(td => {
                 const span = td.querySelector('.cell-value');
                 if (span) span.textContent = formatAmount(td.dataset.original);
             });
             updateFutureTotals();
-            updateBalanceRow();
-            saveFutureTable();
+            await updateBalanceRow();
+            await clearSavedFutureTable();
+            await fetchProjectionFuture();
+            activeFutureCell = null;
         }
 
-        function resetFutureColumn() {
+        async function resetFutureColumn() {
             if (!activeFutureCell) return;
             const idx = activeFutureCell.cellIndex;
             document.querySelectorAll('#projection-future-table tbody tr').forEach(tr => {
@@ -2348,20 +2390,23 @@
                 }
             });
             updateFutureTotals();
-            updateBalanceRow();
-            saveFutureTable();
+            await updateBalanceRow();
+            await clearSavedFutureTable();
+            await fetchProjectionFuture();
+            activeFutureCell = null;
         }
 
-        function resetFutureTable() {
+        async function resetFutureTable() {
             document.querySelectorAll('#projection-future-table tbody td[data-original]').forEach(td => {
                 const span = td.querySelector('.cell-value');
                 if (span) span.textContent = formatAmount(td.dataset.original);
             });
             document.querySelectorAll('#projection-future-table tbody tr[data-custom="true"]').forEach(tr => tr.remove());
-            clearSavedFutureTable();
             updateFutureTotals();
-            updateBalanceRow();
-            saveFutureTable();
+            await updateBalanceRow();
+            await clearSavedFutureTable();
+            await fetchProjectionFuture();
+            activeFutureCell = null;
         }
 
         async function fetchRecurrents() {
